@@ -260,7 +260,7 @@ def _exigir_objetos(db):
         raise Aborta(f"no existe la tabla `{TABLA}`. Corre primero:  "
                      f"python -m scripts.migrate_e3")
     faltan = [n for n in INDICES_EXIGIDOS if not db.execute(text(
-        "SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = :n"),
+        "SELECT 1 FROM pg_indexes WHERE schemaname = current_schema() AND indexname = :n"),
         {"n": n}).first()]
     if faltan:
         raise Aborta(

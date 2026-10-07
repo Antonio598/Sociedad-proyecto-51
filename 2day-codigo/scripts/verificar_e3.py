@@ -1146,7 +1146,7 @@ def p20_reversion_limpia(p, banco):
         p.cuadra("cargas_proveedor sigue intacta · filas", ESPERADO["filas"], n)
         p.cuadra("cargas_proveedor sigue intacta · litros", ESPERADO["litros"], litros)
         p.cuadra("índices de asientos_consumo que sobreviven al DROP", 0, conn.execute(text(
-            "SELECT count(*) FROM pg_indexes WHERE schemaname = 'public' "
+            "SELECT count(*) FROM pg_indexes WHERE schemaname = current_schema() "
             "AND tablename = :t"), {"t": TABLA}).scalar())
         p.cuadra("secuencias `consumo_evento_seq` que sobreviven", 0, conn.execute(text(
             "SELECT count(*) FROM pg_class WHERE relkind = 'S' AND relname = :n"),

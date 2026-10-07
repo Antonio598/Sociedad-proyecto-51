@@ -493,7 +493,7 @@ def _radiografia() -> dict:
             "ORDER BY table_name, ordinal_position"), {"t": list(TABLAS_E2)}).all()
         idx = c.execute(text(
             "SELECT tablename, indexname, indexdef FROM pg_indexes "
-            "WHERE schemaname = 'public' AND tablename = ANY(:t) "
+            "WHERE schemaname = current_schema() AND tablename = ANY(:t) "
             "ORDER BY tablename, indexname"), {"t": list(TABLAS_E2)}).all()
     return {"columnas": [tuple(r) for r in cols], "indices": [tuple(r) for r in idx]}
 

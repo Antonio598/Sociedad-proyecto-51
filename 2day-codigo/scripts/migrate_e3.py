@@ -144,7 +144,7 @@ with engine.begin() as conn:
     nuevos = 0
     for nombre, ddl in INDICES_PARCIALES:
         existe = conn.execute(
-            text("SELECT 1 FROM pg_indexes WHERE schemaname = 'public' "
+            text("SELECT 1 FROM pg_indexes WHERE schemaname = current_schema() "
                  "AND indexname = :n"),
             {"n": nombre},
         ).first()
@@ -166,7 +166,7 @@ with engine.connect() as conn:
         "WHERE contype = 'c' AND conrelid = 'asientos_consumo'::regclass")).scalar_one()
     n_indices = conn.execute(text(
         "SELECT count(*) FROM pg_indexes "
-        "WHERE schemaname = 'public' AND tablename = 'asientos_consumo'")).scalar_one()
+        "WHERE schemaname = current_schema() AND tablename = 'asientos_consumo'")).scalar_one()
 
 print(f"pg_type typtype='e' DESPUÉS: {enums_despues}   (debe seguir en 6)")
 if enums_antes != enums_despues or enums_despues != 6:

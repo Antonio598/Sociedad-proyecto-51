@@ -99,7 +99,7 @@ HAVING count(*) > 1
 
 def existe_indice(conn) -> bool:
     return conn.execute(
-        text("SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = :n"),
+        text("SELECT 1 FROM pg_indexes WHERE schemaname = current_schema() AND indexname = :n"),
         {"n": INDICE},
     ).first() is not None
 
@@ -142,11 +142,11 @@ else:
 
 with engine.connect() as conn:
     definicion = conn.execute(
-        text("SELECT indexdef FROM pg_indexes WHERE schemaname='public' AND indexname = :n"),
+        text("SELECT indexdef FROM pg_indexes WHERE schemaname=current_schema() AND indexname = :n"),
         {"n": INDICE},
     ).scalar_one_or_none()
     n_indices = conn.execute(text(
-        "SELECT count(*) FROM pg_indexes WHERE schemaname='public' "
+        "SELECT count(*) FROM pg_indexes WHERE schemaname=current_schema() "
         "AND tablename='escaneos_motor'")).scalar_one()
 
 print(f"\nTal como quedó en la base:\n  {definicion}")

@@ -163,7 +163,7 @@ for modelo in TABLAS:
 with engine.begin() as conn:
     for nombre, ddl in INDICES_PARCIALES:
         existe = conn.execute(
-            text("SELECT 1 FROM pg_indexes WHERE schemaname = 'public' "
+            text("SELECT 1 FROM pg_indexes WHERE schemaname = current_schema() "
                  "AND indexname = :n"),
             {"n": nombre},
         ).first()

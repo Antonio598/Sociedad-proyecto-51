@@ -77,14 +77,17 @@ def _ajustes_de_esquema() -> None:
 
 
 def _cerrar_api_supabase() -> None:
-    """Cierra la API REST que Supabase publica sobre el esquema `public`.
+    """Impide que la API REST de Supabase llegue a las tablas de esta app.
 
-    Supabase expone por REST toda tabla de `public` a los roles `anon` y `authenticated`, y
-    la llave `anon` es pública por diseño. Sin esto, `usuarios` —hashes y la bóveda de claves
-    de operadores— se podía leer desde fuera sin pasar por la app. Se activa RLS sin
-    políticas (niega todo a esos roles) y se les quitan los permisos, también para las tablas
-    que `create_all` añada más adelante. La app no lo nota: se conecta como dueña de las
-    tablas, y al dueño no le aplica RLS.
+    Supabase expone por REST las tablas a los roles `anon`, `authenticated` y `service_role`.
+    Sin esto, `usuarios` —hashes y la bóveda de claves de operadores— se podría leer desde
+    fuera sin pasar por la app. Se activa RLS sin políticas (niega todo a esos roles) y se les
+    quitan los permisos, también para lo que `create_all` añada más adelante. La app no lo
+    nota: se conecta como dueña de las tablas, y al dueño no le aplica RLS.
+
+    SÓLO toca el esquema de la app (`current_schema()`) y sólo las tablas de las que es dueña.
+    La base puede ser compartida con otra aplicación —en este despliegue, un CRM vive en
+    `public`—, y activar RLS o quitar permisos en sus tablas la rompería.
 
     Sólo corre si existe el rol `anon`, o sea, en Supabase. En un Postgres normal no hace nada.
     """
@@ -93,18 +96,25 @@ def _cerrar_api_supabase() -> None:
         with engine.begin() as cx:
             if not cx.execute(text("SELECT 1 FROM pg_roles WHERE rolname = 'anon'")).first():
                 return
+            esquema = cx.execute(text("SELECT current_schema()")).scalar_one()
             tablas = cx.execute(text(
-                "SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
-                "AND NOT rowsecurity")).scalars().all()
+                "SELECT tablename FROM pg_tables WHERE schemaname = current_schema() "
+                "AND tableowner = current_user AND NOT rowsecurity")).scalars().all()
             for t in tablas:
-                cx.execute(text(f'ALTER TABLE public."{t}" ENABLE ROW LEVEL SECURITY'))
-            for obj in ("TABLES", "SEQUENCES", "FUNCTIONS"):
-                cx.execute(text(f"REVOKE ALL ON ALL {obj} IN SCHEMA public "
-                                "FROM anon, authenticated"))
-                cx.execute(text(f"ALTER DEFAULT PRIVILEGES IN SCHEMA public "
-                                f"REVOKE ALL ON {obj} FROM anon, authenticated"))
+                cx.execute(text(f'ALTER TABLE "{esquema}"."{t}" ENABLE ROW LEVEL SECURITY'))
+            if esquema != "public":
+                # Un esquema propio: basta con cerrarle la puerta entera a los roles de la API.
+                cx.execute(text(f'REVOKE ALL ON SCHEMA "{esquema}" '
+                                "FROM anon, authenticated, service_role"))
+            else:
+                # En `public` (Supabase dedicado a esta app) sólo lo que es de la app.
+                for t in cx.execute(text(
+                        "SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
+                        "AND tableowner = current_user")).scalars().all():
+                    cx.execute(text(f'REVOKE ALL ON public."{t}" '
+                                    "FROM anon, authenticated, service_role"))
         if tablas:
-            log.info("Supabase: RLS activado en %d tabla(s) nuevas de public", len(tablas))
+            log.info("Supabase: RLS activado en %d tabla(s) de %s", len(tablas), esquema)
     except Exception:
         log.exception("SEGURIDAD: no se pudo cerrar la API REST de Supabase. Apaga la "
                       "Data API en el panel de Supabase (Settings → API) mientras tanto.")

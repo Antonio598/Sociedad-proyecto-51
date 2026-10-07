@@ -5,9 +5,11 @@ from .config import settings
 
 _url = settings.database_url
 _args: dict = {}
-# Supabase exige TLS. Si la cadena no dice nada, se pide aquí para no depender de que
-# quien la pegue en el panel se acuerde de `?sslmode=require`.
-if "supabase" in _url and "sslmode=" not in _url:
+# Supabase en la nube exige TLS. Si la cadena no dice nada, se pide aquí para no depender de
+# que quien la pegue en el panel se acuerde de `?sslmode=require`. Sólo para los dominios de
+# supabase.com: un Supabase propio en la red interna (p.ej. `supabase_crm-db`) no usa TLS, y
+# exigirlo ahí impediría conectar.
+if "supabase.com" in _url and "sslmode=" not in _url:
     _args["sslmode"] = "require"
 # El pooler de Supabase en modo TRANSACCIÓN (puerto 6543) reparte cada transacción a una
 # conexión distinta, y las sentencias preparadas de psycopg acaban en una conexión que no

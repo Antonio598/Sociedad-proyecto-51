@@ -17,3 +17,6 @@ venv/
 
 # Volcados de base de datos: traen datos reales y hashes de contraseñas.
 *.sql
+
+# Archivos para cargar la base en Supabase: datos reales y contraseña del usuario de la app.
+supabase-import/
