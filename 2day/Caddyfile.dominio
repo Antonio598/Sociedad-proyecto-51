@@ -1,0 +1,43 @@
+# Ya lleva el dominio puesto: app.famaraz.com
+#
+# Si elegiste OTRO nombre de subdominio, cámbialo abajo — tiene que ser EXACTAMENTE el mismo
+# que pusiste en el registro A de SiteGround. Con `famaraz.com` a secas no funciona si el
+# registro está en `app.famaraz.com`: Caddy se queda reintentando sin explicar gran cosa.
+#
+# El correo es OPCIONAL. Caddy funciona sin él; sólo sirve para que Let's Encrypt te avise si
+# un certificado fuera a caducar sin renovarse. Si lo quieres, descomenta las tres líneas de
+# abajo y pon el tuyo.
+
+# {
+#	email tucorreo@ejemplo.com
+# }
+
+app.famaraz.com {
+	root * /srv
+	file_server
+	encode gzip
+
+	# Cabeceras mínimas. `Strict-Transport-Security` se deja COMENTADA a propósito: le dice al
+	# navegador «esta web es https para siempre», y si algo sale mal y hay que volver a http
+	# durante una hora, los navegadores que ya la vieron no te dejarán. Se enciende cuando el
+	# despliegue esté asentado, no el primer día.
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		# Strict-Transport-Security "max-age=31536000"
+	}
+}
+
+# ── CUANDO LLEGUE LA APP ──────────────────────────────────────────────────────
+# Esto sustituirá a `root`+`file_server` de arriba. Se deja escrito para que se vea a dónde
+# vamos, pero COMENTADO: todavía no existe el contenedor `app`.
+#
+# app.famaraz.com {
+#	encode gzip
+#	# El cuerpo de una foto ronda los 90 KB y el tope del servidor son 12 MB: se deja holgado.
+#	request_body {
+#		max_size 15MB
+#	}
+#	reverse_proxy app:8000
+# }

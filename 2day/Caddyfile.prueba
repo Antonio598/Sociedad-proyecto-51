@@ -1,0 +1,45 @@
+# ENSAYO SIN DOMINIO PROPIO.
+#
+# `179.236.248.139.sslip.io` es un servicio público de DNS que devuelve la IP que lleva
+# escrita en el propio nombre. No hay que registrar nada ni esperar propagación: ya resuelve.
+# Comprobado antes de escribir esto.
+#
+# Sirve para ensayar la cadena ENTERA —puerto 80, validación, certificado de Let's Encrypt,
+# HTTPS— sin tocar `famaraz.com`. Si esto funciona, lo único que falta para el dominio real es
+# el registro A.
+#
+# CÓMO USARLO (en el VPS, dentro de /opt/2day):
+#     cp Caddyfile Caddyfile.dominio        # guarda el bueno
+#     cp Caddyfile.prueba Caddyfile
+#     docker compose up -d
+#     docker compose logs -f caddy
+#
+# Y para volver al dominio real cuando el registro A exista:
+#     cp Caddyfile.dominio Caddyfile && docker compose restart caddy
+#
+# NOTA: si el certificado falla aquí por límite de peticiones, NO es culpa de tu servidor —
+# `sslip.io` lo usa mucha gente. En ese caso usa el bloque `:80` del final, que al menos
+# comprueba que Docker, Caddy y los archivos funcionan.
+
+179.236.248.139.sslip.io {
+	root * /srv
+	file_server
+	encode gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+}
+
+# ── PLAN B, SIN CERTIFICADO ───────────────────────────────────────────────────
+# Si lo de arriba no consigue certificado, comenta ese bloque entero y descomenta éste.
+# Sirve la página por `http://179.236.248.139` sin cifrar: no prueba el certificado, pero sí
+# que Docker, Caddy y los archivos están bien.
+#
+# :80 {
+#	root * /srv
+#	file_server
+#	encode gzip
+# }

@@ -1,0 +1,1771 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRAYECTO — Panel de flota</title>
+<script>
+/* Resolver de tema: corre antes del render para evitar el parpadeo (FOUC). Toma la
+   preferencia guardada; si no hay ninguna, el valor por defecto es 'system' (sigue al SO). */
+(function(){try{var t=localStorage.getItem('tr-theme')||'system';var eff=t==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=eff;}catch(e){}})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1ede2;--panel:#f8f5ec;--card:#fcfaf4;--card2:#efeadd;--ink:#22201a;--muted:#736a59;--line:#ddd6c5;--line2:#c9c1ac;--accent:#F2620F;--accent2:#c94e0a;--green:#1e7a46;--red:#bd3c20;--blue:#20628f;--violet:#6d5bb8;--amber:#a4700c;--shadow:rgba(40,33,20,.16)}
+html[data-theme="dark"]{--bg:#141109;--panel:#1a1610;--card:#201b13;--card2:#17130c;--ink:#ede5d4;--muted:#9b9078;--line:#332d20;--line2:#4a4230;--accent:#FF6E1A;--accent2:#F2620F;--green:#54c17e;--red:#f0704f;--blue:#63a9da;--violet:#a795e8;--amber:#e5a337;--shadow:rgba(0,0,0,.45)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--line2);border-radius:99px;border:3px solid var(--bg)}
+input,select,textarea,button{font-family:inherit;color:inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{opacity:.4}}
+@keyframes lane{to{stroke-dashoffset:-360}}
+@keyframes drift{0%,100%{transform:translate3d(-2%,-1.5%,0)}50%{transform:translate3d(2%,1.5%,0)}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes orbit{to{transform:rotate(360deg)}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+
+.bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:.7}
+.bgfx .glow{position:absolute;inset:-15%;background:radial-gradient(640px 420px at 18% 8%, color-mix(in oklab,var(--accent) 8%,transparent), transparent 70%), radial-gradient(720px 520px at 86% 92%, color-mix(in oklab,var(--blue) 7%,transparent), transparent 70%);animation:drift 30s ease-in-out infinite}
+canvas#parts{position:absolute;inset:0;width:100%;height:100%}
+
+.layout{position:relative;z-index:1;display:flex;min-height:100vh;align-items:stretch}
+aside{flex:0 0 234px;background:var(--panel);border-right:1px solid var(--line);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:16px 12px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 4px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand .lg{width:34px;height:34px;flex:0 0 auto}
+.brand b{font:700 18px/1 'Barlow Condensed';letter-spacing:.1em}
+.brand span{font:600 7px 'IBM Plex Mono';letter-spacing:.26em;color:var(--muted);display:block;margin-top:2px;white-space:nowrap}
+nav{display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto;overflow-x:hidden}
+.grp{font:700 9.5px 'Barlow Condensed';letter-spacing:.22em;text-transform:uppercase;color:var(--muted);padding:12px 10px 5px}
+.navbtn{position:relative;display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;cursor:pointer;padding:9px 10px;color:var(--muted);border-radius:3px;font:500 13px 'IBM Plex Sans';text-align:left;transition:color .12s,background .12s}
+.navbtn:hover{color:var(--ink)}
+.navbtn.on{color:var(--ink);background:color-mix(in oklab,var(--accent) 10%,transparent)}
+.navbtn.on::before{content:"";position:absolute;left:-12px;top:7px;bottom:7px;width:3px;background:var(--accent)}
+.navbtn svg{width:19px;height:19px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.navbtn .bdg{margin-left:auto;background:var(--red);color:#fff;border-radius:2px;font:600 10px 'IBM Plex Mono';padding:1px 6px}
+.uwrap{border-top:1px solid var(--line);padding-top:12px;display:flex;align-items:center;gap:10px}
+.uwrap .av{width:34px;height:34px;border:1px solid var(--line2);border-radius:3px;background:color-mix(in oklab,var(--accent) 14%,transparent);color:var(--accent);font:700 13px 'Barlow Condensed';display:grid;place-items:center;cursor:pointer}
+.uwrap .nm{flex:1;min-width:0;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uwrap .rl{font-size:10.5px;color:var(--muted)}
+.iconbtn{border:1px solid var(--line2);background:var(--card);border-radius:3px;cursor:pointer;display:grid;place-items:center;color:var(--ink);box-shadow:2px 2px 0 var(--shadow);transition:transform .12s}
+.iconbtn:hover{transform:translate(-1px,-1px)}
+.iconbtn svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ic{width:1em;height:1em;display:inline-block;vertical-align:-.14em;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+main{flex:1;min-width:0;padding:0 0 40px}
+.topbar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:14px 30px;display:flex;align-items:center;gap:16px}
+.burger{display:none;width:36px;height:36px}
+.crumb{font:700 10px 'Barlow Condensed';letter-spacing:.3em;color:var(--accent)}
+h1.title{font:700 26px/1.05 'Barlow Condensed';letter-spacing:.04em;text-transform:uppercase;margin:2px 0 0}
+.search{position:relative;width:240px}
+.search .box{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line2);border-radius:3px;padding:7px 12px}
+.search input{border:0;background:none;font-size:12.5px;width:100%;padding:0;outline:none}
+.search svg{width:15px;height:15px;flex:0 0 auto;fill:none;stroke:var(--muted);stroke-width:1.8;stroke-linecap:round}
+.sres{position:absolute;top:calc(100% + 6px);left:0;width:340px;max-width:78vw;max-height:60vh;overflow-y:auto;background:var(--panel);border:1px solid var(--line2);border-radius:4px;box-shadow:8px 8px 0 var(--shadow);z-index:25;display:none}
+.sres.show{display:block;animation:rise .18s ease both}
+.sres .gh{padding:9px 14px 4px;font:700 9px 'Barlow Condensed';letter-spacing:.22em;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--line)}
+.sres .it{display:flex;align-items:center;gap:11px;width:100%;border:0;background:none;text-align:left;cursor:pointer;padding:9px 14px;color:var(--ink)}
+.sres .it:hover{background:color-mix(in oklab,var(--accent) 10%,transparent)}
+.sres .tg{font:600 9px 'IBM Plex Mono';letter-spacing:.05em;padding:2px 6px;border-radius:2px;background:var(--card2);color:var(--muted)}
+.notifwrap{position:relative}
+.notif{position:absolute;top:calc(100% + 8px);right:0;width:344px;max-width:82vw;max-height:64vh;display:none;flex-direction:column;background:var(--panel);border:1px solid var(--line2);border-radius:4px;box-shadow:8px 8px 0 var(--shadow);z-index:25;overflow:hidden}
+.notif.show{display:flex;animation:rise .18s ease both}
+.notif .hd{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);font:700 12px 'Barlow Condensed';letter-spacing:.12em;text-transform:uppercase}
+.notif .row{display:flex;gap:10px;align-items:flex-start;padding:11px 16px;border-bottom:1px solid var(--line);cursor:pointer;text-align:left;background:none;border-left:0;border-right:0;border-top:0;width:100%;color:var(--ink)}
+.notif .row:hover{background:color-mix(in oklab,var(--accent) 8%,transparent)}
+
+.content{padding:24px 30px;max-width:1520px}
+/* Impresión: el reporte ejecutivo se entrega en PDF, así que se va todo lo que es
+   navegación y se fuerzan los colores (Chrome los descarta por defecto al imprimir). */
+@media print{
+  aside,#scrim,header,.notif,.btn,#rep-anio{display:none!important}
+  .content{padding:0;max-width:none}
+  .card,.kpi{break-inside:avoid;box-shadow:none}
+  table{white-space:normal}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.section{display:none}
+.section.on{display:block;animation:rise .4s ease both}
+.card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:18px 20px}
+.grid{display:grid;gap:16px}
+.chart-h{font:700 16px 'Barlow Condensed';letter-spacing:.06em;text-transform:uppercase}
+.sub{font:500 10.5px 'IBM Plex Mono';color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+.kpi{position:relative;background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px 18px 14px}
+.kpi::before{content:"";position:absolute;top:0;left:0;width:28px;height:3px;background:var(--accent)}
+.kpi .l{font:600 10px 'IBM Plex Sans';letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font:600 27px 'IBM Plex Mono';letter-spacing:-.01em;margin:3px 0 1px}
+.kpi .s{font-size:11.5px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;white-space:nowrap}
+th{padding:9px 16px;text-align:left;font:600 10px 'IBM Plex Sans';letter-spacing:.09em;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+td{padding:10px 16px;border-bottom:1px solid var(--line);font-size:12.5px}
+td.mono{font:500 12px 'IBM Plex Mono'}
+.tablewrap{overflow-x:auto}
+.pill{display:inline-block;padding:3px 8px;border-radius:2px;font:600 10px 'IBM Plex Mono';letter-spacing:.04em}
+.pill.tracto{background:color-mix(in oklab,var(--blue) 16%,transparent);color:var(--blue)}
+.pill.camion{background:color-mix(in oklab,var(--amber) 18%,transparent);color:var(--amber)}
+.pill.pend{background:color-mix(in oklab,var(--red) 15%,transparent);color:var(--red)}
+.pill.conf{background:color-mix(in oklab,var(--green) 16%,transparent);color:var(--green)}
+.pill.rech{background:var(--card2);color:var(--muted)}
+.pill.cat-fraude{background:color-mix(in oklab,var(--red) 16%,transparent);color:var(--red)}
+.pill.cat-consistencia{background:color-mix(in oklab,var(--amber) 18%,transparent);color:var(--amber)}
+.pill.cat-telemetria{background:color-mix(in oklab,var(--blue) 16%,transparent);color:var(--blue)}
+.pill.cat-personal{background:color-mix(in oklab,var(--violet) 18%,transparent);color:var(--violet)}
+.pill.cat-base{background:var(--card2);color:var(--muted)}
+.pill.ok{background:color-mix(in oklab,var(--green) 16%,transparent);color:var(--green)}
+.pill.venc{background:color-mix(in oklab,var(--red) 15%,transparent);color:var(--red)}
+.btn{padding:7px 14px;border:1px solid var(--line2);background:var(--card);color:var(--ink);font:600 11px 'IBM Plex Sans';letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border-radius:3px;box-shadow:2px 2px 0 var(--shadow);transition:transform .12s}
+.btn:hover{transform:translate(-1px,-1px)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.sm{padding:5px 10px;font-size:10.5px;box-shadow:none;text-transform:none;letter-spacing:0}
+.mini{padding:6px 11px;border-radius:3px;font:600 11px 'IBM Plex Sans';cursor:pointer;transition:transform .12s}
+.mini:hover{transform:translateY(-1px)}
+.mini.g{border:1px solid color-mix(in oklab,var(--green) 45%,transparent);background:color-mix(in oklab,var(--green) 14%,transparent);color:var(--green)}
+.mini.r{border:1px solid color-mix(in oklab,var(--red) 40%,transparent);background:color-mix(in oklab,var(--red) 12%,transparent);color:var(--red)}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.toolbar input,.toolbar select{padding:8px 11px;border:1px solid var(--line2);background:var(--card);border-radius:3px;font-size:12.5px}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+.link{color:var(--accent);cursor:pointer;font-weight:600}
+.spinner{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;vertical-align:middle}
+.ia-box{line-height:1.7;min-height:160px}
+.ia-box h4{color:var(--accent);margin:16px 0 6px;font:700 14px 'Barlow Condensed';letter-spacing:.06em;text-transform:uppercase}
+.ia-box strong{color:var(--ink)} .ia-box ul{margin:6px 0;padding-left:20px} .ia-box li{margin:3px 0}
+.ia-charts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+@media(max-width:900px){.ia-charts{grid-template-columns:1fr}}
+.iacard{background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.iacard h5{margin:0 0 10px;font:700 13px 'Barlow Condensed';letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
+.ia-empty{text-align:center;padding:44px 20px}
+.orb{position:relative;width:76px;height:76px;margin:0 auto}
+.orb .core{position:absolute;inset:16px;border-radius:50%;background:radial-gradient(circle at 34% 28%, color-mix(in oklab,var(--accent) 65%,#fff), var(--accent));box-shadow:0 0 26px color-mix(in oklab,var(--accent) 50%,transparent);display:grid;place-items:center;color:#fff;animation:floaty 3s ease-in-out infinite}
+.orb .ring{position:absolute;inset:0;border-radius:50%;border:2px dashed color-mix(in oklab,var(--accent) 45%,transparent);animation:orbit 9s linear infinite}
+.orb .ring b{position:absolute;top:-4px;left:50%;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.orb.sm{width:46px;height:46px}.orb.sm .core{inset:9px}.orb.sm .ring{animation-duration:3.5s}
+.skel{height:12px;border-radius:6px;margin:9px 0;background:linear-gradient(90deg,var(--card2) 25%,var(--line2) 37%,var(--card2) 63%);background-size:400% 100%;animation:shimmer 1.5s linear infinite}
+.skelbox{height:118px;border-radius:6px;background:linear-gradient(90deg,var(--card2) 25%,var(--line2) 37%,var(--card2) 63%);background-size:400% 100%;animation:shimmer 1.5s linear infinite}
+.iadots i{animation:blink 1.2s infinite}.iadots i:nth-child(2){animation-delay:.2s}.iadots i:nth-child(3){animation-delay:.4s}
+.bars{display:flex;align-items:flex-end;gap:10px;height:180px;border-bottom:1px solid var(--line2);padding:0 4px}
+.bars .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.bars .col .n{font:600 10px 'IBM Plex Mono';color:var(--muted)}
+.bars .col .b{width:70%;max-width:34px;background:var(--accent);border-radius:3px 3px 0 0;min-height:2px}
+.barlbl{display:flex;gap:10px;padding:6px 4px 0}.barlbl div{flex:1;text-align:center;font:500 9.5px 'IBM Plex Mono';color:var(--muted)}
+.dev{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.dev .st{font-size:11px;padding:2px 9px;border-radius:999px;font-weight:600}
+.dev .st.ok{background:color-mix(in oklab,var(--green) 16%,transparent);color:var(--green)}
+.dev .st.wip{background:color-mix(in oklab,var(--amber) 18%,transparent);color:var(--amber)}
+.dev h4{margin:8px 0 6px;font-size:14px}.dev p{color:var(--muted);font-size:12.5px;line-height:1.5;margin:0}
+.kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}.kv:last-child{border:0}.kv .k{color:var(--muted)}
+.formcard label{display:block;font:600 10px 'IBM Plex Sans';letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:12px 0 5px}
+.formcard input,.formcard textarea,.formcard select{width:100%;padding:9px 11px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:3px;font-size:13px}
+.msg{font-size:13px;margin-top:12px}.msg.ok{color:var(--green)}.msg.err{color:var(--red)}
+.modal-bg{position:fixed;inset:0;background:color-mix(in oklab,var(--ink) 45%,transparent);display:none;place-items:center;z-index:50;padding:20px;backdrop-filter:blur(2px)}
+.modal-bg.show{display:grid;animation:rise .2s}
+.modal{background:var(--panel);border:1px solid var(--line2);border-radius:6px;max-width:720px;width:100%;max-height:88vh;overflow:auto;padding:22px;box-shadow:10px 10px 0 var(--shadow)}
+.modal h3{margin:0 0 4px;font:700 20px 'Barlow Condensed';letter-spacing:.04em}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin-top:14px}
+.grid2 .k{color:var(--muted);font-size:12px}.grid2 .v{text-align:right;font:500 12px 'IBM Plex Mono'}
+.sech{margin-top:18px;margin-bottom:2px;font:700 11px 'Barlow Condensed';text-transform:uppercase;color:var(--muted);letter-spacing:.14em}
+.mhead{display:flex;align-items:center;gap:12px}
+.mbadge{width:48px;height:48px;flex:0 0 auto;border-radius:5px;background:color-mix(in oklab,var(--accent) 16%,transparent);color:var(--accent);display:grid;place-items:center;font:700 15px 'Barlow Condensed';letter-spacing:.03em}
+.chips{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px;margin-top:10px}
+.stat{background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:11px 13px}
+.stat .l{font:600 9.5px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font:600 18px 'IBM Plex Mono';margin-top:4px;line-height:1.1}
+.stat .v small{font:500 11px 'IBM Plex Mono';color:var(--muted)}
+.stat.mut .v{color:var(--muted);font-weight:500}
+.stat.hero{background:var(--card);position:relative;padding-left:16px}
+.stat.hero::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:3px;background:var(--accent);border-radius:2px}
+.stat.hero .v{font-size:21px}
+.dtable{width:100%;border-collapse:collapse;margin-top:4px}
+.dtable td{padding:9px 2px;border-bottom:1px solid var(--line);font-size:12.5px}
+.dtable tr:last-child td{border-bottom:0}
+.dtable td:first-child{color:var(--muted)}
+.dtable td:last-child{text-align:right;font:500 12.5px 'IBM Plex Mono'}
+.note{display:flex;gap:9px;align-items:flex-start;background:color-mix(in oklab,var(--blue) 10%,transparent);border:1px solid color-mix(in oklab,var(--blue) 30%,transparent);color:var(--blue);border-radius:4px;padding:9px 12px;font-size:12px;margin-top:14px;line-height:1.5}
+.note svg{width:15px;height:15px;flex:0 0 auto;margin-top:1px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.anomcard{display:flex;gap:10px;align-items:flex-start;background:var(--card2);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin-top:8px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:4px;font-size:13px;z-index:80;box-shadow:0 8px 24px var(--shadow);display:none;max-width:min(92vw,440px)}
+.toast.show{display:block;animation:rise .2s}
+/* Aviso de anomalía nueva: rojo y clicable (lleva a la sección Anomalías) */
+.toast.anom{background:var(--red);color:#fff;cursor:pointer;font-weight:600;border-left:4px solid rgba(255,255,255,.5)}
+.scrim{display:none}
+@media (max-width:900px){.g2{grid-template-columns:1fr !important}}
+@media (max-width:820px){
+  aside{position:fixed;left:0;top:0;bottom:0;height:100dvh;z-index:60;width:250px;transform:translateX(-100%);transition:transform .28s cubic-bezier(.16,1,.3,1);box-shadow:14px 0 40px var(--shadow)}
+  aside.open{transform:none}
+  .scrim.open{display:block;position:fixed;inset:0;z-index:55;background:color-mix(in oklab,var(--ink) 34%,transparent)}
+  .burger{display:grid}
+  .search{display:none}
+  .content{padding:16px 14px}
+  h1.title{font-size:20px}
+}
+</style>
+</head>
+<body>
+<div class="bgfx"><div class="glow"></div><canvas id="parts"></canvas></div>
+<div class="scrim" id="scrim" onclick="closeNav()"></div>
+
+<div class="layout">
+  <aside id="aside">
+    <div class="brand">
+      <svg class="lg" viewBox="0 0 48 48"><path d="M2 2h44v33L35 46H2z" style="fill:var(--accent)"></path><path d="M11 34l9-10 7 6 11-14" style="fill:none;stroke:#fff;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:3 6.5"></path><circle cx="38" cy="16" r="3.2" style="fill:#fff"></circle><rect x="8.6" y="31.6" width="5" height="5" style="fill:#fff"></rect></svg>
+      <div><b>TRAYECTO</b><span>LOGÍSTICA · COMBUSTIBLE</span></div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="uwrap">
+      <button class="av" id="uav" onclick="show('perfil')">–</button>
+      <div style="flex:1;min-width:0"><div class="nm" id="unm">…</div><div class="rl">Administrador</div></div>
+      <button class="iconbtn" title="Cerrar sesión" style="width:30px;height:30px;box-shadow:none;border:0;background:none;color:var(--muted)" onclick="location.href='/logout'"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M14 4h-9v16h9M9 12h12m0 0l-3.5-3.5M21 12l-3.5 3.5"></path></svg></button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <button class="iconbtn burger" onclick="toggleNav()" title="Menú"><svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+      <div style="flex:1;min-width:0">
+        <div class="crumb">PANEL / <span id="crumb">RESUMEN</span></div>
+        <h1 class="title" id="title">Resumen</h1>
+      </div>
+      <div class="search">
+        <div class="box">
+          <svg viewBox="0 0 24 24"><path d="M10.5 4.5a6 6 0 1 0 .01 0M15.3 15.3L20 20"></path></svg>
+          <input id="gq" type="search" name="busqueda-flota" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" placeholder="Buscar unidad, operador…" oninput="doSearch()" onfocus="doSearch()">
+        </div>
+        <div class="sres" id="sres"></div>
+      </div>
+      <button class="iconbtn" style="width:36px;height:36px" onclick="cycleTheme()" title="Tema"><svg id="themeIco" viewBox="0 0 24 24" style="width:17px;height:17px"><path d="M20 13.5A8 8 0 1 1 10.5 4a6.3 6.3 0 0 0 9.5 9.5z"></path></svg></button>
+      <div class="notifwrap">
+        <button class="iconbtn" style="width:36px;height:36px;position:relative" onclick="toggleNotif(event)" title="Notificaciones"><svg viewBox="0 0 24 24" style="width:17px;height:17px"><path d="M6.2 9.8a5.8 5.8 0 0 1 11.6 0c0 3.8 1.4 5.2 1.4 5.2H4.8s1.4-1.4 1.4-5.2zM10.2 18.4a1.9 1.9 0 0 0 3.6 0"></path></svg><span id="nbadge" style="display:none;position:absolute;top:2px;right:3px;min-width:15px;height:15px;padding:0 3px;border-radius:99px;background:var(--red);color:#fff;font:600 9px 'IBM Plex Mono';display:grid;place-items:center;border:1.5px solid var(--card)"></span></button>
+        <div class="notif" id="notif"><div class="hd">Notificaciones</div><div id="notiflist" style="overflow-y:auto"></div><button class="row" style="justify-content:center;font:600 11px 'IBM Plex Sans';text-transform:uppercase;color:var(--accent)" onclick="show('anomalias');closeNotif()">Ver anomalías →</button></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- RESUMEN -->
+      <section class="section on" id="s-resumen">
+        <div class="kpis" id="kpis"></div>
+        <div class="grid g2" style="grid-template-columns:repeat(auto-fit,minmax(380px,1fr))">
+          <div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px"><div class="chart-h">Rendimiento por unidad</div><div class="sub">KM/L</div></div><div id="r-rend"></div></div>
+          <div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="chart-h">Viajes por mes</div><div class="sub" id="r-vmy"></div></div><div id="r-vm"></div></div>
+        </div>
+        <div class="card" style="margin-top:16px;padding:0;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px"><div class="chart-h">Anomalías pendientes</div><button class="btn" onclick="show('anomalias')">Ver todas</button></div>
+          <div class="tablewrap"><table><thead><tr><th>Unidad</th><th>Fecha</th><th>Tipo</th><th>Descripción</th><th></th></tr></thead><tbody id="r-anom"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- GRÁFICOS -->
+      <section class="section" id="s-graficos">
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(420px,1fr))">
+          <div class="card"><div class="chart-h" style="margin-bottom:4px">Tendencia mensual</div><div class="sub" style="margin-bottom:10px"><span style="color:var(--accent)"><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:currentColor;vertical-align:-1px"></i></span> Litros (miles) &nbsp; <span style="color:var(--blue)"><i style="display:inline-block;width:15px;border-top:2px dashed currentColor;vertical-align:middle"></i></span> Viajes</div><div id="g-dual"></div></div>
+          <div class="card"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px"><div class="chart-h">Scanner vs real</div><div class="sub"><span style="color:var(--line2)"><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:currentColor;vertical-align:-1px"></i></span> scanner &nbsp; <span style="color:var(--accent)"><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:currentColor;vertical-align:-1px"></i></span> real</div></div><div id="g-svr"></div></div>
+          <div class="card" style="display:flex;gap:20px;align-items:center"><div id="g-donut"></div><div style="flex:1"><div class="chart-h" style="margin-bottom:12px">Composición de la flota</div><div id="g-donut-leg"></div></div></div>
+          <div class="card"><div class="chart-h" style="margin-bottom:4px">Consumo por unidad</div><div class="sub" style="margin-bottom:14px">Litros reales acumulados (top)</div><div id="g-consumo"></div></div>
+          <div class="card" style="grid-column:1/-1"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px"><div class="chart-h">Mapa de calor · anomalías por unidad y mes</div><div class="sub">MÁS OSCURO = MÁS ANOMALÍAS</div></div><div id="g-heat" class="tablewrap"></div></div>
+          <div class="card" style="grid-column:1/-1;padding:0;overflow:hidden"><div style="padding:16px 20px 12px" class="chart-h">Ranking de rendimiento · operador ↔ unidad</div><div class="tablewrap"><table><thead><tr><th>#</th><th>Operador</th><th>Unidad</th><th>Tipo</th><th>km/l real</th><th>Viajes</th></tr></thead><tbody id="g-rank"></tbody></table></div></div>
+        </div>
+      </section>
+
+      <!-- CRUCE MOTOR vs TICKET -->
+      <section class="section" id="s-conciliacion">
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div><div class="chart-h">Lo que midió el motor vs lo que dice el ticket</div>
+              <div class="sub" id="con-sub">Cargando…</div></div>
+            <select id="con-anio" style="padding:8px 11px;border:1px solid var(--line2);background:var(--card);color:var(--ink);border-radius:3px;font-size:12.5px"></select>
+          </div>
+        </div>
+        <div id="con-body"></div>
+      </section>
+
+      <!-- CONSUMO DE IA -->
+      <section class="section" id="s-uso">
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div><div class="chart-h">Consumo de inteligencia artificial</div>
+              <div class="sub" id="uso-sub">Cada lectura de foto y cada reporte cuesta. Aquí se ve cuánto.</div></div>
+            <select id="uso-dias" style="padding:8px 11px;border:1px solid var(--line2);background:var(--card);color:var(--ink);border-radius:3px;font-size:12.5px">
+              <option value="7">Últimos 7 días</option>
+              <option value="30" selected>Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+            </select>
+          </div>
+        </div>
+        <div id="uso-body"></div>
+      </section>
+
+      <!-- EVENTOS CON PROBLEMA -->
+      <section class="section" id="s-eventos">
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div>
+              <div class="chart-h">Mensajes que no se pudieron procesar</div>
+              <div class="sub" id="ev-sub">Nada se pierde: el mensaje original queda guardado y se puede volver a intentar.</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <select id="ev-estado" style="padding:8px 11px;border:1px solid var(--line2);background:var(--card);color:var(--ink);border-radius:3px;font-size:12.5px">
+                <option value="todos">Todos los no procesados</option>
+                <option value="fallido">Solo fallidos</option>
+                <option value="pendiente">Solo pendientes</option>
+                <option value="omitido">Solo omitidos</option>
+              </select>
+              <button class="btn" id="ev-recargar">Actualizar</button>
+            </div>
+          </div>
+        </div>
+        <div id="ev-body"></div>
+      </section>
+
+      <!-- REPORTE EJECUTIVO -->
+      <section class="section" id="s-reporte">
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div><div class="chart-h">Reporte ejecutivo de combustible</div><div class="sub" id="rep-per">Cargando…</div></div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <select id="rep-anio" onchange="loadReporte()" style="padding:8px 11px;border:1px solid var(--line2);background:var(--card);color:var(--ink);border-radius:3px;font-size:12.5px"></select>
+              <button class="btn" onclick="window.print()">Imprimir / PDF</button>
+            </div>
+          </div>
+        </div>
+        <div id="rep-body"></div>
+      </section>
+
+      <!-- ANÁLISIS IA -->
+      <section class="section" id="s-analisis">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+            <div><div class="chart-h">Análisis con IA</div><div class="sub" id="ia-model">Interpretación de tu flota con Claude</div></div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <select id="ia-hist" onchange="cargarReporte(this.value)" title="Reportes guardados" style="padding:8px 11px;border:1px solid var(--line2);background:var(--card);color:var(--ink);border-radius:3px;font-size:12.5px;display:none"><option value="">Reportes guardados…</option></select>
+              <button class="btn primary" onclick="genAnalisis()">Generar análisis</button>
+            </div>
+          </div>
+          <div class="ia-box" id="ia-box"></div>
+        </div>
+      </section>
+
+      <!-- ANOMALÍAS -->
+      <!-- CONSULTA IA (gerente de operaciones) -->
+      <section class="section" id="s-consulta">
+        <div class="card">
+          <div class="chart-h">Pregúntale a la IA sobre la flota</div>
+          <div class="sub" style="margin-bottom:12px">Consulta puntual sobre los datos (rendimientos, unidades, anomalías). No genera reportes ni cambia nada.</div>
+          <textarea id="cq-texto" rows="3" placeholder="Ej. ¿Qué unidades tienen el peor rendimiento y cuántos viajes?" style="width:100%;padding:11px 12px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:4px;font:inherit;resize:vertical"></textarea>
+          <div style="margin-top:10px"><button class="btn primary" id="cq-enviar">Preguntar</button></div>
+          <div id="cq-resp" style="margin-top:16px"></div>
+        </div>
+      </section>
+
+      <section class="section" id="s-anomalias">
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+            <div><div class="chart-h">Salud de las reglas</div><div class="sub">Precisión por regla — confirmadas (reales) vs rechazadas (falsas alarmas)</div></div>
+            <button class="btn primary" onclick="diagAnomalias()">Diagnóstico con IA</button>
+          </div>
+          <div id="prec-box"></div>
+          <div id="diag-box" style="margin-top:14px"></div>
+        </div>
+        <div class="toolbar"><select id="f-estado" onchange="loadAnomalias()"><option value="PENDIENTE">Pendientes</option><option value="CONFIRMADA">Confirmadas</option><option value="RECHAZADA">Rechazadas</option></select></div>
+        <div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table><thead><tr><th>Unidad</th><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Estado</th><th></th></tr></thead><tbody id="anom-body"></tbody></table></div></div>
+      </section>
+
+      <!-- HISTORIAL -->
+      <!-- SOLICITUDES DE RECARGA -->
+      <section class="section" id="s-solicitudes">
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div><div class="chart-h">Bandeja de solicitudes de recarga</div>
+              <div class="sub" id="sol-sub">Cada solicitud pasa por un ciclo: enviada, validada, autorizada, despachada, facturada, conciliada.</div></div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <select id="sol-estado" style="padding:8px 11px;border:1px solid var(--line2);background:var(--card);color:var(--ink);border-radius:3px;font-size:12.5px">
+                <option value="">Todas</option>
+                <option value="enviada">Por validar</option>
+                <option value="en_validacion">En validación</option>
+                <option value="devuelta">Devueltas</option>
+                <option value="autorizada">Autorizadas</option>
+                <option value="en_discrepancia">En discrepancia</option>
+              </select>
+              <button class="btn" id="sol-recargar">Actualizar</button>
+            </div>
+          </div>
+        </div>
+        <div id="sol-body"></div>
+      </section>
+
+      <!-- ASIGNAR VIAJES -->
+      <section class="section" id="s-asignaciones">
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div><div class="chart-h">Asignación de viajes</div>
+              <div class="sub">Cada operador tiene un viaje activo: al asignar uno nuevo, el anterior se finaliza solo.</div></div>
+            <button class="btn primary" onclick="abrirAsignarViaje()">+ Asignar viaje</button>
+          </div>
+        </div>
+        <div id="asig-body"></div>
+      </section>
+
+      <section class="section" id="s-historial">
+        <div class="toolbar">
+          <input id="f-unidad" type="search" autocomplete="off" data-lpignore="true" data-1p-ignore placeholder="Filtrar por unidad (ej. C013)" oninput="filtrarViajes()">
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted)"><input type="checkbox" id="f-anom" onchange="loadViajes()" style="width:15px;height:15px"> Solo con anomalías</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted)"><input type="checkbox" id="f-incompletos" onchange="loadViajes()" style="width:15px;height:15px"> Solo incompletos</label>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table><thead><tr><th>Fecha y hora</th><th>Unidad</th><th>Operador</th><th>Km tablero</th><th>Nivel tanque</th><th>Km viaje</th><th>Lts real</th><th>RTO real</th><th>%</th><th></th></tr></thead><tbody id="viajes-body"></tbody></table></div></div>
+      </section>
+
+      <!-- HORAS DE TERMO -->
+      <section class="section" id="s-termo">
+        <div class="card" style="padding:0;overflow:hidden"><div style="padding:16px 20px 6px"><div class="chart-h">Horas de termo</div><div class="sub" style="margin-top:3px">Horómetro y consumo del equipo de refrigeración</div></div><div class="tablewrap"><table><thead><tr><th>Unidad</th><th>Operador</th><th>Remolque</th><th>Mes</th><th>Hrs inic.</th><th>Hrs fin.</th><th>Horas trab.</th><th>Litros</th><th>RTO termo</th></tr></thead><tbody id="thermo-body"></tbody></table></div></div>
+      </section>
+
+      <!-- CUMPLIMIENTO -->
+      <section class="section" id="s-cumplimiento">
+        <div class="card" style="margin-bottom:16px">
+          <div class="chart-h" style="margin-bottom:4px">Cumplimiento por número</div>
+          <div class="sub" style="margin-bottom:12px">Quién reporta viajes completos (con ticket de litros + km) y quién manda info parcial. Se llena con los reportes que entran por WhatsApp.</div>
+          <div id="cump-box"></div>
+        </div>
+      </section>
+
+      <!-- UNIDADES -->
+      <section class="section" id="s-unidades">
+        <div class="toolbar"><button class="btn primary" onclick="nuevaUnidad()">+ Nueva unidad</button><span class="sub" id="uni-count"></span></div>
+        <div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table><thead><tr><th>Clave</th><th>Tipo</th><th>Marca</th><th>Año</th><th>Placa</th><th>Operador asignado</th><th>Viajes</th><th>RTO real</th><th></th></tr></thead><tbody id="unidades-body"></tbody></table></div></div>
+      </section>
+
+      <!-- REMOLQUES -->
+      <section class="section" id="s-remolques">
+        <div class="toolbar"><button class="btn primary" onclick="nuevoRemolque()">+ Nuevo remolque</button><span class="sub" id="rem-count"></span></div>
+        <div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table><thead><tr><th>ECO</th><th>ECO nuevo</th><th>Marca</th><th>Año</th><th>Placa</th><th>Serie termo</th><th>Combustible</th><th></th></tr></thead><tbody id="remolques-body"></tbody></table></div></div>
+      </section>
+
+      <!-- OPERADORES -->
+      <section class="section" id="s-operadores">
+        <div class="toolbar"><button class="btn primary" onclick="nuevoOperador()">+ Nuevo operador</button><button class="btn" onclick="depurarDuplicados()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" style="margin-right:5px"><path d="M19 5 9 15M15 5l4 4"></path><path d="M9.5 12.5 4.5 17.5c-.8.8-.8 2 0 2.8l1.2 1.2c.8.8 2 .8 2.8 0l5-5z"></path></svg>Depurar duplicados</button><input id="f-op" type="search" autocomplete="off" data-lpignore="true" data-1p-ignore placeholder="Buscar operador…" oninput="renderOps()"><label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted)"><input type="checkbox" id="f-op-viajes" onchange="renderOps()" style="width:15px;height:15px"> Solo con viajes</label></div>
+        <div id="prov-box"></div>
+        <div class="grid" id="ops-grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr))"></div>
+      </section>
+
+      <!-- DESARROLLOS -->
+      <section class="section" id="s-desarrollos">
+        <div class="grid" id="dev-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))"></div>
+      </section>
+
+      <!-- CONFIG -->
+      <section class="section" id="s-config">
+        <div class="grid g2" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start">
+          <div class="card formcard"><div class="chart-h" style="margin-bottom:8px">Parámetros del sistema</div><div id="cfg-params"></div><p style="color:var(--muted);margin-top:12px;font-size:12px">Se editan en el archivo <code>.env</code> del servidor.</p></div>
+          <div class="card formcard"><div class="chart-h" style="margin-bottom:8px">Personalización</div><div id="tr-perfil-mount"></div></div>
+        </div>
+      </section>
+
+      <!-- PERFIL -->
+      <section class="section" id="s-perfil">
+        <div class="grid g2" style="grid-template-columns:330px 1fr">
+          <div class="card" style="text-align:center"><div id="perf-av" data-tr-avatar style="width:84px;height:84px;border-radius:4px;background:var(--accent);color:#fff;display:grid;place-items:center;font:700 32px 'Barlow Condensed';margin:6px auto 12px;box-shadow:5px 5px 0 var(--shadow);overflow:hidden">–</div><div id="perf-nm" style="font:700 20px 'Barlow Condensed';letter-spacing:.05em"></div><div id="perf-user" class="sub" style="margin-top:3px"></div><div style="border-top:1px solid var(--line);margin-top:16px;padding-top:6px;text-align:left"><div class="kv"><span class="k">Rol</span><span>Administrador</span></div><div class="kv"><span class="k">Sistema</span><span>TRAYECTO</span></div></div></div>
+          <div class="card formcard"><div class="chart-h" style="margin-bottom:8px">Personalización</div>
+            <p style="color:var(--muted);margin:0 0 4px;font-size:12.5px">Ajusta tu foto, color, tema y datos en <b>Configuración</b>. La contraseña la gestiona el administrador del servidor.</p>
+            <button class="btn" style="margin-top:10px" onclick="show('config')">Ir a Configuración</button></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="/static/perfil.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const fmt=(x,d=2)=>(x===null||x===undefined)?'—':Number(x).toLocaleString('es-MX',{maximumFractionDigits:d});
+const pctFmt=x=>(x===null||x===undefined)?'—':(x*100).toLocaleString('es-MX',{maximumFractionDigits:2})+'%';
+const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function api(p,o){const r=await fetch(p,o);if(r.status===401){location.href='/login';throw 0;}if(!r.ok)throw new Error(await r.text().catch(()=>''+r.status));return r.json();}
+// Helper de iconos: reemplaza los emojis por SVG de trazo que heredan color y tamaño del
+// texto (currentColor + 1em). Global, accesible desde todos los template literals de abajo.
+const ICONS={
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  alert:'<path d="M12 3.2 2 20.5h20z"/><path d="M12 9.5v4.5M12 17.6v.4"/>',
+  edit:'<path d="M4 20h4L18.5 9.5l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  broom:'<path d="M19 5 9 15M15 5l4 4"/><path d="M9.5 12.5 4.5 17.5c-.8.8-.8 2 0 2.8l1.2 1.2c.8.8 2 .8 2.8 0l5-5z"/>',
+  clip:'<path d="M20 11.5 11.5 20a5 5 0 0 1-7-7l8.5-8.5a3.2 3.2 0 0 1 4.5 4.5l-8 8a1.6 1.6 0 0 1-2.3-2.3l7.3-7.3"/>',
+  camera:'<path d="M4 7h3l1.5-2h7L18 7h2v12H4z"/><circle cx="12" cy="13" r="3.2"/>',
+  chart:'<path d="M4 4v16h16M8 16v-4M12 16V8M16 16v-6"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>',
+  up:'<path d="M12 19V6M6 12l6-6 6 6"/>',
+  down:'<path d="M12 5v13M6 12l6 6 6-6"/>'
+};
+function ic(n,extra){return '<svg class="ic'+(extra?' '+extra:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[n]||'')+'</svg>';}
+// El aviso rojo de anomalía tiene prioridad: un toast informativo cualquiera (p.ej.
+// "Anomalía confirmada") no debe borrarlo antes de que se alcance a leer o pulsar.
+function toast(m){const t=$('#toast');
+  if(t.classList.contains('anom')&&t.classList.contains('show'))return;   // no pisar el aviso
+  t.textContent=m;t.classList.remove('anom');t.onclick=null;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400);}
+// Aviso de anomalía nueva: rojo, dura más y al tocarlo lleva a la sección Anomalías.
+function toastAnom(m){const t=$('#toast');t.textContent=m;t.classList.add('anom','show');
+  t.onclick=()=>{show('anomalias');t.classList.remove('show');t.classList.remove('anom');t.onclick=null;};
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.classList.remove('show');t.classList.remove('anom');t.onclick=null;},7000);}
+
+const MES3=['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+const mesLbl=ym=>{if(!ym)return'';const[y,m]=ym.split('-');return MES3[(+m)-1]+(String(y).slice(2));};
+const tipoPill=t=>`<span class="pill ${t==='TRACTO'?'tracto':'camion'}">${t||'—'}</span>`;
+
+// Categorías de anomalía (14 tipos)
+const CATEGORIA={km_imposible:'base',lts_imposible:'base',odometro_retrocede:'base',consumo_atipico:'base',desviacion_alta:'base',rendimiento_fuera_banda_fisica:'consistencia',km_vs_odometro:'consistencia',reporte_duplicado:'consistencia',rendimiento_cv_incoherente:'consistencia',carga_fantasma:'fraude',ticket_inflado:'fraude',sifoneo_tanque:'fraude',exceso_velocidad:'telemetria',ralenti_elevado:'telemetria',paradas_panico_recurrentes:'telemetria',operador_no_disponible:'personal',operador_no_asignado:'personal'};
+const CAT_ET={base:'Base',consistencia:'Consistencia',fraude:'Fraude',telemetria:'Telemetría',personal:'Personal'};
+const tipoLbl=t=>esc((t||'—')).replace(/_/g,' ');
+// Capacidad FIJA del tanque por tipo de unidad (igual que en el backend).
+const CAP_TANQUE={TRACTO:1000,CAMION:500};
+// Fecha del viaje + HORA a la que entró el reporte (creado_en viene en UTC con zona,
+// así que toLocaleTimeString lo pasa solo a la hora local).
+function fechaHoraCell(v){
+  const f=v.fecha?v.fecha.split('-').reverse().join('/'):'—';
+  let h='';
+  if(v.creado_en){const d=new Date(v.creado_en);if(!isNaN(d))h=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+  return h?`${f}<br><span style="font-size:10px;opacity:.75">${h}</span>`:f;
+}
+// Nivel del tanque: % de la aguja + litros aproximados según la capacidad de SU tipo.
+function nivelCell(v){
+  if(v.nivel_tanque==null)return '<span style="color:var(--muted)">—</span>';
+  const pct=Math.round(v.nivel_tanque*100), cap=CAP_TANQUE[v.tipo_unidad]||0;
+  const litros=cap?` <span style="font-size:10px;opacity:.7">${Math.round(v.nivel_tanque*cap)} L</span>`:'';
+  const col=pct<=15?'var(--red)':(pct>=95?'var(--muted)':'inherit');
+  return `<b style="color:${col}">${pct}%</b>${litros}`;
+}
+const catPill=t=>{const c=CATEGORIA[t]||'base';return `<span class="pill cat-${c}">${CAT_ET[c]}</span>`;};
+const tipoCell=t=>`<b>${tipoLbl(t)}</b><br>${catPill(t)}`;
+
+// ── Navegación ──────────────────────────────────────────────────────────────
+const NAV=[
+  {top:true,items:[['resumen','Resumen','M4 13h6v8H4zM14 3h6v18h-6zM4 3h6v6H4z']]},
+  {grp:'Análisis',items:[['graficos','Gráficos','M4 20V4M4 20h16M8 16l3-4 3 2 4-6'],['conciliacion','Motor vs ticket','M4 17h2l2-6 3 9 3-12 2.5 9H20M3 20h18'],['reporte','Reporte ejecutivo','M7 3h7l5 5v13H7zM14 3v5h5M9.5 13h6M9.5 16.5h6'],['analisis','Análisis IA','M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z'],['anomalias','Anomalías','M12 4l9 16H3zM12 10v4M12 17v.5'],['consulta','Consulta IA','M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M9.7 9.5a2.4 2.4 0 0 1 4.5 1.2c0 1.6-2.2 2-2.2 3.3M12 17h.01']]},
+  {grp:'Operación',items:[['solicitudes','Solicitudes de recarga','M5 3h14v18l-7-3-7 3zM9 8h6M9 12h6'],['asignaciones','Asignar viajes','M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8 17h6a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h5'],['historial','Historial','M4 6h16M4 12h16M4 18h10'],['termo','Horas de termo','M12 3v18M5 8l14 8M19 8L5 16'],['cumplimiento','Cumplimiento','M9 12l2 2 4-4M21 12a9 9 0 1 1-18 0a9 9 0 0 1 18 0']]},
+  {grp:'Flota',items:[['unidades','Unidades','M3 7h11v8H3zM14 10h4l3 3v2h-7z M6 18a1.6 1.6 0 1 0 .01 0M17 18a1.6 1.6 0 1 0 .01 0'],['remolques','Remolques','M2 7h15v9H2zM17 13h4M5 18a1.6 1.6 0 1 0 .01 0M11 18a1.6 1.6 0 1 0 .01 0'],['operadores','Operadores','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M4.5 20a7.5 7.5 0 0 1 15 0']]},
+  {grp:'Sistema',items:[['uso','Consumo de IA','M12 3v18M7 8h7a2.5 2.5 0 0 1 0 5H7h8a2.5 2.5 0 0 1 0 5H7'],['eventos','Mensajes con problema','M12 4l9 16H3zM12 10v4M12 17v.5'],['desarrollos','Desarrollos','M14 7l6 5-6 5M10 7l-6 5 6 5'],['config','Configuración','M9.6 12a2.4 2.4 0 1 0 4.8 0a2.4 2.4 0 1 0-4.8 0M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2'],['perfil','Perfil','M4 5h16v14H4zM8 9h5M8 13h8']]},
+];
+const TIT={resumen:['Resumen','RESUMEN'],graficos:['Gráficos','GRÁFICOS'],conciliacion:['Motor vs ticket','CONCILIACIÓN'],reporte:['Reporte ejecutivo','REPORTE'],analisis:['Análisis de Claude','ANÁLISIS'],anomalias:['Anomalías','ANOMALÍAS'],consulta:['Consulta a la IA','CONSULTA'],solicitudes:['Solicitudes de recarga','SOLICITUDES'],asignaciones:['Asignación de viajes','ASIGNACIONES'],historial:['Historial de viajes','HISTORIAL'],termo:['Horas de termo','TERMO'],cumplimiento:['Cumplimiento de reportes','CUMPLIMIENTO'],unidades:['Unidades motrices','UNIDADES'],remolques:['Remolques','REMOLQUES'],operadores:['Operadores','OPERADORES'],uso:['Consumo de IA','CONSUMO'],eventos:['Mensajes con problema','MENSAJES'],desarrollos:['Desarrollos','DESARROLLOS'],config:['Configuración','CONFIG'],perfil:['Perfil','PERFIL']};
+const LOADERS={resumen:loadResumen,graficos:loadGraficos,conciliacion:loadConciliacion,reporte:loadReporte,analisis:loadAnalisis,anomalias:()=>{loadAnomalias();loadPrecision();},consulta:loadConsulta,solicitudes:loadSolicitudes,asignaciones:loadAsignaciones,historial:loadViajes,termo:loadThermo,cumplimiento:loadCumplimiento,unidades:loadUnidades,remolques:loadRemolques,operadores:loadOperadores,uso:loadUso,eventos:loadEventos,desarrollos:loadDesarrollos,config:loadConfig,perfil:loadPerfil};
+let SEC_ACTIVA=null;
+// Los loaders son async: hay que atrapar el rechazo de la promesa, no solo el throw
+// síncrono. Antes un fallo salía como unhandled rejection y la sección se quedaba muda.
+function correrLoader(sec){
+  if(!LOADERS[sec])return;
+  try{Promise.resolve(LOADERS[sec]()).catch(e=>console.error('loader '+sec,e));}
+  catch(e){console.error('loader '+sec,e);}
+}
+// Secciones que NO se auto-refrescan: no son datos en vivo y refrescarlas pisaría lo que
+// el usuario tiene en pantalla (el análisis IA se genera bajo demanda y auto-carga el más
+// reciente: el refresco borraba la generación en curso o el reporte que estabas leyendo).
+const SIN_REFRESCO=new Set(['analisis','config','perfil','desarrollos','reporte','conciliacion','uso']);
+// Refresco automático de la sección activa: los reportes entran en vivo por WhatsApp, así
+// que el panel se mantiene al día sin tocar nada. Se salta si la pestaña está en segundo
+// plano o si hay un modal abierto (para no interrumpir lo que estás viendo o editando).
+const REFRESCO_MS=60000;
+setInterval(()=>{
+  if(document.hidden)return;
+  if($('#modal-bg')&&$('#modal-bg').classList.contains('show'))return;
+  if(!SEC_ACTIVA||SIN_REFRESCO.has(SEC_ACTIVA))return;
+  correrLoader(SEC_ACTIVA);
+},REFRESCO_MS);
+
+function buildNav(){
+  let h='';
+  for(const g of NAV){
+    if(g.grp)h+=`<div class="grp">${g.grp}</div>`;
+    for(const[id,label,d] of g.items){
+      h+=`<button class="navbtn" data-sec="${id}" onclick="show('${id}')"><svg viewBox="0 0 24 24"><path d="${d}"></path></svg><span style="flex:1">${label}</span>${id==='anomalias'?'<span class="bdg" id="nav-anom" style="display:none"></span>':''}${id==='eventos'?'<span class="bdg" id="nav-ev" style="display:none"></span>':''}</button>`;
+    }
+  }
+  $('#nav').innerHTML=h;
+}
+function show(sec){
+  if(!permitido(sec))sec=(ROL==='coordinador'?'solicitudes':'resumen');
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('on',b.dataset.sec===sec));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
+  $('#s-'+sec).classList.add('on');
+  $('#title').textContent=TIT[sec][0]; $('#crumb').textContent=TIT[sec][1];
+  // Siempre se recargan los datos al entrar a la sección. Antes se cargaban UNA sola vez
+  // por carga de página (flag `loaded`), así que los reportes nuevos que iban llegando no
+  // aparecían al volver al Historial hasta recargar el navegador.
+  correrLoader(sec);
+  if(sec==='config'&&window.TR_montarPerfil)TR_montarPerfil(document.getElementById('tr-perfil-mount'),ME_D);
+  SEC_ACTIVA=sec;
+  closeNav();
+}
+function toggleNav(){$('#aside').classList.toggle('open');$('#scrim').classList.toggle('open');}
+function closeNav(){$('#aside').classList.remove('open');$('#scrim').classList.remove('open');}
+
+// ── Tema ─────────────────────────────────────────────────────────────────────
+function applyTheme(){const t=localStorage.getItem('tr-theme')||'system';const eff=t==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=eff;}
+function cycleTheme(){const cur=localStorage.getItem('tr-theme')||'system';const nx={light:'dark',dark:'system',system:'light'}[cur];localStorage.setItem('tr-theme',nx);applyTheme();toast('Tema: '+({light:'claro',dark:'oscuro',system:'sistema'}[nx]));}
+
+// ── Charts (SVG/CSS calculados desde datos reales) ───────────────────────────
+function barsCSS(el,items,max){ // items:[{label,val,disp}]
+  const m=max||Math.max(...items.map(i=>i.val),1);
+  el.innerHTML=`<div class="bars">${items.map(i=>`<div class="col"><div class="n">${i.disp}</div><div class="b" title="${esc(i.label)}" style="height:${Math.max(2,i.val/m*100)}%"></div></div>`).join('')}</div><div class="barlbl">${items.map(i=>`<div>${esc(i.label)}</div>`).join('')}</div>`;
+}
+function linePts(vals,W,H){const L=36,R=W-12,T=38,B=H-30,n=vals.length;if(!n)return{line:'',area:'',dots:[],sx:()=>0};const mx=Math.max(...vals),mn=Math.min(...vals,0);const sx=i=>n===1?(L+R)/2:L+i*(R-L)/(n-1);const sy=v=>B-(mx===mn?.5:(v-mn)/(mx-mn))*(B-T);let line='';vals.forEach((v,i)=>{line+=(i?'L':'M')+sx(i).toFixed(1)+' '+sy(v).toFixed(1)+' ';});if(n===1)line+='L'+sx(0).toFixed(1)+' '+sy(vals[0]).toFixed(1)+' ';const area=line+`L${sx(n-1).toFixed(1)} ${B} L${sx(0).toFixed(1)} ${B} Z`;return{line,area,dots:vals.map((v,i)=>({cx:sx(i).toFixed(1),cy:sy(v).toFixed(1)})),sx};}
+function areaChart(el,labels,vals,color){const W=560,H=232;const p=linePts(vals,W,H);const xl=labels.map((l,i)=>`<text x="${p.sx(i).toFixed(1)}" y="226" text-anchor="middle" style="fill:var(--muted);font:500 9.5px 'IBM Plex Mono'">${esc(l)}</text>`).join('');el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block"><path d="M36 62h${W-46}M36 110h${W-46}M36 158h${W-46}" style="stroke:var(--line);stroke-width:1"></path><path d="${p.area}" style="fill:color-mix(in oklab,${color} 13%,transparent)"></path><path d="${p.line}" style="fill:none;stroke:${color};stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round"></path>${p.dots.map(d=>`<circle cx="${d.cx}" cy="${d.cy}" r="3" style="fill:${color};stroke:var(--card);stroke-width:1.5"></circle>`).join('')}${xl}</svg>`;}
+function dualChart(el,labels,a,b){const W=560,H=232;const pa=linePts(a,W,H),pb=linePts(b,W,H);const xl=labels.map((l,i)=>`<text x="${pa.sx(i).toFixed(1)}" y="226" text-anchor="middle" style="fill:var(--muted);font:500 9.5px 'IBM Plex Mono'">${esc(l)}</text>`).join('');el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block"><path d="M36 62h${W-46}M36 110h${W-46}M36 158h${W-46}" style="stroke:var(--line);stroke-width:1"></path><path d="${pa.area}" style="fill:color-mix(in oklab,var(--accent) 11%,transparent)"></path><path d="${pa.line}" style="fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round"></path><path d="${pb.line}" style="fill:none;stroke:var(--blue);stroke-width:2;stroke-dasharray:5 6;stroke-linejoin:round;stroke-linecap:round"></path>${xl}</svg>`;}
+function donut(el,leg,segs){ // segs:[{name,val,color}]
+  const real=segs.reduce((s,x)=>s+x.val,0);const tot=real||1;const C=2*Math.PI*54;let off=0;
+  const circles=segs.map(s=>{const dash=s.val/tot*C;const c=`<circle cx="70" cy="70" r="54" fill="none" stroke-width="17" stroke-dasharray="${dash.toFixed(2)} ${(C-dash).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" style="stroke:${s.color}"></circle>`;off+=dash;return c;}).join('');
+  el.innerHTML=`<svg viewBox="0 0 140 140" style="width:170px;height:170px;flex:0 0 auto"><g transform="rotate(-90 70 70)">${circles}</g><text x="70" y="66" text-anchor="middle" style="fill:var(--ink);font:600 22px 'IBM Plex Mono'">${real}</text><text x="70" y="84" text-anchor="middle" style="fill:var(--muted);font:500 8.5px 'IBM Plex Mono';letter-spacing:.14em">EQUIPOS</text></svg>`;
+  leg.innerHTML=segs.map(s=>`<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)"><span style="width:11px;height:11px;border-radius:2px;background:${s.color};flex:0 0 auto"></span><span style="flex:1;font-size:12.5px">${esc(s.name)}</span><span style="font:600 12px 'IBM Plex Mono'">${s.val}</span></div>`).join('');
+}
+function spark(vals,w=120,h=34){if(!vals||!vals.length)return'';const p=linePts(vals,w+24,h+16);return `<svg viewBox="0 0 ${w+24} ${h+16}" style="width:${w}px;height:${h}px"><path d="${p.line}" style="fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round"></path></svg>`;}
+
+// ── KPIs / Resumen ───────────────────────────────────────────────────────────
+async function loadResumen(){
+  const k=await api('/api/kpis');
+  const pt=k.unidades_por_tipo||{};
+  const cards=[['Viajes registrados',fmt(k.total_viajes,0),''],['Unidades',fmt(k.unidades,0),`Tractos ${pt.TRACTO||0} · Camiones ${pt.CAMION||0}`],['Operadores',fmt(k.operadores,0),''],['Rendimiento prom.',fmt(k.rendimiento_promedio,3)+' km/l',''],['Litros históricos',fmt(k.litros_totales,0)+' L',''],['Anomalías pend.',fmt(k.anomalias_pendientes,0),'']];
+  $('#kpis').innerHTML=cards.map(c=>`<div class="kpi"><div class="l">${c[0]}</div><div class="v">${c[1]}</div><div class="s">${c[2]||'&nbsp;'}</div></div>`).join('');
+  const rend=await api('/api/stats/rendimiento-unidad');
+  if(rend.labels.length)barsCSS($('#r-rend'),rend.labels.map((l,i)=>({label:l,val:rend.valores[i],disp:fmt(rend.valores[i],2)})));
+  else $('#r-rend').innerHTML='<div class="empty">Sin datos suficientes</div>';
+  const vm=await api('/api/stats/viajes-mes');
+  $('#r-vmy').textContent=vm.labels.length?mesLbl(vm.labels[0])+' – '+mesLbl(vm.labels[vm.labels.length-1]):'';
+  areaChart($('#r-vm'),vm.labels.map(mesLbl),vm.viajes,'var(--accent)');
+  const an=await api('/api/anomalias?estado=PENDIENTE');
+  renderNotif(an);
+  $('#r-anom').innerHTML=an.length?an.slice(0,6).map(a=>`<tr><td class="mono">${esc(a.unidad)||'—'}</td><td class="mono" style="color:var(--muted)">${a.fecha||'—'}</td><td>${tipoCell(a.tipo)}</td><td style="white-space:normal;max-width:460px;color:var(--muted)">${esc(a.descripcion)}</td><td style="text-align:right"><button class="mini g" onclick="resolver(${a.id},'confirmar')">Confirmar</button> <button class="mini r" onclick="resolver(${a.id},'rechazar')">Rechazar</button></td></tr>`).join(''):`<tr><td colspan="5" class="empty">${ic('check')} Sin anomalías pendientes</td></tr>`;
+}
+
+// ── Gráficos ─────────────────────────────────────────────────────────────────
+async function loadGraficos(){
+  const vm=await api('/api/stats/viajes-mes');
+  dualChart($('#g-dual'),vm.labels.map(mesLbl),vm.litros.map(x=>x/1000),vm.viajes);
+  const svr=await api('/api/stats/scanner-vs-real');
+  const mx=Math.max(...svr.flatMap(p=>[p.rto||0,p.rto_real||0]),1);
+  $('#g-svr').innerHTML=svr.length?`<div style="display:flex;align-items:flex-end;gap:14px;height:172px;border-bottom:1px solid var(--line2);padding:0 6px">${svr.map(p=>`<div style="flex:1;height:100%;display:flex;align-items:flex-end;justify-content:center;gap:4px"><div title="Scanner ${fmt(p.rto,2)}" style="width:12px;background:var(--line2);border-radius:2px 2px 0 0;height:${(p.rto||0)/mx*100}%"></div><div title="Real ${fmt(p.rto_real,2)}" style="width:12px;background:var(--accent);border-radius:2px 2px 0 0;height:${(p.rto_real||0)/mx*100}%"></div></div>`).join('')}</div><div class="barlbl">${svr.map(p=>`<div>${esc(p.unidad)}</div>`).join('')}</div>`:'<div class="empty">Sin datos suficientes</div>';
+  // composición: unidades por tipo + remolques
+  const[uni,rem]=await Promise.all([api('/api/unidades'),api('/api/remolques')]);
+  const tract=uni.filter(u=>u.tipo==='TRACTO').length, cam=uni.filter(u=>u.tipo==='CAMION').length;
+  const refr=rem.filter(r=>r.usa_combustible&&!r.es_dolly).length, dolly=rem.filter(r=>r.es_dolly).length;
+  const seca=rem.length-refr-dolly;
+  donut($('#g-donut'),$('#g-donut-leg'),[{name:'Tractos',val:tract,color:'var(--blue)'},{name:'Camiones',val:cam,color:'var(--amber)'},{name:'Remolques refrigerados',val:refr,color:'var(--green)'},{name:'Cajas secas',val:seca,color:'var(--violet)'},{name:'Dollys',val:dolly,color:'var(--line2)'}]);
+  const cons=await api('/api/stats/consumo-unidad');
+  const cmx=Math.max(...cons.map(c=>c.litros),1);
+  $('#g-consumo').innerHTML=cons.length?cons.map(c=>`<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font:600 11px 'IBM Plex Mono'">${esc(c.unidad)}</span><span class="sub">${fmt(c.litros,0)} L</span></div><div style="height:9px;background:var(--card2);border-radius:2px;overflow:hidden"><div style="height:100%;width:${c.litros/cmx*100}%;background:var(--accent)"></div></div></div>`).join(''):'<div class="empty">Sin datos suficientes</div>';
+  const heat=await api('/api/stats/heatmap-anomalias');
+  const hmax=Math.max(...heat.filas.flatMap(f=>f.celdas),1);
+  const head=`<div style="display:grid;grid-template-columns:64px repeat(${heat.meses.length},1fr);gap:4px;align-items:center;min-width:520px"><div></div>${heat.meses.map(m=>`<div style="text-align:center" class="sub">${mesLbl(m)}</div>`).join('')}</div>`;
+  const rows=heat.filas.map(f=>`<div style="display:grid;grid-template-columns:64px repeat(${heat.meses.length},1fr);gap:4px;align-items:center;margin-top:4px;min-width:520px"><div style="font:600 10.5px 'IBM Plex Mono';color:var(--muted)">${esc(f.unidad)}</div>${f.celdas.map(n=>`<div title="${n} anomalía(s)" style="aspect-ratio:1;border-radius:2px;background:${n?`color-mix(in oklab,var(--red) ${Math.round(18+n/hmax*70)}%,transparent)`:'var(--card2)'}"></div>`).join('')}</div>`).join('');
+  $('#g-heat').innerHTML=heat.filas.length?head+rows:`<div class="empty">Sin anomalías registradas</div>`;
+  const rank=await api('/api/stats/ranking-operador-unidad');
+  const rmx=Math.max(...rank.map(r=>r.rto_real||0),1);
+  $('#g-rank').innerHTML=rank.length?rank.map((r,i)=>`<tr><td class="mono">${i+1}</td><td>${esc(r.operador)||'—'}</td><td class="mono">${esc(r.unidad)}</td><td>${tipoPill(r.tipo)}</td><td style="width:40%"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:var(--card2);border-radius:2px;overflow:hidden"><div style="height:100%;width:${(r.rto_real||0)/rmx*100}%;background:var(--accent)"></div></div><b style="font:600 12px 'IBM Plex Mono'">${fmt(r.rto_real,3)}</b></div></td><td class="mono" style="color:var(--muted)">${r.viajes}</td></tr>`).join(''):`<tr><td colspan="6" class="empty">Sin datos</td></tr>`;
+}
+
+// ── Análisis IA ──────────────────────────────────────────────────────────────
+function md(t){t=t||'';return t.split('\n').map(l=>{l=esc(l).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');if(/^#{1,4}\s/.test(l))return '<h4>'+l.replace(/^#+\s/,'')+'</h4>';if(/^\s*[-*]\s/.test(l))return '<li>'+l.replace(/^\s*[-*]\s/,'')+'</li>';return l.trim()?'<p>'+l+'</p>':'';}).join('').replace(/(<li>.*?<\/li>)+/gs,m=>'<ul>'+m+'</ul>');}
+const ORB=`<div class="orb"><div class="ring"><b></b></div><div class="core"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:currentColor"><path d="M12 2l1.8 5.6L19.5 9l-5.7 1.8L12 16l-1.8-5.2L4.5 9l5.7-1.4z"></path></svg></div></div>`;
+const ORB_SM=`<div class="orb sm"><div class="ring"><b></b></div><div class="core"></div></div>`;
+function iaVacio(){return `<div class="ia-empty">${ORB}<div class="sub" style="margin:20px auto 0;max-width:380px;line-height:1.7">Pulsa <b style="color:var(--accent)">Generar análisis</b> para que Claude lea tus datos y arme un reporte con 3 gráficos y un resumen ejecutivo.</div></div>`;}
+function iaCargando(){return `<div style="padding:18px 4px"><div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">${ORB_SM}<div style="font-weight:600;font-size:15px">Claude está analizando tu flota<span class="iadots"><i>.</i><i>.</i><i>.</i></span></div></div><div class="skel" style="width:96%"></div><div class="skel" style="width:88%"></div><div class="skel" style="width:70%"></div><div class="ia-charts" style="margin-top:18px"><div class="skelbox"></div><div class="skelbox"></div><div class="skelbox"></div></div></div>`;}
+function fechaHora(iso){if(!iso)return '';try{return new Date(iso).toLocaleString('es-MX',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return iso;}}
+// ── Roles: Administrador y Coordinador ───────────────────────────────────────
+// El coordinador atiende la operación diaria —ve todo, resuelve anomalías, corrige
+// viajes— pero no genera análisis con IA (cada uno se factura) ni edita catálogos,
+// usuarios o configuración. Esto solo ACOMODA la pantalla: el permiso de verdad lo
+// aplica el servidor con require_admin, porque esconder un botón no es seguridad.
+const SECC_ADMIN=new Set(['analisis','config','uso']);
+// Secciones visibles por rol (el permiso REAL lo valida el servidor; esto solo acomoda la
+// vista). admin: todas. Coordinador: lo OPERATIVO. Gerente: SOLO LECTURA (audita y consulta).
+const SECC_POR_ROL={
+  coordinador:new Set(['solicitudes','asignaciones','unidades','remolques','operadores','perfil']),
+  gerente:new Set(['resumen','graficos','conciliacion','anomalias','historial','termo','cumplimiento','operadores','uso','eventos','solicitudes','asignaciones','consulta','perfil']),
+};
+let ROL='admin';
+
+let ME_D={};
+async function aplicarRol(){
+  try{ ME_D=await api('/api/me'); ROL=ME_D.rol||'admin'; }catch(e){ return; }
+  if(window.TR_aplicarPrefs)TR_aplicarPrefs(ME_D.prefs);
+  if(ROL==='admin')return true;
+  const permitidas=SECC_POR_ROL[ROL];
+  document.body.classList.add('rol-'+ROL);
+  document.querySelectorAll('.navbtn[data-sec]').forEach(b=>{
+    if(permitidas && !permitidas.has(b.dataset.sec)) b.style.display='none';
+  });
+  const et=document.createElement('div');
+  et.className='sub'; et.style.cssText='padding:6px 14px;color:var(--muted)';
+  et.textContent='Sesión de '+({coordinador:'coordinador',gerente:'gerente · solo lectura'}[ROL]||ROL);
+  const nav=$('#nav'); if(nav)nav.appendChild(et);
+  const css=document.createElement('style');
+  css.textContent=
+    '.rol-coordinador [data-editar-viaje],.rol-coordinador .btn-editar-viaje{display:none!important}'+
+    '.rol-gerente [data-tr],.rol-gerente [data-autoriza],.rol-gerente [data-despachar],'+
+    '.rol-gerente [data-finaliza-asig],.rol-gerente #aut-litros,.rol-gerente [data-editar-viaje],'+
+    '.rol-gerente .btn-editar-viaje,.rol-gerente [data-borrar],.rol-gerente [data-editar]{display:none!important}';
+  document.head.appendChild(css);
+  if(ROL==='gerente'){
+    // El gerente es solo lectura: se ocultan también los botones estáticos de crear/generar
+    // (el servidor igual los rechaza; esto evita el 403 confuso).
+    document.querySelectorAll('[onclick*="abrirAsignarViaje"],[onclick*="nuevaUnidad"],[onclick*="nuevoRemolque"],[onclick*="altaOperador"],[onclick*="nuevoOperador"],[onclick*="generar"]').forEach(b=>b.style.display='none');
+  }
+  return true;
+}
+function permitido(sec){
+  if(ROL==='admin')return true;
+  const p=SECC_POR_ROL[ROL];
+  if(!p||p.has(sec))return true;
+  toast('Esa sección no está disponible para tu rol');
+  return false;
+}
+function loadConsulta(){ const t=$('#cq-texto'); if(t)setTimeout(()=>t.focus(),60); }
+document.addEventListener('click',async ev=>{
+  if(ev.target.id!=='cq-enviar')return;
+  const t=$('#cq-texto'), resp=$('#cq-resp'), btn=ev.target;
+  const q=(t.value||'').trim();
+  if(!q){ toast('Escribe una pregunta'); return; }
+  btn.disabled=true; resp.innerHTML='<div class="sub">Consultando…</div>';
+  try{ const fd=new FormData(); fd.append('pregunta',q);
+    const d=await apiPost('/api/consulta',fd);
+    resp.innerHTML='<div class="card" style="background:var(--card2);white-space:pre-wrap;line-height:1.6">'+esc(d.respuesta||'')+'</div>';
+  }catch(e){ resp.innerHTML='<div class="sub" style="color:var(--red)">No se pudo: '+esc(e.message||'')+'</div>'; }
+  btn.disabled=false;
+});
+
+// ── Consumo de IA ────────────────────────────────────────────────────────────
+// El crédito se agotó una vez sin que nadie pudiera decir cuántas consultas se habían
+// hecho. Esta pantalla existe para que el gasto sea visible ANTES de quedarse sin saldo.
+const OPS_IA={imagen:'Lectura de fotos',mensaje:'Lectura de reportes',
+  analisis_flota:'Análisis de flota',analisis_anomalias:'Diagnóstico de anomalías'};
+
+async function loadUso(){
+  const d=await api('/api/uso-ia?dias='+(($('#uso-dias')||{}).value||30));
+  const t=d.totales, ops=d.por_operacion||[], dias=d.por_dia||[];
+  $('#uso-sub').textContent=`Modelo en uso: ${d.modelo_actual}`+(t.desde?` · primer registro ${t.desde.slice(0,10)}`:'');
+  const usd=v=>'$'+Number(v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  if(!t.llamadas){
+    $('#uso-body').innerHTML=`<div class="card" style="text-align:center;padding:34px 20px">
+      <div style="font:600 15px 'Barlow Condensed';letter-spacing:.06em;text-transform:uppercase">Sin registros todavía</div>
+      <div class="sub" style="margin-top:8px">La medición empieza desde ahora: las llamadas anteriores a este cambio no quedaron registradas y no se pueden reconstruir.</div></div>`;
+    return;
+  }
+  const diario=dias.length?t.costo_usd/dias.length:0;
+  let h=`<div class="kpis">
+    <div class="kpi"><div class="l">Consultas a la IA</div><div class="v">${fmt(t.llamadas,0)}</div><div class="s">${t.fallidas?fmt(t.fallidas,0)+' fallaron':'ninguna falló'}</div></div>
+    <div class="kpi"><div class="l">Tokens procesados</div><div class="v">${fmt(t.tokens_entrada+t.tokens_salida,0)}</div><div class="s">${fmt(t.tokens_entrada,0)} de entrada · ${fmt(t.tokens_salida,0)} de salida</div></div>
+    <div class="kpi"><div class="l">Costo del período</div><div class="v">${usd(t.costo_usd)}</div><div class="s">USD</div></div>
+    <div class="kpi"><div class="l">Promedio por día</div><div class="v">${usd(diario)}</div><div class="s">≈ ${usd(diario*30)} al mes</div></div>
+  </div>`;
+
+  h+=`<div class="card" style="margin-bottom:16px"><div class="chart-h" style="margin-bottom:14px">¿En qué se gasta?</div>
+    <div class="tablewrap"><table><thead><tr><th>Operación</th><th>Consultas</th><th>Tokens entrada</th><th>Tokens salida</th><th>Costo</th><th>Por consulta</th></tr></thead><tbody>`;
+  for(const o of ops){
+    h+=`<tr><td>${esc(OPS_IA[o.operacion]||o.operacion)}</td><td class="mono">${fmt(o.llamadas,0)}</td>
+      <td class="mono">${fmt(o.tokens_entrada,0)}</td><td class="mono">${fmt(o.tokens_salida,0)}</td>
+      <td class="mono">${usd(o.costo_usd)}</td><td class="mono">${usd(o.costo_usd/(o.llamadas||1))}</td></tr>`;
+  }
+  h+=`</tbody></table></div></div>`;
+
+  if(dias.length){
+    const max=Math.max(...dias.map(x=>x.costo_usd))||1;
+    h+=`<div class="card" style="margin-bottom:16px"><div class="chart-h" style="margin-bottom:14px">Gasto por día</div>
+      <div style="display:flex;align-items:flex-end;gap:3px;height:120px">`;
+    for(const x of dias){
+      const alto=Math.max(3,Math.round(x.costo_usd/max*110));
+      h+=`<div title="${x.dia}: ${usd(x.costo_usd)} (${x.llamadas} consultas)" style="flex:1;min-width:4px;height:${alto}px;background:var(--accent);opacity:.85"></div>`;
+    }
+    h+=`</div><div class="sub" style="margin-top:8px">${dias[0].dia} → ${dias[dias.length-1].dia}</div></div>`;
+  }
+
+  h+=`<div class="card"><div class="chart-h" style="margin-bottom:10px">Precio por millón de tokens</div>
+    <div class="tablewrap"><table><thead><tr><th>Modelo</th><th>Entrada</th><th>Salida</th><th></th></tr></thead><tbody>`;
+  for(const[m,[pi,po]] of Object.entries(d.precios_usd_por_millon||{})){
+    const act=m===d.modelo_actual;
+    h+=`<tr><td class="mono">${esc(m)}</td><td class="mono">$${pi.toFixed(2)}</td><td class="mono">$${po.toFixed(2)}</td>
+      <td>${act?'<span class="pill conf">EN USO</span>':''}</td></tr>`;
+  }
+  h+=`</tbody></table></div></div>`;
+  $('#uso-body').innerHTML=h;
+}
+document.addEventListener('change',ev=>{if(ev.target.id==='uso-dias')loadUso();});
+
+// ── Mensajes con problema ────────────────────────────────────────────────────
+// Un mensaje que no se pudo procesar NO se pierde: queda guardado crudo y se puede volver
+// a intentar. Sin esta pantalla ese rastro existía solo en la base y nadie lo veía, así
+// que un reporte perdido pasaba inadvertido. Se muestran también los 'pendiente' con
+// intentos: están igual de atorados que un fallido, solo que sin haberse rendido todavía.
+async function loadEventos(){
+  const est=($('#ev-estado')||{}).value||'todos';
+  const d=await api('/api/eventos/fallidos?estado='+est+'&limite=200');
+  const c=d.conteos||{}, evs=d.eventos||[];
+  const nb=$('#nav-ev');
+  if(nb){const n=c.fallido||0;if(n){nb.style.display='inline-block';nb.textContent=n;}else nb.style.display='none';}
+  $('#ev-sub').textContent=`${c.procesado||0} procesados · ${c.pendiente||0} en cola · ${c.fallido||0} fallidos · ${c.omitido||0} omitidos a propósito`;
+
+  if(!evs.length){
+    $('#ev-body').innerHTML=`<div class="card" style="text-align:center;padding:38px 20px">
+      <div style="font:600 15px 'Barlow Condensed';letter-spacing:.06em;text-transform:uppercase;color:var(--green)">Todo procesado</div>
+      <div class="sub" style="margin-top:8px">No hay mensajes atorados. Los ${c.procesado||0} recibidos se procesaron correctamente.</div></div>`;
+    return;
+  }
+  // 'omitido' NO es un fallo: son mensajes que el sistema decidió no registrar (reenvíos,
+  // stickers…). Se muestran para que se vea qué se descartó y por qué, pero sin botón de
+  // reintentar: volver a procesarlos es justo lo que no se quiere.
+  const PILL={fallido:['cat-fraude','FALLIDO'],pendiente:['pend','EN COLA'],omitido:['rech','OMITIDO']};
+  let h=`<div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table>
+    <thead><tr><th>#</th><th>Estado</th><th>Recibido</th><th>De</th><th>Tipo</th><th>Mensaje</th><th>Intentos</th><th>Motivo</th><th></th></tr></thead><tbody>`;
+  for(const e of evs){
+    const[cls,txt]=PILL[e.estado]||['rech',(e.estado||'?').toUpperCase()];
+    const omit=e.estado==='omitido';
+    h+=`<tr data-ev="${e.id}">
+      <td class="mono">${e.id}</td>
+      <td><span class="pill ${cls}">${txt}</span></td>
+      <td class="mono">${e.recibido?e.recibido.replace('T',' ').slice(0,16):'—'}</td>
+      <td class="mono">${esc(e.participante||'—')}</td>
+      <td class="mono">${esc(e.tipo||'—')}${e.tiene_media?' '+ic('clip'):''}</td>
+      <td style="max-width:280px;white-space:normal">${esc(e.texto||'(sin texto)')}</td>
+      <td class="mono">${e.intentos||0}</td>
+      <td style="max-width:320px;white-space:normal;color:var(--${omit?'muted':'red'})">${esc(e.error||'—')}</td>
+      <td>${omit?'':`<button class="mini g" data-reproc="${e.id}">Reintentar</button>`}</td></tr>`;
+  }
+  h+=`</tbody></table></div></div>`;
+  $('#ev-body').innerHTML=h;
+}
+
+// Delegación de eventos: esc() no escapa comillas simples, así que un onclick con el texto
+// del mensaje dentro rompería el HTML. El id va en un data-attribute y se lee aquí.
+document.addEventListener('click',async ev=>{
+  const b=ev.target.closest('[data-reproc]');
+  if(!b)return;
+  const id=b.dataset.reproc;
+  b.disabled=true; b.textContent='Reintentando…';
+  try{
+    await apiPost('/api/eventos/'+id+'/reprocesar',new FormData());
+    toast('Mensaje reencolado: se está procesando de nuevo');
+    setTimeout(loadEventos,1500);   // dar tiempo al worker antes de refrescar
+  }catch(e){
+    b.disabled=false; b.textContent='Reintentar';
+    toast('No se pudo reencolar: '+(e.message||''));
+  }
+});
+document.addEventListener('change',ev=>{if(ev.target.id==='ev-estado')loadEventos();});
+document.addEventListener('click',ev=>{if(ev.target.id==='ev-recargar')loadEventos();});
+
+// ── Cruce motor vs ticket ────────────────────────────────────────────────────
+// El escáner del motor mide lo que el camión QUEMÓ; el ticket dice lo que se CARGÓ.
+// La diferencia entre ambos es el dato que justifica el proyecto — pero no es una
+// acusación por sí sola: hay que descontar el termo y revisar los períodos largos.
+// Por eso esta pantalla muestra la brecha JUNTO con lo que puede explicarla.
+let CON_ANIOS=null;
+
+async function loadConciliacion(){
+  const sel=$('#con-anio');
+  const d=await api('/api/conciliacion'+(sel&&sel.value?('?anio='+sel.value):''));
+  if(!CON_ANIOS){
+    CON_ANIOS=(d.por_anio||[]).map(x=>x.anio).sort((a,b)=>b-a);
+    sel.innerHTML=CON_ANIOS.map(a=>`<option value="${a}"${a===d.anio?' selected':''}>${a}</option>`).join('');
+  }
+  const t=d.totales, us=d.unidades||[], termo=d.termo||{};
+  $('#con-sub').textContent=`${t.periodos} períodos de ${t.unidades} unidades · ${d.escaneos} escaneos de motor importados`;
+  const L=v=>fmt(v,0)+' L';
+  let h='';
+
+  h+=`<div class="kpis">
+    <div class="kpi"><div class="l">Quemó el motor</div><div class="v">${fmt(t.lts_motor,0)}</div><div class="s">litros medidos por el camión</div></div>
+    <div class="kpi"><div class="l">Dice el ticket</div><div class="v">${fmt(t.lts_ticket,0)}</div><div class="s">litros cargados según captura</div></div>
+    <div class="kpi" style="border-color:color-mix(in oklab,var(--amber) 45%,var(--line))"><div class="l">Diferencia a explicar</div>
+      <div class="v" style="color:var(--amber)">${t.dif>0?'+':''}${fmt(t.dif,0)}</div><div class="s">${fmt(t.pct_dif,1)}% más de lo quemado</div></div>
+    <div class="kpi"><div class="l">Rendimiento real</div><div class="v">${fmt(t.rend_motor,2)}</div><div class="s">km/L según el motor · ticket: ${fmt(t.rend_ticket,2)}</div></div>
+  </div>`;
+
+  // Lo que puede explicar la brecha — antes de la tabla, para que no se lea como robo.
+  if(termo.medido&&t.dif>0){
+    const pMin=termo.lts_min/t.dif*100, pMax=Math.min(100,termo.lts_max/t.dif*100);
+    const restoMin=Math.max(0,t.dif-termo.lts_max), restoMax=Math.max(0,t.dif-termo.lts_min);
+    h+=`<div class="card" style="margin-bottom:16px;border-color:color-mix(in oklab,var(--amber) 35%,var(--line))">
+      <div class="chart-h" style="margin-bottom:10px">Cuánto explica el equipo de frío</div>
+      <div style="font-size:12.5px;line-height:1.8">
+        El escáner mide <b>solo el motor</b>; el termo consume del mismo tanque y no aparece ahí.
+        Su consumo está <b>medido</b>: <b>${fmt(termo.lts_hora,2)} L por hora</b>
+        (${termo.unidades_medidas} camiones auditados, ${fmt(termo.horas_medidas,0)} h y ${L(termo.litros_medidos)} reales).
+        <br>Extrapolado a la flota son entre <b>${L(termo.lts_min)}</b> (solo los ${termo.camiones} camiones refrigerados)
+        y <b>${L(termo.lts_max)}</b> (incluyendo los ${termo.tractos} tractos con remolque frío):
+        entre el <b>${fmt(pMin,0)}%</b> y el <b>${fmt(pMax,0)}%</b> de la diferencia.
+      </div>
+      <div style="margin-top:12px;padding:10px 12px;background:var(--card2);border-radius:3px;font-size:12.5px">
+        <b>Queda sin explicar entre ${L(restoMin)} y ${L(restoMax)}.</b>
+        Eso es lo que hay que investigar — no la diferencia completa.
+      </div>
+      <div class="sub" style="margin-top:10px">Base delgada: un mes y ${termo.unidades_medidas} unidades. Más auditorías de termo estrechan esta banda.</div>
+    </div>`;
+  }
+
+  // Evolución por año
+  if((d.por_anio||[]).length>1){
+    h+=`<div class="card" style="margin-bottom:16px"><div class="chart-h" style="margin-bottom:14px">¿Se está abriendo la brecha?</div>
+      <div class="tablewrap"><table><thead><tr><th>Año</th><th>Períodos</th><th>Kilómetros</th><th>Motor</th><th>Ticket</th><th>Diferencia</th><th>Rend. motor</th><th>Rend. ticket</th></tr></thead><tbody>`;
+    for(const a of d.por_anio){
+      h+=`<tr><td class="mono"><b>${a.anio}</b></td><td class="mono">${fmt(a.periodos,0)}</td><td class="mono">${fmt(a.km,0)}</td>
+        <td class="mono">${fmt(a.lts_motor,0)}</td><td class="mono">${fmt(a.lts_ticket,0)}</td>
+        <td class="mono" style="color:var(--${a.pct_dif>15?'red':'amber'})">${a.dif>0?'+':''}${fmt(a.dif,0)} (${fmt(a.pct_dif,1)}%)</td>
+        <td class="mono">${fmt(a.rend_motor,2)}</td><td class="mono">${fmt(a.rend_ticket,2)}</td></tr>`;
+    }
+    h+=`</tbody></table></div>
+      <div class="sub" style="margin-top:10px">Si el rendimiento del MOTOR se mantiene pero el del TICKET baja, el problema no es cómo se maneja: es cuánto se compra.</div></div>`;
+  }
+
+  // Por unidad
+  h+=`<div class="card" style="margin-bottom:16px"><div class="chart-h" style="margin-bottom:4px">Por unidad · ${d.anio}</div>
+    <div class="sub" style="margin-bottom:14px">Ordenado por litros de diferencia. Un período largo puede mover el total de una unidad él solo.</div>
+    <div class="tablewrap"><table><thead><tr><th>Unidad</th><th>Tipo</th><th>Períodos</th><th>Km</th><th>Motor</th><th>Ticket</th><th>Diferencia</th><th>%</th><th>Rend. motor</th></tr></thead><tbody>`;
+  for(const u of us){
+    const alto=u.pct_dif>25;
+    h+=`<tr><td class="mono"><b>${esc(u.unidad)}</b>${u.periodos_largos?` <span class="pill rech" title="Incluye ${u.periodos_largos} período(s) de más de 40 días">LARGO</span>`:''}</td>
+      <td><span class="pill ${u.tipo==='TRACTO'?'tracto':'camion'}">${esc(u.tipo||'—')}</span></td>
+      <td class="mono">${u.periodos}</td><td class="mono">${fmt(u.km,0)}</td>
+      <td class="mono">${fmt(u.lts_motor,0)}</td><td class="mono">${fmt(u.lts_ticket,0)}</td>
+      <td class="mono" style="color:var(--${alto?'red':'ink'})">${u.dif>0?'+':''}${fmt(u.dif,0)}</td>
+      <td class="mono" style="color:var(--${alto?'red':'muted'})">${fmt(u.pct_dif,1)}%</td>
+      <td class="mono">${fmt(u.rend_motor,2)}</td></tr>`;
+  }
+  h+=`</tbody></table></div></div>`;
+
+  h+=`<div class="card"><div class="chart-h" style="margin-bottom:10px">Cómo se calculó</div>
+    <ul style="font-size:12.5px;line-height:1.8;margin:0 0 0 18px">
+      <li>Solo períodos con <b>ambos</b> datos: litros del motor y litros del ticket.</li>
+      <li><b>${d.descartadas}</b> períodos quedaron fuera porque el ticket y el escáner difieren más de ${d.ratio_max}× — eso no es una brecha, es un error de captura.</li>
+      <li>Los períodos <b>retractados</b> (reporte borrado del grupo) no cuentan.</li>
+      <li>Diferencia = litros del ticket − litros del motor. Positiva = se cargó más de lo que el motor quemó.</li>
+    </ul></div>`;
+  $('#con-body').innerHTML=h;
+}
+document.addEventListener('change',ev=>{if(ev.target.id==='con-anio')loadConciliacion();});
+
+// ── Reporte ejecutivo ────────────────────────────────────────────────────────
+// Replica el entregable que el cliente ya usa: rendimiento real contra el IDEAL de cada
+// configuración, cuánto cuesta el ralentí, qué operadores generan el sobrecosto y cuánto
+// dinero es todo junto. Los criterios de exclusión se muestran al pie: un reporte que
+// esconde lo que dejó fuera no es auditable.
+const MESES=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const dinero=v=>(v===null||v===undefined)?'—':'$'+Number(v).toLocaleString('es-MX',{maximumFractionDigits:0});
+let REP_ANIOS=null;
+
+// ── Solicitudes de recarga (bandeja del coordinador + modal de validación) ───
+// Cada solicitud es un objeto con estado; la bandeja la muestra y el modal la resuelve.
+// La validación reúne en una sola vista la foto, el valor que leyó la IA, de dónde salió
+// cada dato (procedencia) y las anomalías, para que el coordinador decida sin cambiar de
+// pantalla. El permiso real lo aplica el servidor; aquí solo se acomoda lo que se ve.
+const SOL_PILL={borrador:['rech','BORRADOR'],enviada:['pend','POR VALIDAR'],
+  en_validacion:['pend','EN VALIDACIÓN'],devuelta:['venc','DEVUELTA'],rechazada:['rech','RECHAZADA'],
+  autorizada:['conf','AUTORIZADA'],despachada:['ok','DESPACHADA'],facturada:['ok','FACTURADA'],
+  conciliada:['conf','CONCILIADA'],en_discrepancia:['venc','DISCREPANCIA'],anulada:['rech','ANULADA']};
+const PROC_TXT={ia_aceptada:'IA, aceptada',ia_corregida:'IA, corregida a mano',manual:'capturado a mano'};
+
+async function loadSolicitudes(){
+  const est=($('#sol-estado')||{}).value||'';
+  const d=await api('/api/solicitudes'+(est?('?estado='+est):''));
+  const c=d.conteos||{}, ss=d.solicitudes||[];
+  const porVal=(c.enviada||0)+(c.en_validacion||0);
+  $('#sol-sub').textContent=`${porVal} por validar · ${c.autorizada||0} autorizadas · ${c.en_discrepancia||0} en discrepancia · ${ss.length} en la lista`;
+
+  if(!ss.length){
+    $('#sol-body').innerHTML=`<div class="card" style="text-align:center;padding:38px 20px">
+      <div style="font:600 15px 'Barlow Condensed';letter-spacing:.06em;text-transform:uppercase">Bandeja vacía</div>
+      <div class="sub" style="margin-top:8px">No hay solicitudes${est?' en ese estado':''}. Las nuevas aparecen aquí en cuanto un operador las envía.</div></div>`;
+    return;
+  }
+  let h=`<div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table>
+    <thead><tr><th>#</th><th>Estado</th><th>Unidad</th><th>Operador</th><th>Litros</th><th>Folio</th><th>Creada</th><th></th></tr></thead><tbody>`;
+  for(const s of ss){
+    const[cls,txt]=SOL_PILL[s.estado]||['rech',s.estado.toUpperCase()];
+    h+=`<tr>
+      <td class="mono">${s.id}</td>
+      <td><span class="pill ${cls}">${txt}</span>${s.capturada_asistida?' <span class="sub">asistida</span>':''}${s.eco_alerta?' <span title="Un número económico no coincide con lo asignado" style="color:var(--red);vertical-align:middle">'+ic('alert')+'</span>':''}</td>
+      <td class="mono">${esc(s.unidad||'—')}</td>
+      <td>${esc(s.operador||'—')}</td>
+      <td class="mono">${s.litros_autorizados!=null?fmt(s.litros_autorizados,0):(s.litros_reales!=null?fmt(s.litros_reales,0):'—')}</td>
+      <td class="mono">${esc(s.folio||'—')}</td>
+      <td class="mono">${s.creada_en?s.creada_en.replace('T',' ').slice(0,16):'—'}</td>
+      <td><button class="mini g" data-sol="${s.id}">Abrir</button></td></tr>`;
+  }
+  h+=`</tbody></table></div></div>`;
+  $('#sol-body').innerHTML=h;
+}
+
+async function abrirSolicitud(id){
+  const s=await api('/api/solicitudes/'+id);
+  const[cls,txt]=SOL_PILL[s.estado]||['rech',s.estado.toUpperCase()];
+  const evs=s.evidencias||[];
+  const trs=s.transiciones||[];
+
+  let ev='';
+  if(s.eco_alerta){
+    ev+=`<div style="padding:9px 12px;background:color-mix(in oklab,var(--red) 12%,transparent);border:1px solid color-mix(in oklab,var(--red) 40%,var(--line));border-radius:4px;font-size:12.5px;margin:14px 0 6px"><b>Revisar:</b> un número económico leído NO coincide con lo asignado.</div>`;
+  }
+  if(evs.length){
+    ev+=`<div class="chart-h" style="font-size:13px;margin:16px 0 8px">Lecturas</div>
+      <div class="tablewrap"><table><thead><tr><th>Evidencia</th><th>Leído</th><th>Esperado / Final</th><th>Verificación</th><th>Confianza</th></tr></thead><tbody>`;
+    for(const e of evs){
+      const esEco=e.tipo==='eco';
+      const leido=esEco?(e.texto_ia||'—'):(e.valor_ia!=null?fmt(e.valor_ia,2):'—');
+      const ref=esEco?esc(e.esperado||'—'):(e.valor_final!=null?fmt(e.valor_final,2):'—');
+      const verif=esEco?(e.coincide===true?'<span style="color:var(--green);font-weight:600">coincide</span>':(e.coincide===false?'<span style="color:var(--red);font-weight:600">NO coincide</span>':'—')):'—';
+      ev+=`<tr><td>${esc(esEco?(e.etiqueta||'Económico'):e.tipo)}${e.foto?' '+ic('camera'):''}</td>
+        <td class="mono">${esc(String(leido))}</td>
+        <td class="mono">${ref}</td>
+        <td>${verif}</td>
+        <td class="mono">${esc(e.confianza||'—')}</td></tr>`;
+    }
+    ev+=`</tbody></table></div>`;
+  }else{
+    ev+=`<div class="sub" style="margin:14px 0">Esta solicitud aún no tiene fotos de instrumentos.</div>`;
+  }
+
+  let hist='';
+  if(trs.length){
+    hist=`<div class="chart-h" style="font-size:13px;margin:16px 0 8px">Historial</div>
+      <div style="font-size:12px;line-height:1.7">`+
+      trs.map(t=>`<div>${t.momento?t.momento.replace('T',' ').slice(0,16):''} · <b>${esc(t.a)}</b>${t.nota?' — '+esc(t.nota):''}</div>`).join('')+`</div>`;
+  }
+
+  // Acciones según el estado. Solo se ofrecen las transiciones legales.
+  let acc='';
+  if(['enviada','en_validacion','devuelta'].includes(s.estado)){
+    if(s.estado!=='en_validacion') acc+=`<button class="mini" data-tr="${id}:en_validacion">Tomar</button>`;
+    acc+=`<input id="aut-litros" type="number" inputmode="decimal" min="0" placeholder="Litros a autorizar" style="width:140px;padding:7px 9px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:3px;font-size:13px">
+      <button class="mini g" data-autoriza="${id}">Autorizar</button>
+      <button class="mini" data-tr="${id}:devuelta" data-pide-motivo="1">Devolver</button>
+      <button class="mini r" data-tr="${id}:rechazada" data-pide-motivo="1">Rechazar</button>`;
+  }
+  if(s.estado==='en_discrepancia'){
+    acc+=`<button class="mini g" data-tr="${id}:conciliada">Marcar conciliada</button>`;
+  }
+  if(!['conciliada','rechazada','anulada'].includes(s.estado)){
+    acc+=`<button class="mini r" data-tr="${id}:anulada" data-pide-motivo="1">Anular</button>`;
+  }
+
+  openModal(`
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+      <div class="chart-h">Solicitud #${s.id} · <span class="pill ${cls}">${txt}</span></div>
+      <button class="btn sm" onclick="closeModal()">Cerrar</button>
+    </div>
+    <div class="statgrid" style="margin:10px 0">
+      <div class="stat"><div class="l">Unidad</div><div class="v">${esc(s.unidad||'—')}</div></div>
+      <div class="stat"><div class="l">Operador</div><div class="v" style="font-size:15px">${esc(s.operador||'—')}</div></div>
+      <div class="stat"><div class="l">Nivel tanque</div><div class="v">${s.nivel_tanque!=null?Math.round(s.nivel_tanque*100)+'%':'—'}</div></div>
+      <div class="stat"><div class="l">Folio</div><div class="v" style="font-size:15px">${esc(s.folio||'—')}</div></div>
+    </div>
+    ${s.motivo?`<div style="padding:8px 12px;background:var(--card2);border-radius:3px;font-size:12.5px;margin-bottom:8px"><b>Motivo:</b> ${esc(s.motivo)}</div>`:''}
+    ${ev}
+    ${hist}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px">${acc||'<span class="sub">Sin acciones disponibles en este estado.</span>'}</div>
+  `);
+}
+
+// Delegación: esc() no escapa comillas simples, así que nada de onclick con datos dentro.
+document.addEventListener('click',async ev=>{
+  const abrir=ev.target.closest('[data-sol]');
+  if(abrir){ abrirSolicitud(abrir.dataset.sol); return; }
+
+  const aut=ev.target.closest('[data-autoriza]');
+  if(aut){
+    const inp=document.getElementById('aut-litros');
+    const litros=inp?parseFloat(inp.value):NaN;
+    if(!litros || litros<=0){ toast('Escribe los litros a autorizar'); if(inp)inp.focus(); return; }
+    aut.disabled=true;
+    try{ const fd=new FormData(); fd.append('litros',litros);
+      const d=await apiPost('/api/solicitudes/'+aut.dataset.autoriza+'/autorizar',fd);
+      toast('Autorizada · folio '+d.folio+' · '+litros+' L'); closeModal(); loadSolicitudes();
+    }catch(e){ aut.disabled=false; toast('No se pudo autorizar: '+(e.message||'')); }
+    return;
+  }
+  const tr=ev.target.closest('[data-tr]');
+  if(tr){
+    const[id,destino]=tr.dataset.tr.split(':');
+    let motivo='';
+    if(tr.dataset.pideMotivo){ motivo=prompt('Motivo:'); if(motivo===null)return; }
+    tr.disabled=true;
+    const fd=new FormData(); fd.append('destino',destino); if(motivo)fd.append('motivo',motivo);
+    try{ await apiPost('/api/solicitudes/'+id+'/transicion',fd);
+      toast('Solicitud actualizada'); closeModal(); loadSolicitudes();
+    }catch(e){ tr.disabled=false; toast('No se pudo: '+(e.message||'')); }
+    return;
+  }
+});
+document.addEventListener('change',ev=>{if(ev.target.id==='sol-estado')loadSolicitudes();});
+document.addEventListener('click',ev=>{if(ev.target.id==='sol-recargar')loadSolicitudes();});
+
+async function loadReporte(){
+  const sel=$('#rep-anio');
+  if(!REP_ANIOS){
+    REP_ANIOS=await api('/api/reporte-ejecutivo/anios');
+    sel.innerHTML=REP_ANIOS.map(a=>`<option value="${a}">${a}</option>`).join('');
+  }
+  const anio=sel.value||REP_ANIOS[0];
+  if(!anio){$('#rep-body').innerHTML='<div class="card">Aún no hay viajes con kilometraje y litros para generar el reporte.</div>';return;}
+  $('#rep-body').innerHTML='<div class="card">Calculando…</div>';
+  const r=await api('/api/reporte-ejecutivo?anio='+anio);
+  pintarReporte(r);
+}
+
+function pintarReporte(r){
+  const p=r.periodo,t=r.totales,pv=r.previo,c=r.cobertura,cr=r.criterios;
+  $('#rep-per').textContent=`${p.desde} a ${p.hasta} · diésel a $${p.precio}/L`+(pv?` · comparado contra ${pv.periodo.anio} (mismos meses)`:'');
+  const delta=(a,b,inv)=>{ // inv: para costos, subir es malo
+    if(a==null||b==null)return '';
+    const d=a-b,mal=inv?d>0:d<0;
+    return `<span style="color:var(--${mal?'red':'green'})">${d>0?ic('up'):ic('down')} ${fmt(Math.abs(d),2)}</span>`;
+  };
+  let h='';
+
+  // KPIs principales
+  h+=`<div class="kpis">
+    <div class="kpi"><div class="l">Combustible cargado</div><div class="v">${fmt(t.litros,0)} L</div><div class="s">${t.viajes} períodos · ${fmt(t.km,0)} km</div></div>
+    <div class="kpi"><div class="l">Gasto en diésel</div><div class="v">${dinero(t.gasto)}</div><div class="s">a $${p.precio} por litro</div></div>
+    <div class="kpi"><div class="l">Rendimiento de la flota</div><div class="v">${fmt(t.rendimiento,2)}</div><div class="s">km por litro ${pv?'· '+pv.periodo.anio+': '+fmt(pv.totales.rendimiento,2)+' '+delta(t.rendimiento,pv.totales.rendimiento):''}</div></div>
+    <div class="kpi" style="border-color:color-mix(in oklab,var(--red) 40%,var(--line))"><div class="l">Costo por no alcanzar el ideal</div><div class="v" style="color:var(--red)">${dinero(t.costo_extra)}</div><div class="s">${pv?pv.periodo.anio+': '+dinero(pv.totales.costo_extra):'&nbsp;'}</div></div>
+  </div>`;
+
+  // Rendimiento por tipo vs ideal
+  h+=`<div class="card" style="margin-bottom:16px"><div class="chart-h" style="margin-bottom:4px">Rendimiento por tipo de unidad</div>
+    <div class="sub" style="margin-bottom:14px">Cada configuración tiene un rendimiento que DEBERÍA alcanzar. La brecha es lo que falta para llegar.</div>
+    <div class="tablewrap"><table><thead><tr><th>Configuración</th><th>Períodos</th><th>Kilómetros</th><th>Litros</th><th>Ideal</th><th>Real</th><th>Brecha</th><th>Litros de más</th><th>Costo extra</th></tr></thead><tbody>`;
+  for(const x of r.por_tipo){
+    const bien=x.brecha>=0;
+    h+=`<tr><td><b>${x.tipo}</b><div class="sub">${esc(x.descripcion||'')}</div></td>
+      <td class="mono">${x.viajes}</td><td class="mono">${fmt(x.km,0)}</td><td class="mono">${fmt(x.litros,0)}</td>
+      <td class="mono">${fmt(x.ideal,1)}</td><td class="mono"><b>${fmt(x.rendimiento,2)}</b></td>
+      <td class="mono" style="color:var(--${bien?'green':'red'})">${x.brecha>0?'+':''}${fmt(x.brecha,2)}</td>
+      <td class="mono">${x.litros_demas>0?fmt(x.litros_demas,0)+' L':'—'}</td>
+      <td class="mono" style="color:var(--${x.costo_extra>0?'red':'green'})">${x.costo_extra>0?dinero(x.costo_extra):'dentro del ideal'}</td></tr>`;
+  }
+  h+=`</tbody></table></div></div>`;
+
+  // Evolución mensual
+  const mm=r.mensual;
+  if(mm.meses.length){
+    h+=`<div class="card" style="margin-bottom:16px"><div class="chart-h" style="margin-bottom:14px">Rendimiento mes a mes</div>
+      <div class="tablewrap"><table><thead><tr><th>Configuración</th><th>Ideal</th>${mm.meses.map(m=>`<th>${MESES[m]}</th>`).join('')}</tr></thead><tbody>`;
+    for(const[tipo,vals] of Object.entries(mm.series)){
+      const ideal=(cr.ideales||{})[tipo];
+      h+=`<tr><td><b>${tipo}</b></td><td class="mono">${ideal?fmt(ideal,1):'—'}</td>`+
+        vals.map(v=>{
+          if(v==null)return '<td class="mono">—</td>';
+          const col=ideal?(v>=ideal?'green':(v>=ideal*0.85?'amber':'red')):'ink';
+          return `<td class="mono" style="color:var(--${col})">${fmt(v,2)}</td>`;
+        }).join('')+`</tr>`;
+    }
+    h+=`</tbody></table></div><div class="sub" style="margin-top:10px">Verde = alcanza el ideal · ámbar = cerca · rojo = por debajo</div></div>`;
+  }
+
+  // Ralentí
+  const ra=r.ralenti;
+  if(ra.escaneos){
+    h+=`<div class="card" style="margin-bottom:16px"><div class="chart-h" style="margin-bottom:4px">Combustible quemado con el camión parado</div>
+      <div class="sub" style="margin-bottom:14px">Medido por la computadora del propio motor · ${ra.escaneos} escaneos entre ${ra.desde} y ${ra.hasta}</div>
+      <div class="kpis" style="margin:0">
+        <div class="kpi"><div class="l">Diésel en ralentí</div><div class="v">${fmt(ra.litros,0)} L</div><div class="s">${ra.pct_del_total!=null?fmt(ra.pct_del_total,1)+'% de todo lo quemado':'&nbsp;'}</div></div>
+        <div class="kpi"><div class="l">Costo del ralentí</div><div class="v" style="color:var(--red)">${dinero(ra.costo)}</div><div class="s">dinero quemado sin avanzar un metro</div></div>
+        <div class="kpi"><div class="l">Promedio por unidad</div><div class="v">${ra.pct_promedio!=null?fmt(ra.pct_promedio,1)+'%':'—'}</div><div class="s">del tiempo con motor encendido</div></div>
+      </div></div>`;
+  }
+
+  // Operadores
+  const tipos=Object.keys(r.operadores);
+  if(tipos.length){
+    h+=`<div class="card" style="margin-bottom:16px"><div class="chart-h" style="margin-bottom:4px">Operadores con mayor sobrecosto</div>
+      <div class="sub" style="margin-bottom:14px">Se comparan solo contra el ideal de SU configuración. Mínimo ${cr.min_viajes_operador} períodos y ${fmt(cr.min_km_operador,0)} km para entrar: con menos no hay patrón, solo ruido.</div>`;
+    for(const tipo of tipos){
+      h+=`<div style="margin-bottom:18px"><div style="font:700 13px 'Barlow Condensed';letter-spacing:.06em;margin-bottom:8px">${tipo} · ideal ${fmt((cr.ideales||{})[tipo],1)} km/L</div>
+        <div class="tablewrap"><table><thead><tr><th>#</th><th>Operador</th><th>Períodos</th><th>Kilómetros</th><th>Litros</th><th>Real</th><th>Brecha</th><th>Costo extra</th></tr></thead><tbody>`;
+      r.operadores[tipo].forEach((o,i)=>{
+        h+=`<tr><td class="mono">${i+1}</td><td>${esc(o.operador||'—')}</td><td class="mono">${o.viajes}</td>
+          <td class="mono">${fmt(o.km,0)}</td><td class="mono">${fmt(o.litros,0)}</td>
+          <td class="mono">${fmt(o.rendimiento,2)}</td>
+          <td class="mono" style="color:var(--red)">${fmt(o.brecha,2)}</td>
+          <td class="mono" style="color:var(--red)">${dinero(o.costo_extra)}</td></tr>`;
+      });
+      h+=`</tbody></table></div></div>`;
+    }
+    h+=`</div>`;
+  }
+
+  // Datos que quedaron fuera — se muestran, no se esconden
+  h+=`<div class="card"><div class="chart-h" style="margin-bottom:4px">Cómo se calculó · qué quedó fuera</div>
+    <div class="sub" style="margin-bottom:14px">De ${c.filas_totales} períodos con datos se usaron ${c.filas_usadas}.</div>
+    <ul style="font-size:12.5px;line-height:1.8;margin:0 0 14px 18px">
+      <li><b>${c.filas_dudosas}</b> períodos se excluyeron por datos no creíbles (rendimiento fuera de ${cr.rend_min}–${cr.rend_max} km/L, o ticket y escáner del motor difiriendo más de ${cr.ratio_ticket_escaner}×).</li>
+      <li><b>${c.filas_acumuladas}</b> períodos abarcan más de ${cr.dias_max_imputable} días: cuentan para los totales de la flota, pero <b>no se le cobran a ningún operador</b> — en ese lapso manejaron varios.</li>
+      <li>El costo extra es <i>(litros gastados − km ÷ ideal) × $${p.precio}</i>. Solo cuenta cuando el rendimiento quedó por debajo del ideal.</li>
+    </ul>`;
+  if(r.dudosos.length){
+    h+=`<div class="chart-h" style="font-size:13px;margin:16px 0 8px">Períodos a revisar en la bitácora</div>
+      <div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Unidad</th><th>Operador</th><th>Km</th><th>Ticket</th><th>Escáner</th><th>km/L</th><th>Motivo</th></tr></thead><tbody>`;
+    for(const d of r.dudosos){
+      h+=`<tr><td class="mono">${d.fecha}</td><td class="mono">${esc(d.unidad||'—')}</td><td>${esc(d.operador||'—')}</td>
+        <td class="mono">${fmt(d.km,0)}</td><td class="mono">${fmt(d.lts_real,0)}</td><td class="mono">${d.lts_scaner!=null?fmt(d.lts_scaner,0):'—'}</td>
+        <td class="mono" style="color:var(--red)">${fmt(d.rendimiento,2)}</td><td>${esc(d.motivo)}</td></tr>`;
+    }
+    h+=`</tbody></table></div>`;
+  }
+  h+=`</div>`;
+  $('#rep-body').innerHTML=h;
+}
+
+async function loadAnalisis(){await cargarHistorial();}
+async function cargarHistorial(autoload){autoload=autoload!==false;
+  let hist=[];try{hist=await api('/api/analisis/historial');}catch(e){}
+  const sel=$('#ia-hist');
+  if(hist.length){sel.style.display='';sel.innerHTML='<option value="">Reportes guardados…</option>'+hist.map(h=>`<option value="${h.id}">${esc(fechaHora(h.creado_en))}${h.total_viajes!=null?' · '+fmt(h.total_viajes,0)+' viajes':''}</option>`).join('');}
+  else{sel.style.display='none';}
+  if(autoload){if(hist.length){await cargarReporte(hist[0].id);}else{$('#ia-box').innerHTML=iaVacio();}}
+}
+async function cargarReporte(id){if(!id)return;try{const d=await api('/api/analisis/'+id);renderReporte(d);$('#ia-hist').value=id;}catch(e){console.error(e);$('#ia-box').innerHTML='<span style="color:var(--red)">No se pudo cargar el reporte.</span>';}}
+async function genAnalisis(){$('#ia-box').innerHTML=iaCargando();try{const d=await apiPost('/api/analisis');renderReporte(d);await cargarHistorial(false);$('#ia-hist').value=d.id;toast('Reporte generado y guardado');}catch(e){console.error(e);$('#ia-box').innerHTML='<span style="color:var(--red)">'+esc(e.message||'No se pudo generar el análisis.')+'</span>';}}
+async function borrarReporte(id){if(!id||!confirm('¿Eliminar este reporte de análisis? No se puede deshacer.'))return;try{await apiDel('/api/analisis/'+id);toast('Reporte eliminado');await cargarHistorial();}catch(e){console.error(e);toast(e.message||'No se pudo eliminar');}}
+function renderReporte(d){const r=d.resumen||{};const box=$('#ia-box');
+  const rango=(r.rango_fechas&&r.rango_fechas[0])?` · ${esc(r.rango_fechas[0])} a ${esc(r.rango_fechas[1]||r.rango_fechas[0])}`:'';
+  const meta=`${esc(fechaHora(d.creado_en))}${r.total_viajes!=null?' · '+fmt(r.total_viajes,0)+' viajes':''}${rango}${r.rendimiento_global_km_l!=null?' · '+fmt(r.rendimiento_global_km_l,3)+' km/l global':''}`;
+  box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px"><div class="sub">${ic('chart')} Reporte · ${meta}</div>${d.id?`<button class="btn sm" style="color:var(--red);border:1px solid color-mix(in oklab,var(--red) 40%,transparent)" onclick="borrarReporte(${d.id})">Eliminar reporte</button>`:''}</div>
+    <div class="ia-charts">
+      <div class="iacard"><h5>Unidades de menor rendimiento</h5><div id="iac-rend"></div></div>
+      <div class="iacard"><h5>Anomalías por tipo</h5><div id="iac-anom"></div></div>
+      <div class="iacard"><h5>Tendencia mensual (viajes)</h5><div id="iac-mes"></div></div>
+    </div>
+    <div style="line-height:1.7">${md(d.analisis)}</div>`;
+  const peores=r.unidades_menor_rendimiento||[];
+  if(peores.length)barsCSS($('#iac-rend'),peores.map(p=>({label:p.unidad,val:p.km_l,disp:fmt(p.km_l,2)})));
+  else $('#iac-rend').innerHTML='<div class="empty" style="padding:20px">Sin datos</div>';
+  const anoms=Object.entries(r.anomalias_por_tipo||{});
+  if(anoms.length){const mx=Math.max(...anoms.map(a=>a[1]),1);
+    $('#iac-anom').innerHTML=anoms.sort((a,b)=>b[1]-a[1]).map(([t,n])=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;gap:6px"><span style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tipoLbl(t)}</span><span class="sub">${n}</span></div><div style="height:8px;background:var(--card);border-radius:2px;overflow:hidden"><div style="height:100%;width:${n/mx*100}%;background:var(--accent)"></div></div></div>`).join('');
+  }else $('#iac-anom').innerHTML='<div class="empty" style="padding:20px">'+ic('check')+' Sin anomalías</div>';
+  api('/api/stats/viajes-mes').then(vm=>{if(vm.labels.length)areaChart($('#iac-mes'),vm.labels.map(mesLbl),vm.viajes,'var(--accent)');else $('#iac-mes').innerHTML='<div class="empty" style="padding:20px">Sin datos</div>';}).catch(()=>{});}
+
+// ── Anomalías ────────────────────────────────────────────────────────────────
+async function loadAnomalias(){const est=$('#f-estado').value;const rows=await api('/api/anomalias?estado='+est);const p={PENDIENTE:'pend',CONFIRMADA:'conf',RECHAZADA:'rech'};
+  $('#anom-body').innerHTML=rows.length?rows.map(a=>`<tr><td class="mono">${esc(a.unidad)||'—'}</td><td class="mono" style="color:var(--muted)">${a.fecha||'—'}</td><td>${tipoCell(a.tipo)}</td><td style="white-space:normal;max-width:460px;color:var(--muted)">${esc(a.descripcion)}</td><td><span class="pill ${p[a.estado]}">${a.estado}</span></td><td style="text-align:right">${a.estado==='PENDIENTE'?`<button class="mini g" onclick="resolver(${a.id},'confirmar')">Confirmar</button> <button class="mini r" onclick="resolver(${a.id},'rechazar')">Rechazar</button>`:''}</td></tr>`).join(''):`<tr><td colspan="6" class="empty">Sin anomalías</td></tr>`;}
+async function resolver(id,ac){
+  try{
+    await api(`/api/anomalias/${id}/${ac}`,{method:'POST'});
+    toast(ac==='confirmar'?'Anomalía confirmada':'Anomalía rechazada');
+  }catch(e){
+    console.error('resolver',e);
+    toast('No se pudo resolver la anomalía');   // antes fallaba en silencio
+  }finally{
+    // Se recarga pase lo que pase: si falló, la tabla debe volver al estado real.
+    if($('#s-resumen').classList.contains('on'))correrLoader('resumen');
+    if($('#s-anomalias').classList.contains('on')){loadAnomalias();loadPrecision();}
+    vigilarAnomalias();
+  }
+}
+async function loadPrecision(){let d;try{d=await api('/api/stats/anomalias-precision');}catch(e){return;}
+  const box=$('#prec-box');
+  if(!d.tipos.length){box.innerHTML='<div class="sub" style="padding:6px 0">Aún no hay anomalías registradas. En cuanto se generen y las confirmes/rechaces, aquí verás qué reglas son confiables y cuáles hacen ruido.</div>';return;}
+  const t=d.totales;
+  const barra=(c,r)=>{const res=c+r;if(!res)return '<span class="sub">sin resolver</span>';const p=Math.round(c/res*100);return `<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:var(--card2);border-radius:2px;overflow:hidden;display:flex"><div style="width:${c/res*100}%;background:var(--green)" title="${c} confirmadas"></div><div style="width:${r/res*100}%;background:var(--muted)" title="${r} rechazadas"></div></div><b style="font:600 12px 'IBM Plex Mono';min-width:34px;text-align:right">${p}%</b></div>`;};
+  const kpis=['Pendientes',t.pendientes,'Confirmadas',t.confirmadas,'Rechazadas',t.rechazadas,'Precisión global',t.precision!=null?Math.round(t.precision*100)+'%':'—'];
+  const rows=d.tipos.map(x=>`<tr><td>${tipoCell(x.tipo)}</td><td class="mono">${x.pendientes}</td><td class="mono" style="color:var(--green)">${x.confirmadas}</td><td class="mono" style="color:var(--muted)">${x.rechazadas}</td><td style="width:32%">${barra(x.confirmadas,x.rechazadas)}</td></tr>`).join('');
+  box.innerHTML=`<div class="statgrid" style="margin:0 0 14px">${kpis.reduce((a,_,i,r)=>{if(i%2===0)a.push(`<div class="stat"><div class="l">${r[i]}</div><div class="v">${r[i+1]}</div></div>`);return a;},[]).join('')}</div>
+    <div class="tablewrap"><table><thead><tr><th>Regla</th><th>Pend.</th><th>Conf.</th><th>Rech.</th><th>Precisión (confirmadas / resueltas)</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+async function diagAnomalias(){const box=$('#diag-box');box.innerHTML=`<div class="iacard"><div style="display:flex;align-items:center;gap:12px">${ORB_SM}<span style="font-weight:600">Claude está evaluando la precisión de las reglas<span class="iadots"><i>.</i><i>.</i><i>.</i></span></span></div></div>`;
+  try{const d=await apiPost('/api/stats/anomalias-diagnostico');box.innerHTML=`<div class="iacard"><h5>Diagnóstico de reglas · IA</h5><div style="line-height:1.7">${md(d.analisis)}</div></div>`;}
+  catch(e){console.error(e);box.innerHTML='<span style="color:var(--red)">'+esc(e.message||'No se pudo generar el diagnóstico.')+'</span>';}}
+
+// ── Historial ────────────────────────────────────────────────────────────────
+// Token de secuencia: al teclear el filtro salen varias peticiones y las respuestas
+// pueden llegar desordenadas; sin esto la tabla acababa mostrando un filtro distinto
+// al que dice el input. Solo pinta la respuesta de la ÚLTIMA petición lanzada.
+let VIAJES_SEQ=0;
+// Debounce del filtro: antes disparaba una petición por cada tecla.
+let _tFiltro=null;
+function filtrarViajes(){clearTimeout(_tFiltro);_tFiltro=setTimeout(()=>correrLoader('historial'),250);}
+async function loadViajes(){const u=$('#f-unidad').value.trim(),an=$('#f-anom').checked,inc=$('#f-incompletos').checked;const qs=new URLSearchParams({limit:150});if(u)qs.set('unidad',u);if(an)qs.set('con_anomalias','true');if(inc)qs.set('incompletos','true');
+  const mio=++VIAJES_SEQ;
+  const rows=await api('/api/viajes?'+qs);
+  if(mio!==VIAJES_SEQ)return;   // llegó tarde: ya hay un filtro más nuevo en pantalla
+  // "Incompleto" según lo que HOY captura el bot: km del tablero (odómetro) + nivel de
+  // la aguja. Antes miraba lts_real, que el bot ya no captura -> todo salía incompleto.
+  const incompleto=v=>v.odometro==null||v.nivel_tanque==null;
+  $('#viajes-body').innerHTML=rows.length?rows.map(v=>`<tr><td class="mono" style="color:var(--muted)">${fechaHoraCell(v)}</td><td class="mono"><b>${esc(v.unidad)||'—'}</b> ${v.tipo_unidad?tipoPill(v.tipo_unidad):''}${incompleto(v)?' <span class="pill" style="background:color-mix(in oklab,var(--blue) 14%,transparent);color:var(--blue)" title="Falta el km del tablero o el nivel del tanque">incompleto</span>':''}</td><td>${esc(v.operador)||'—'}</td><td class="mono"><b>${fmt(v.odometro,1)}</b></td><td class="mono">${nivelCell(v)}</td><td class="mono">${fmt(v.kilometros,1)}</td><td class="mono">${fmt(v.lts_real,1)}</td><td class="mono"><b>${fmt(v.rto_real,3)}</b></td><td class="mono" style="color:${v.pct&&Math.abs(v.pct)>0.05?'var(--red)':'var(--muted)'}">${pctFmt(v.pct)}</td><td style="text-align:right">${v.anomalias>0?`<span class="pill pend">${v.anomalias} ${ic('alert')}</span> `:''}<span class="link" onclick="verViaje(${v.id})">ver</span></td></tr>`).join(''):`<tr><td colspan="10" class="empty">Sin viajes</td></tr>`;}
+async function verViaje(id){const v=await api('/api/viajes/'+id);const t=v.telemetria||{};const anom=v.anomalias_detalle||[];
+  const has=x=>x!==null&&x!==undefined;
+  const stat=(l,val,unit,hero,d)=>{const e=!has(val);const disp=e?'—':(typeof val==='number'?fmt(val,d??2):esc(val));return `<div class="stat${hero?' hero':''}${e?' mut':''}"><div class="l">${l}</div><div class="v">${disp}${!e&&unit?` <small>${unit}</small>`:''}</div></div>`;};
+  const chips=[v.tipo?`<span class="pill rech">${esc(v.tipo)}</span>`:'',v.codigo_cv?`<span class="pill rech">c ${esc(v.codigo_cv)}</span>`:'',v.analista?`<span class="pill rech">Analista ${esc(v.analista)}</span>`:'',anom.length?`<span class="pill pend">${anom.length} anomalía${anom.length>1?'s':''}</span>`:'<span class="pill conf">Sin anomalías</span>'].filter(Boolean).join('');
+  // Lo que HOY captura el bot: km del tablero (odómetro) + nivel de la aguja.
+  const faltan=[!has(v.odometro)?'el km del tablero':'',!has(v.nivel_tanque)?'el nivel del tanque':''].filter(Boolean);
+  const banner=faltan.length?`<div class="note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16v.01"></path></svg><span>Viaje incompleto: falta ${faltan.join(' y ')}. Pídele al operador la foto del tablero.</span></div>`:'';
+  const cap=CAP_TANQUE[v.tipo_unidad]||0;
+  const nivelStat=`<div class="stat hero${has(v.nivel_tanque)?'':' mut'}"><div class="l">Nivel de tanque</div><div class="v">${has(v.nivel_tanque)?`${Math.round(v.nivel_tanque*100)}%${cap?` <small>~${Math.round(v.nivel_tanque*cap)} L de ${cap}</small>`:''}`:'—'}</div></div>`;
+  const desv=`<div class="stat hero${has(v.pct)?'':' mut'}"><div class="l">Desviación</div><div class="v"${has(v.pct)&&Math.abs(v.pct)>0.05?' style="color:var(--red)"':''}>${has(v.pct)?pctFmt(v.pct):'—'}</div></div>`;
+  const hero=`<div class="statgrid">${stat('Km del tablero',v.odometro,'km',1,1)}${nivelStat}${stat('RTO real',v.rto_real,'km/l',1,3)}${desv}</div>`;
+  const fuel=[['Km del viaje (distancia)',has(v.kilometros)?fmt(v.kilometros,1)+' km':'—'],['Litros reales (ticket)',has(v.lts_real)?fmt(v.lts_real,1)+' L':'—'],['Litros de scanner',has(v.lts_scaner)?fmt(v.lts_scaner,1)+' L':'—'],['RTO scanner',has(v.rto)?fmt(v.rto,3)+' km/l':'—'],['DIF (real − scanner)',has(v.dif)?fmt(v.dif,1)+' L':'—'],['Descuentos',has(v.descuentos)?fmt(v.descuentos,1)+' L':'—'],['Reportado por',v.reportado_por?esc(String(v.reportado_por).split('@')[0]):'—'],['Registrado',v.creado_en?new Date(v.creado_en).toLocaleString():'—']];
+  const fuelT=`<table class="dtable">${fuel.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>`;
+  const tel=[['Vel. máx',t.vel_max,'km/h',0],['RPM',t.rpm,'',0],['Ralentí',t.ralenti,'%',1],['Crucero',t.crucero,'%',1],['Paradas pánico',t.paradas_panico,'',0],['Frenadas',t.num_frenadas,'',0],['Top gear',t.top_gear,'%',1],['Gear down',t.gear_down,'%',1],['Neutralización',t.neutralizacion,'',1],['C. manejo',t.c_manejo,'',2]];
+  const telHas=tel.some(x=>has(x[1]));
+  const telSec=telHas?`<div class="statgrid">${tel.map(x=>stat(x[0],x[1],x[2],0,x[3])).join('')}</div>`:`<div class="sub" style="margin-top:6px">Sin telemetría capturada para este viaje.</div>`;
+  const anomSec=anom.length?'<div class="sech">Anomalías detectadas</div>'+anom.map(a=>`<div class="anomcard"><div style="flex:1"><b>${tipoLbl(a.tipo)}</b> ${catPill(a.tipo)} <span class="pill ${a.estado==='PENDIENTE'?'pend':a.estado==='CONFIRMADA'?'conf':'rech'}">${a.estado}</span><div style="color:var(--muted);font-size:12px;margin-top:4px">${esc(a.descripcion)}</div></div></div>`).join(''):'';
+  openModal(`<div class="mhead"><div class="mbadge">${esc(v.unidad)||'—'}</div><div style="flex:1;min-width:0"><h3>Viaje · ${v.fecha||'—'}</h3><div class="sub">${esc(v.operador)||'Sin operador'} · ${v.tipo_unidad?v.tipo_unidad.toLowerCase():''}</div></div><button class="btn sm" onclick="editarViaje(${v.id})">${ic('edit')} Editar / completar</button></div>
+  <div class="chips">${chips}</div>${banner}${hero}
+  <div class="sech">Cálculo de combustible</div>${fuelT}
+  <div class="sech">Telemetría del motor</div>${telSec}${anomSec}`);
+}
+
+// ── Termo / Unidades / Remolques ─────────────────────────────────────────────
+async function loadThermo(){const rows=await api('/api/thermo');$('#thermo-body').innerHTML=rows.length?rows.map(t=>`<tr><td class="mono"><b>${esc(t.unidad)||'—'}</b></td><td>${esc(t.operador)||'—'}</td><td class="mono">${esc(t.remolque)||'—'}</td><td>${esc(t.mes)||'—'}</td><td class="mono">${fmt(t.hrs_inic,0)}</td><td class="mono">${fmt(t.hrs_fin,0)}</td><td class="mono"><b>${fmt(t.horas_trab,0)}</b></td><td class="mono">${fmt(t.litros_thermo,1)}</td><td class="mono">${fmt(t.rto_thermo,2)}</td></tr>`).join(''):`<tr><td colspan="9" class="empty">Sin registros</td></tr>`;}
+function fmtNumero(n){if(!n)return '—';return String(n).split('@')[0].split(':')[0];}
+async function loadCumplimiento(){let d;try{d=await api('/api/stats/cumplimiento');}catch(e){return;}
+  const box=$('#cump-box');
+  if(!d.numeros.length){box.innerHTML='<div class="empty" style="padding:24px">Aún no hay reportes ligados a un número. Se irá llenando conforme entren reportes por WhatsApp (los viajes importados del Excel no traen remitente).</div>';return;}
+  const t=d.totales;
+  const kpis=['Números activos',d.numeros.length,'Reportes',t.reportados,'Completos',t.cumplen,'Cumplimiento global',t.pct!=null?Math.round(t.pct*100)+'%':'—'];
+  const barra=(c,inc)=>{const tot=c+inc;if(!tot)return '';const p=Math.round(c/tot*100);return `<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:var(--card2);border-radius:2px;overflow:hidden;display:flex"><div style="width:${c/tot*100}%;background:var(--green)" title="${c} completos"></div><div style="width:${inc/tot*100}%;background:var(--red)" title="${inc} incompletos"></div></div><b style="font:600 12px 'IBM Plex Mono';min-width:36px;text-align:right">${p}%</b></div>`;};
+  const rows=d.numeros.map(x=>`<tr><td class="mono"><b>${esc(fmtNumero(x.numero))}</b></td><td class="mono">${x.reportados}</td><td class="mono" style="color:var(--green)">${x.cumplen}</td><td class="mono" style="color:var(--red)">${x.incompletos}</td><td class="mono">${x.con_ticket}</td><td class="mono" style="color:var(--muted)">${x.ultimo||'—'}</td><td style="width:26%">${barra(x.cumplen,x.incompletos)}</td></tr>`).join('');
+  box.innerHTML=`<div class="statgrid" style="margin:0 0 14px">${kpis.reduce((a,_,i,r)=>{if(i%2===0)a.push(`<div class="stat"><div class="l">${r[i]}</div><div class="v">${r[i+1]}</div></div>`);return a;},[]).join('')}</div>
+    <div class="tablewrap"><table><thead><tr><th>Número</th><th>Reportes</th><th>Completos</th><th>Incompletos</th><th>Con ticket</th><th>Último</th><th>Cumplimiento</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+async function loadUnidades(){UNIS=await api('/api/unidades');$('#uni-count').textContent=`${UNIS.length} unidades`;
+  $('#unidades-body').innerHTML=UNIS.map(u=>`<tr${u.activo?'':' style="opacity:.5"'}><td class="mono"><b>${esc(u.clave)}</b>${u.activo?'':' <span class="pill rech">baja</span>'}</td><td>${tipoPill(u.tipo)}</td><td>${esc(u.marca)||'—'}</td><td class="mono">${u.anio||'—'}</td><td class="mono">${esc(u.placa)||'—'}</td><td>${esc(u.operador_titular||u.operador_asignado)||'<span class="sub">sin titular</span>'} <span class="link" style="font-size:11px" data-titular="${u.id}">cambiar</span></td><td class="mono">${fmt(u.viajes,0)}</td><td class="mono"><b>${fmt(u.rto_real_prom,3)}</b></td><td style="text-align:right;white-space:nowrap"><span class="link" data-unidad="${esc(u.clave)}">ver</span>${ROL==='admin'?` · <span class="link" onclick="editarUnidad(${u.id})">editar</span> · <span class="link" style="color:var(--red)" onclick="eliminarUnidad(${u.id})">eliminar</span>`:''}</td></tr>`).join('');}
+async function verUnidad(clave){const[uni,vs]=await Promise.all([api('/api/unidades'),api('/api/viajes?unidad='+encodeURIComponent(clave)+'&limit=12')]);const u=uni.find(x=>x.clave===clave)||{};
+  openModal(`<h3>Unidad ${esc(clave)} ${tipoPill(u.tipo)}</h3><div class="sub" style="margin-top:2px">${esc(u.marca)||'—'} · ${u.anio||'—'} · placa ${esc(u.placa)||'—'}</div>
+  <div class="grid2"><span class="k">Serie (VIN)</span><span class="v">${esc(u.serie)||'—'}</span><span class="k">Motor</span><span class="v">${esc(u.motor)||'—'}</span><span class="k">Operador asignado</span><span class="v">${esc(u.operador_asignado)||'—'}</span><span class="k">Viajes</span><span class="v">${fmt(u.viajes,0)}</span><span class="k">RTO real prom.</span><span class="v">${fmt(u.rto_real_prom,3)} km/l</span><span class="k">Usa remolque</span><span class="v">${u.usa_remolque?'Sí':'No'}</span></div>
+  <div class="sech">Últimos viajes</div><div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Operador</th><th>Km</th><th>RTO real</th><th>%</th></tr></thead><tbody>${vs.length?vs.map(v=>`<tr><td class="mono" style="color:var(--muted)">${v.fecha}</td><td>${esc(v.operador)||'—'}</td><td class="mono">${fmt(v.kilometros,1)}</td><td class="mono">${fmt(v.rto_real,3)}</td><td class="mono">${pctFmt(v.pct)}</td></tr>`).join(''):`<tr><td colspan="5" class="empty">Sin viajes</td></tr>`}</tbody></table></div>`);
+}
+async function loadRemolques(){REMS=await api('/api/remolques');$('#rem-count').textContent=`${REMS.length} remolques`;
+  $('#remolques-body').innerHTML=REMS.map(r=>`<tr${r.activo?'':' style="opacity:.5"'}><td class="mono"><b>${esc(r.eco)}</b>${r.activo?'':' <span class="pill rech">baja</span>'}</td><td class="mono">${esc(r.eco_nuevo)||'—'}</td><td>${esc(r.marca)||'—'}</td><td class="mono">${r.anio||'—'}</td><td class="mono">${esc(r.placa)||'—'}</td><td class="mono">${esc(r.serie_thermo)||'—'}</td><td>${r.es_dolly?'<span class="pill rech">Dolly</span>':r.usa_combustible?'<span class="pill conf">Sí</span>':'<span class="pill rech">No</span>'}</td><td style="text-align:right;white-space:nowrap"><span class="link" onclick="editarRemolque(${r.id})">editar</span> · <span class="link" style="color:var(--red)" onclick="eliminarRemolque(${r.id})">eliminar</span></td></tr>`).join('');}
+
+// ── Operadores (lista + ficha editable) ──────────────────────────────────────
+let OPS=[],UNIS=[],REMS=[];
+let PROVS=[];
+async function loadOperadores(){OPS=await api('/api/operadores');window.OPS_CAT=OPS;try{PROVS=await api('/api/operadores/provisionales');}catch(e){PROVS=[];}renderProv();renderOps();}
+// Aviso de operadores PROVISIONALES (creados del chat sin match) pendientes de resolver.
+function renderProv(){const box=$('#prov-box');if(!PROVS.length){box.innerHTML='';return;}
+  box.innerHTML=`<div class="card" style="border-left:4px solid var(--accent);margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><b style="font:700 13px 'Barlow Condensed';letter-spacing:.08em;text-transform:uppercase">${ic('alert')} ${PROVS.length} operador${PROVS.length>1?'es':''} por resolver</b></div>
+    <div class="sub" style="margin-bottom:12px">Aparecieron en reportes pero no casaron con el catálogo. Dales de alta o vincúlalos al conductor real.</div>
+    <div style="display:flex;flex-direction:column;gap:8px">${PROVS.map(p=>`<div style="display:flex;align-items:center;gap:12px;padding:8px 10px;background:var(--card2);border-radius:4px">
+      <div style="flex:1;min-width:0"><b>${esc(p.nombre)}</b> <span class="sub">· ${fmt(p.viajes,0)} viaje${p.viajes!==1?'s':''}${p.unidades.length?' · '+p.unidades.map(esc).join(', '):''}</span></div>
+      <button class="btn sm primary" onclick="resolverProv(${p.id})">Resolver</button></div>`).join('')}</div></div>`;}
+
+// ── Depuración de duplicados (fusión guiada) ─────────────────────────────────
+let DUP=[];
+async function depurarDuplicados(){
+  DUP=await api('/api/operadores/duplicados');
+  if(!DUP.length){openModal('<h3>Depurar duplicados</h3><div class="empty" style="padding:24px">'+ic('check')+' No se detectaron grupos de posibles duplicados.</div><div style="text-align:right;margin-top:12px"><button class="btn" onclick="closeModal()">Cerrar</button></div>');return;}
+  const chk='width:16px;height:16px;flex:0 0 auto;margin:0;accent-color:var(--accent);cursor:pointer';
+  const cards=DUP.map((g,gi)=>{
+    const rows=g.miembros.map(m=>{
+      const esDest=m.id===g.destino_sugerido;
+      return `<div style="display:flex;align-items:center;gap:14px;padding:9px 11px;border-radius:4px;background:var(--card2)">
+        <input type="radio" name="dst-${gi}" value="${m.id}" ${esDest?'checked':''} style="${chk}" title="Conservar este registro">
+        <input type="checkbox" class="dup-chk" value="${m.id}" ${esDest?'':'checked'} style="${chk}" title="Es la misma persona: fusionar">
+        <span style="flex:1;min-width:0">
+          <span style="display:block;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.nombre)}</span>
+          <span class="sub">${m.numero?'#'+m.numero:'sin número'} · ${fmt(m.viajes,0)} viaje${m.viajes!==1?'s':''}</span>
+        </span></div>`;}).join('');
+    return `<div id="dup-${gi}" style="border:1px solid var(--line2);border-radius:6px;padding:13px;margin-bottom:12px;background:var(--panel)">
+      <div class="sub" style="margin-bottom:9px">● conservar &nbsp;·&nbsp; ${ic('check')} es la misma persona (se fusiona)</div>
+      <div style="display:flex;flex-direction:column;gap:7px">${rows}</div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:11px">
+        <button class="btn sm" onclick="document.getElementById('dup-${gi}').remove()">No son la misma persona</button>
+        <button class="btn sm primary" onclick="fusionarCluster(${gi})">Fusionar</button></div></div>`;
+  }).join('');
+  openModal(`<h3>Depurar duplicados <span class="sub">(${DUP.length} grupos)</span></h3>
+    <div class="sub" style="margin-bottom:12px">Marca con <b>●</b> el registro que se CONSERVA (normalmente el que tiene número) y con <b>${ic('check')}</b> los que son la MISMA persona. Sus viajes se pasan al conservado. Ojo con homónimos distintos.</div>
+    <div style="max-height:56vh;overflow-y:auto;overflow-x:hidden;padding-right:6px">${cards}</div>
+    <div style="text-align:right;margin-top:12px"><button class="btn" onclick="closeModal()">Cerrar</button></div>`);
+}
+async function fusionarCluster(gi){
+  const card=document.getElementById('dup-'+gi);if(!card)return;
+  const dest=card.querySelector(`input[name="dst-${gi}"]:checked`);
+  if(!dest){toast('Elige el registro a conservar');return;}
+  const origenes=[...card.querySelectorAll('.dup-chk:checked')].map(c=>c.value).filter(v=>v!==dest.value);
+  if(!origenes.length){toast('Marca al menos un duplicado a fusionar');return;}
+  try{const fd=new FormData();fd.set('destino_id',dest.value);fd.set('origenes',origenes.join(','));
+    const r=await apiPost('/api/operadores/fusionar-lote',fd);
+    toast(`${r.fusionados} fusionado(s) en ${r.destino}`);card.remove();
+    await _refrescarOps();
+  }catch(e){toast(e.message);}
+}
+
+function resolverProv(id){const p=PROVS.find(x=>x.id===id);if(!p)return;
+  const reales=(OPS||[]).filter(o=>!o.provisional).sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+  openModal(`<h3>Resolver: ${esc(p.nombre)}</h3><div class="sub" style="margin-bottom:14px">Apareció en ${fmt(p.viajes,0)} viaje(s)${p.unidades.length?' · '+p.unidades.map(esc).join(', '):''}.</div>
+    <div class="formcard" style="border:1px solid var(--line2);border-radius:6px;padding:14px;margin-bottom:12px">
+      <div style="font-weight:600;margin-bottom:8px">${ic('check')} Vincular al conductor real</div>
+      <div class="sub" style="margin-bottom:8px">Sus viajes pasan a este operador y el provisional se elimina.</div>
+      <input id="prov-buscar" placeholder="Buscar operador…" oninput="_filtrarDestino()" style="margin-bottom:6px">
+      <select id="prov-destino" size="6" style="width:100%">${reales.map(o=>`<option value="${o.id}">${esc(o.nombre)}${o.numero?' · #'+o.numero:''}</option>`).join('')}</select>
+      <button class="btn primary" style="margin-top:10px;width:100%" onclick="vincularProv(${id})">Vincular</button>
+    </div>
+    <div class="formcard" style="border:1px solid var(--line2);border-radius:6px;padding:14px">
+      <div style="font-weight:600;margin-bottom:8px">${ic('plus')} Es un conductor nuevo: darlo de alta</div>
+      <div class="grid2" style="gap:8px 12px">
+        <div><label>Número (opcional)</label><input id="prov-num" type="number" placeholder="1450"></div>
+        <div><label>Rol</label><select id="prov-rol"><option>TITULAR</option><option>RELEVO</option></select></div>
+      </div>
+      <button class="btn" style="margin-top:10px;width:100%" onclick="altaProv(${id})">Dar de alta como nuevo</button>
+    </div>
+    <div class="msg" id="prov-msg" style="text-align:right;margin-top:8px"></div>`);
+}
+window._REALES_CACHE=null;
+function _filtrarDestino(){const q=($('#prov-buscar').value||'').toLowerCase();const sel=$('#prov-destino');
+  for(const op of sel.options){op.style.display=op.text.toLowerCase().includes(q)?'':'none';}}
+async function _refrescarOps(){await loadOperadores();await ensureOpsCat(true);if($('#s-unidades').classList.contains('on'))loadUnidades();}
+async function vincularProv(id){const d=$('#prov-destino').value;if(!d){$('#prov-msg').className='msg err';$('#prov-msg').textContent='Elige un operador destino';return;}
+  try{const fd=new FormData();fd.set('destino_id',d);const r=await apiPost('/api/operadores/'+id+'/fusionar',fd);closeModal();toast('Vinculado a '+r.destino);await _refrescarOps();}catch(e){$('#prov-msg').className='msg err';$('#prov-msg').textContent=e.message;}}
+async function altaProv(id){try{const fd=new FormData();const n=$('#prov-num').value.trim();if(n)fd.set('numero',n);fd.set('rol',$('#prov-rol').value);const r=await apiPost('/api/operadores/'+id+'/confirmar',fd);closeModal();toast('Operador dado de alta: '+r.nombre);await _refrescarOps();}catch(e){$('#prov-msg').className='msg err';$('#prov-msg').textContent=e.message;}}
+function renderOps(){const q=($('#f-op').value||'').toLowerCase();const soloV=$('#f-op-viajes')&&$('#f-op-viajes').checked;const list=OPS.filter(o=>(!q||(o.nombre||'').toLowerCase().includes(q)||String(o.numero||'').includes(q))&&(!soloV||o.viajes>0));
+  $('#ops-grid').innerHTML=list.length?list.map(o=>{const ini=(o.nombre||'?').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+    const av=o.tiene_foto?`<img src="/api/operadores/${o.id}/foto" alt="" style="width:42px;height:42px;border-radius:3px;object-fit:cover;flex:0 0 auto">`:`<div style="width:42px;height:42px;border-radius:3px;background:color-mix(in oklab,var(--accent) 14%,transparent);color:var(--accent);display:grid;place-items:center;font:700 15px 'Barlow Condensed';flex:0 0 auto">${esc(ini)}</div>`;
+    return `<div class="card" style="cursor:pointer${o.activo===false?';opacity:.55':''}" onclick="verOperador(${o.id})"><div style="display:flex;align-items:center;gap:12px">${av}<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.nombre)}</div><div class="sub">${o.numero?'#'+o.numero:'sin número'}${o.estatus?' · '+esc(o.estatus):''}${o.activo===false?' · baja':''}${o.tiene_cuenta?' · <span style="color:var(--green)">✓ acceso</span>':''}</div></div></div><div style="display:flex;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)"><div><div style="font:600 16px 'IBM Plex Mono'">${fmt(o.viajes,0)}</div><div class="sub">viajes</div></div><div><div style="font:600 16px 'IBM Plex Mono'">${fmt(o.rto_real_prom,2)}</div><div class="sub">km/l</div></div></div></div>`;}).join(''):`<div class="empty" style="grid-column:1/-1">Sin operadores</div>`;
+}
+async function verOperador(id){const o=await api('/api/operadores/'+id);const ini=(o.nombre||'?').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+  const rend=o.rend_mensual&&o.rend_mensual.valores.length?spark(o.rend_mensual.valores,160,40):'<span class="sub">Sin historial suficiente</span>';
+  const av=o.tiene_foto?`<img src="/api/operadores/${o.id}/foto?t=${Date.now()}" alt="" style="width:80px;height:80px;border-radius:6px;object-fit:cover;box-shadow:3px 3px 0 var(--shadow);border:1px solid var(--line2)">`:`<div style="width:80px;height:80px;border-radius:6px;background:var(--accent);color:#fff;display:grid;place-items:center;font:700 30px 'Barlow Condensed';box-shadow:3px 3px 0 var(--shadow)">${esc(ini)}</div>`;
+  openModal(`<div style="display:flex;gap:16px;align-items:flex-start"><div style="flex:0 0 auto;text-align:center"><input type="file" id="ed-foto" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="subirFoto(${o.id},this)">${av}<button class="btn sm" style="margin-top:8px;width:80px" onclick="document.getElementById('ed-foto').click()">${o.tiene_foto?'Cambiar':'Subir'}</button>${o.tiene_foto?`<button class="btn sm" style="margin-top:6px;width:80px" onclick="quitarFoto(${o.id})">Quitar</button>`:''}</div>
+    <div style="flex:1;min-width:0"><label>Nombre</label><input id="ed-nombre" value="${esc(o.nombre)}" style="font-size:15px"><div class="sub" style="margin-top:6px">${o.numero?'Operador #'+o.numero:'Sin número de catálogo'}${o.activo?'':' · <span style="color:var(--red)">BAJA</span>'}</div></div></div>
+  <div class="statgrid" style="margin-top:16px">${['Viajes',fmt(o.viajes,0),'','Rend. prom.',fmt(o.rto_real_prom,3),'km/l','DIF prom.',fmt(o.dif_prom,1),'L','Unidades',o.unidades.length,''].reduce((a,_,i,r)=>{if(i%3===0)a.push(`<div class="stat"><div class="l">${r[i]}</div><div class="v">${r[i+1]}${r[i+2]?` <small>${r[i+2]}</small>`:''}</div></div>`);return a;},[]).join('')}</div>
+  <div class="sech">Rendimiento reciente</div><div>${rend}</div>
+  <div class="sech">Unidades manejadas</div><div style="display:flex;flex-wrap:wrap;gap:8px">${o.unidades.length?o.unidades.map(u=>`<span class="pill ${u.tipo==='TRACTO'?'tracto':'camion'}" title="último ${u.ultimo||''}">${esc(u.clave)} · ${u.viajes}</span>`).join(''):'<span class="sub">—</span>'}</div>
+  <div class="sech">Datos del operador <span class="sub" style="text-transform:none;letter-spacing:0">(editable — se guarda en la base)</span></div>
+  <div class="formcard grid2" style="gap:8px 16px">
+    <div><label>Número</label><input id="ed-numero" type="number" value="${o.numero!=null?o.numero:''}"></div>
+    <div><label>Estatus</label><select id="ed-est"><option value=""></option>${['ACTIVO','VACACIONES','INCAPACIDAD','BAJA'].map(s=>`<option${o.estatus===s?' selected':''}>${s}</option>`).join('')}</select></div>
+    <div><label>Rol</label><select id="ed-rol">${['TITULAR','RELEVO'].map(x=>`<option${(o.rol||'TITULAR').toUpperCase()===x?' selected':''}>${x}</option>`).join('')}</select><div class="sub" style="margin-top:4px;line-height:1.4">RELEVO = operador situacional (exento de la alerta "no asignado").</div></div>
+    <div><label>Teléfono / WhatsApp</label><input id="ed-tel" value="${esc(o.telefono)||''}" placeholder="81 0000 0000"></div>
+    <div><label>Licencia (folio / tipo)</label><input id="ed-lic" value="${esc(o.licencia)||''}" placeholder="LF-000000 · Federal E"></div>
+    <div><label>Licencia vence</label><input id="ed-licv" type="date" value="${o.licencia_vence||''}"></div>
+    <div><label>Ingreso</label><input id="ed-ing" type="date" value="${o.ingreso||''}"></div>
+    <div><label>Estado</label><label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 0"><input type="checkbox" id="ed-activo" ${o.activo?'checked':''} style="width:16px;height:16px;accent-color:var(--accent)"> Activo</label></div>
+    <div style="grid-column:1/-1"><label>Notas</label><textarea id="ed-notas" rows="2">${esc(o.notas)||''}</textarea></div>
+  </div>
+  <div class="sech">Acceso a la app <span class="sub" style="text-transform:none;letter-spacing:0">(login del operador)</span></div>
+  <div class="formcard" id="acc-box">${o.cuenta
+    ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div>Usuario: <b>${esc(o.cuenta.username)}</b> <span class="pill conf">con acceso</span></div><button class="btn sm" onclick="resetAcceso(${o.id})">Restablecer contraseña</button></div>`
+    : `<div class="grid2" style="gap:8px 16px;align-items:end"><div><label>Usuario</label><input id="acc-user" value="op${o.numero!=null?o.numero:o.id}"></div><div><label>Contraseña (opcional)</label><input id="acc-pw" placeholder="Vacío = se genera una"></div></div><button class="btn primary sm" style="margin-top:10px" onclick="crearAcceso(${o.id})">Crear acceso</button><div class="sub" style="margin-top:6px">El operador no cambia su contraseña; la restableces tú desde aquí.</div>`}
+    <div id="acc-msg" class="msg"></div></div>
+  <div style="display:flex;gap:10px;justify-content:space-between;margin-top:14px"><button class="btn" style="color:var(--red);border-color:color-mix(in oklab,var(--red) 40%,transparent)" onclick="eliminarOperador(${o.id})">Eliminar</button><div style="display:flex;gap:10px"><button class="btn" onclick="closeModal()">Cerrar</button><button class="btn primary" onclick="guardarOperador(${o.id})">Guardar</button></div></div>
+  <div class="msg" id="ed-msg" style="text-align:right"></div>
+  ${o.anomalias.length?'<div class="sech">Anomalías de sus viajes</div>'+o.anomalias.slice(0,8).map(a=>`<div style="margin:6px 0;font-size:12px"><b>${esc(a.unidad)}</b> · ${tipoLbl(a.tipo)} ${catPill(a.tipo)} <span class="pill ${a.estado==='PENDIENTE'?'pend':a.estado==='CONFIRMADA'?'conf':'rech'}">${a.estado}</span> <span class="sub">${a.fecha||''}</span></div>`).join(''):''}`);
+}
+async function guardarOperador(id){const fd=new FormData();
+  fd.set('nombre',$('#ed-nombre').value);fd.set('numero',$('#ed-numero').value);fd.set('estatus',$('#ed-est').value);fd.set('rol',$('#ed-rol').value);
+  fd.set('telefono',$('#ed-tel').value);fd.set('licencia',$('#ed-lic').value);fd.set('licencia_vence',$('#ed-licv').value);
+  fd.set('ingreso',$('#ed-ing').value);fd.set('notas',$('#ed-notas').value);fd.set('activo',$('#ed-activo').checked?'true':'false');
+  const m=$('#ed-msg');m.textContent='';
+  try{await apiPost('/api/operadores/'+id,fd);m.className='msg ok';m.innerHTML=ic('check')+' Guardado';toast('Operador guardado');loadOperadores();}catch(e){m.className='msg err';m.textContent=e.message||'No se pudo guardar';}}
+async function crearAcceso(id){const fd=new FormData();const u=$('#acc-user'),p=$('#acc-pw');if(u&&u.value.trim())fd.set('username',u.value.trim());if(p&&p.value.trim())fd.set('password',p.value.trim());const m=$('#acc-msg');m.textContent='';
+  try{const d=await apiPost('/api/operadores/'+id+'/crear-acceso',fd);m.className='msg ok';m.innerHTML=`Acceso creado &middot; <b>Usuario:</b> ${esc(d.username)} &middot; <b>Contraseña:</b> <code>${esc(d.password)}</code>${d.generada?' <span class="sub">(anótala y dásela al operador; no se vuelve a mostrar)</span>':''}`;toast('Acceso creado');loadOperadores();}
+  catch(e){m.className='msg err';m.textContent=e.message||'No se pudo crear el acceso';}}
+async function resetAcceso(id){if(!confirm('¿Restablecer la contraseña de este operador? La actual dejará de funcionar.'))return;const m=$('#acc-msg');m.textContent='';
+  try{const d=await apiPost('/api/operadores/'+id+'/reset-acceso',new FormData());m.className='msg ok';m.innerHTML=`Nueva contraseña de <b>${esc(d.username)}</b>: <code>${esc(d.password)}</code> <span class="sub">(anótala; no se vuelve a mostrar)</span>`;toast('Contraseña restablecida');}
+  catch(e){m.className='msg err';m.textContent=e.message||'No se pudo restablecer';}}
+
+// ── Desarrollos / Config / Perfil ────────────────────────────────────────────
+function loadDesarrollos(){const items=[['ok','Conexión WhatsApp','Evolution API v2.3.7 vinculada al grupo, recibiendo mensajes y fotos.'],['ok','Captura inteligente (IA)','Claude parsea el texto/caption y lee las fotos (odómetro, scanner, termo, tanque).'],['ok','Detección de anomalías (16 tipos)','Consistencia, fraude, telemetría y personal (operador de vacaciones o no asignado), por unidad y operador.'],['ok','Horas de termo en vivo','Las lecturas de horas del equipo de frío se registran automáticamente en la auditoría.'],['ok','Expediente de operador','Ficha con rendimiento, unidades manejadas, anomalías y datos editables.'],['ok','Bot conversacional','Acuse cordial por cada reporte y solicitud de reenvío ante fotos borrosas.'],['ok','Catálogo de flota','Unidades y remolques con serie, motor, placa y termo.'],['ok','Panel TRAYECTO','Diseño completo con gráficos, mapa de calor, ranking, búsqueda y detalle.'],['wip','Auditorías de campo','Tabla e importación para tolerancia real por unidad (siguiente incremento).'],['wip','Recarga por nivel de tanque','Lógica de litros mínimos y recarga autorizada.'],['wip','Reporte Excel','Generación automática de la bitácora en el formato actual.']];
+  $('#dev-grid').innerHTML=items.map(i=>`<div class="dev"><span class="st ${i[0]}">${i[0]==='ok'?ic('check')+' Listo':ic('clock')+' En camino'}</span><h4>${i[1]}</h4><p>${i[2]}</p></div>`).join('');}
+async function loadConfig(){const c=await api('/api/config');$('#cfg-params').innerHTML=[['Tolerancia de desviación',(c.tolerancia_pct*100).toFixed(0)+'%'],['Umbral sigma (anomalías)',c.umbral_sigma],['Bot responde en grupo',c.bot_confirmar?'Sí':'No'],['Modelo de IA',c.modelo_ia],['Grupo de WhatsApp',c.grupo_jid||'—']].map(kv=>`<div class="kv"><span class="k">${kv[0]}</span><span>${esc(kv[1])}</span></div>`).join('');$('#ia-model').textContent='Modelo: '+c.modelo_ia;}
+async function loadPerfil(){const me=await api('/api/me');$('#perf-nm').textContent=me.nombre||me.username;$('#perf-user').textContent='@'+me.username;const ini=(me.nombre||me.username||'?').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();if(me.tiene_foto){const img='<img src="/api/perfil/foto?t='+Date.now()+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt="">';$('#perf-av').innerHTML=img;$('#uav').innerHTML=img;}else{$('#perf-av').textContent=ini;$('#uav').textContent=ini;}$('#unm').textContent=me.nombre||me.username;}
+
+// ── Notificaciones ───────────────────────────────────────────────────────────
+function renderNotif(an){const n=an.length;const b=$('#nbadge');if(n){b.style.display='grid';b.textContent=n;}else b.style.display='none';const nb=$('#nav-anom');if(nb){if(n){nb.style.display='inline-block';nb.textContent=n;}else nb.style.display='none';}
+  $('#notiflist').innerHTML=n?an.slice(0,8).map(a=>`<button class="row" onclick="show('anomalias');closeNotif()"><span style="width:7px;height:7px;border-radius:50%;background:var(--red);flex:0 0 auto;margin-top:5px"></span><span style="flex:1;min-width:0"><span style="font-size:12.5px">${esc(a.unidad)||'—'} · ${tipoLbl(a.tipo)}</span><span style="display:block;font:500 10px 'IBM Plex Mono';color:var(--muted);margin-top:2px">${a.fecha||''}</span></span></button>`).join(''):`<div class="empty" style="padding:24px">Sin notificaciones</div>`;}
+async function refreshNotif(){try{renderNotif(await api('/api/anomalias?estado=PENDIENTE'));}catch(e){}}
+
+// Vigilancia de anomalías: mantiene la campana al día desde CUALQUIER sección (antes solo
+// se refrescaba al entrar al Resumen o al resolver una) y avisa con un toast rojo las que
+// van entrando en vivo. En la primera lectura solo memoriza, no avisa de las viejas.
+// Se compara contra el id MÁXIMO visto, no por diferencia de conjuntos: la lista viene
+// truncada a 500 por el backend, así que una anomalía vieja que reentra a la ventana
+// (al resolverse otras) disparaba el toast rojo como si fuera nueva.
+let ANOM_MAX=null;
+async function vigilarAnomalias(){
+  if(document.hidden)return;
+  let an;
+  try{an=await api('/api/anomalias?estado=PENDIENTE');}catch(e){return;}
+  renderNotif(an);
+  const maxId=an.reduce((m,a)=>Math.max(m,a.id),0);
+  if(ANOM_MAX===null){ANOM_MAX=maxId;return;}   // primera lectura: solo memoriza
+  const nuevas=an.filter(a=>a.id>ANOM_MAX);
+  ANOM_MAX=Math.max(ANOM_MAX,maxId);
+  if(!nuevas.length)return;
+  const a=nuevas[0];
+  toastAnom(nuevas.length===1
+    ? `Anomalía nueva · ${a.unidad||'—'} · ${tipoLbl(a.tipo)}`
+    : `${nuevas.length} anomalías nuevas · toca para verlas`);
+}
+setInterval(vigilarAnomalias,30000);
+function toggleNotif(e){e.stopPropagation();$('#notif').classList.toggle('show');}
+function closeNotif(){$('#notif').classList.remove('show');}
+document.addEventListener('click',e=>{if(!e.target.closest('.notifwrap'))closeNotif();if(!e.target.closest('.search'))$('#sres').classList.remove('show');});
+// Delegación segura para abrir detalles: el valor viaja por data-* (no por onclick), evitando inyección.
+document.addEventListener('click',e=>{const el=e.target.closest('[data-unidad],[data-operador]');if(!el)return;if(el.dataset.goto){show(el.dataset.goto);$('#sres').classList.remove('show');}if('unidad' in el.dataset)verUnidad(el.dataset.unidad);else if('operador' in el.dataset)verOperador(+el.dataset.operador);});
+
+// ── Búsqueda global ──────────────────────────────────────────────────────────
+let SEARCH=null;
+async function ensureSearch(){if(SEARCH)return;const[u,o]=await Promise.all([api('/api/unidades'),api('/api/operadores')]);SEARCH={u,o};}
+async function doSearch(){await ensureSearch();const q=($('#gq').value||'').trim().toLowerCase();const box=$('#sres');if(!q){box.classList.remove('show');return;}
+  const us=SEARCH.u.filter(x=>x.clave.toLowerCase().includes(q)).slice(0,6);
+  const os=SEARCH.o.filter(x=>(x.nombre||'').toLowerCase().includes(q)||String(x.numero||'').includes(q)).slice(0,6);
+  let h='';
+  if(us.length){h+='<div class="gh">Unidades</div>'+us.map(x=>`<button class="it" data-goto="unidades" data-unidad="${esc(x.clave)}"><span class="tg">${x.tipo==='TRACTO'?'T':'C'}</span><span style="flex:1"><b>${esc(x.clave)}</b> <span class="sub">${esc(x.marca)||''}</span></span></button>`).join('');}
+  if(os.length){h+='<div class="gh">Operadores</div>'+os.map(x=>`<button class="it" data-goto="operadores" data-operador="${x.id}"><span class="tg">OP</span><span style="flex:1"><b>${esc(x.nombre)}</b> <span class="sub">${x.numero?'#'+x.numero:''}</span></span></button>`).join('');}
+  box.innerHTML=h||`<div class="empty" style="padding:20px">Sin resultados</div>`;box.classList.add('show');
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────────
+function openModal(html){$('#modal').innerHTML=html;$('#modal-bg').classList.add('show');}
+function closeModal(){$('#modal-bg').classList.remove('show');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeNav();}});
+
+// ── CRUD de flota (formularios genéricos) ────────────────────────────────────
+async function apiPost(url,fd){const r=await fetch(url,{method:'POST',body:fd});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.detail||('Error '+r.status));return d;}
+async function apiDel(url){const r=await fetch(url,{method:'DELETE'});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.detail||('Error '+r.status));return d;}
+function _field(c,valores){
+  const v=(valores&&valores[c.key]!=null)?valores[c.key]:(c.def!=null?c.def:'');
+  if(c.type==='select')return `<select id="fld-${c.key}">${(c.options||[]).map(o=>`<option value="${esc(o)}"${String(v)===o?' selected':''}>${esc(o)}</option>`).join('')}</select>`;
+  if(c.type==='opselect'){const opts=(window.OPS_CAT||[]).filter(o=>!o.provisional).map(o=>`<option value="${o.id}"${String(v)===String(o.id)?' selected':''}>${esc(o.nombre)}${o.numero?' · #'+o.numero:''}</option>`).join('');return `<select id="fld-${c.key}"><option value="">— sin asignar —</option>${opts}</select>`;}
+  if(c.type==='checkbox')return `<label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0"><input type="checkbox" id="fld-${c.key}" ${v?'checked':''} style="width:16px;height:16px;accent-color:var(--accent)"> ${esc(c.check||'Sí')}</label>`;
+  if(c.type==='textarea')return `<textarea id="fld-${c.key}" rows="2" placeholder="${esc(c.ph||'')}">${esc(v)}</textarea>`;
+  if(c.type==='foto')return `<div style="display:flex;align-items:center;gap:12px"><img id="fld-${c.key}-prev" alt="" style="width:52px;height:52px;border-radius:4px;object-fit:cover;display:none;border:1px solid var(--line2)"><div id="fld-${c.key}-ph" style="width:52px;height:52px;border-radius:4px;background:var(--card2);display:grid;place-items:center;color:var(--muted)"><svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round"><path d="M4 7h3l1-2h8l1 2h3v12H4z"></path><circle cx="12" cy="13" r="3.2"></circle></svg></div><input type="file" id="fld-${c.key}" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="_prevFoto('fld-${c.key}')"><button type="button" class="btn sm" onclick="document.getElementById('fld-${c.key}').click()">Elegir foto</button></div>`;
+  if(c.type==='perfil'){const v=(valores&&valores[c.nombreKey]!=null)?valores[c.nombreKey]:'';return `<div style="display:flex;gap:16px;align-items:flex-start;padding:2px 0 6px"><div style="flex:0 0 auto;text-align:center"><img id="fld-${c.fotoKey}-prev" alt="" style="width:80px;height:80px;border-radius:6px;object-fit:cover;display:none;border:1px solid var(--line2);box-shadow:3px 3px 0 var(--shadow)"><div id="fld-${c.fotoKey}-ph" style="width:80px;height:80px;border-radius:6px;background:var(--card2);display:grid;place-items:center;color:var(--muted);box-shadow:3px 3px 0 var(--shadow)"><svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round"><path d="M4 7h3l1-2h8l1 2h3v12H4z"></path><circle cx="12" cy="13" r="3.4"></circle></svg></div><input type="file" id="fld-${c.fotoKey}" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="_prevFoto('fld-${c.fotoKey}')"><button type="button" class="btn sm" style="margin-top:8px;width:80px" onclick="document.getElementById('fld-${c.fotoKey}').click()">Foto</button></div><div style="flex:1;min-width:0"><label>Nombre *</label><input id="fld-${c.nombreKey}" value="${esc(v)}" placeholder="${esc(c.nombrePh||'')}" style="font-size:15px"><div class="sub" style="margin-top:8px;line-height:1.5">Sube una foto del operador (opcional) · JPG, PNG o WebP, máx 5 MB. Aparecerá en su ficha y en el listado.</div></div></div>`;}
+  return `<input id="fld-${c.key}" type="${c.type||'text'}"${c.type==='number'?' step="any"':''} value="${esc(v)}" placeholder="${esc(c.ph||'')}">`;
+}
+function _prevFoto(id){const el=document.getElementById(id),f=el.files&&el.files[0],prev=document.getElementById(id+'-prev'),ph=document.getElementById(id+'-ph');if(f){prev.src=URL.createObjectURL(f);prev.style.display='';if(ph)ph.style.display='none';}}
+const IC_UNIDAD='<svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><path d="M3 7h11v8H3zM14 10h4l3 3v2h-7z"></path><circle cx="7" cy="18" r="1.6"></circle><circle cx="17" cy="18" r="1.6"></circle></svg>';
+const IC_REMOLQUE='<svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><path d="M2 7h15v9H2zM17 13h4"></path><circle cx="6" cy="18" r="1.6"></circle><circle cx="12" cy="18" r="1.6"></circle></svg>';
+const IC_OPERADOR='<svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><path d="M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M4.5 20a7.5 7.5 0 0 1 15 0"></path></svg>';
+const IC_VIAJE='<svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>';
+function abrirForm(titulo,campos,valores,onGuardar,opts){opts=opts||{};
+  const cab=opts.icono?`<div style="margin:-22px -22px 18px;padding:18px 22px;background:linear-gradient(120deg, color-mix(in oklab,var(--accent) 16%,var(--panel)), var(--panel));border-bottom:1px solid var(--line2);border-radius:6px 6px 0 0"><div style="display:flex;align-items:center;gap:13px"><div class="mbadge">${opts.icono}</div><div><h3 style="margin:0">${esc(titulo)}</h3>${opts.subtitulo?`<div class="sub">${esc(opts.subtitulo)}</div>`:''}</div></div></div>`:`<h3>${esc(titulo)}</h3>`;
+  const body=campos.map(c=>c.type==='perfil'
+      ?`<div style="grid-column:1/-1">${_field(c,valores)}</div>`
+      :`<div${c.full?' style="grid-column:1/-1"':''}><label>${esc(c.label)}${c.req?' *':''}</label>${_field(c,valores)}</div>`).join('');
+  openModal(`${cab}<div class="formcard grid2" style="gap:8px 16px">${body}</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" id="form-save">Guardar</button></div>
+    <div class="msg" id="form-msg" style="text-align:right"></div>`);
+  $('#form-save').onclick=async()=>{
+    const fd=new FormData();
+    for(const c of campos){
+      if(c.type==='perfil'){const nel=document.getElementById('fld-'+c.nombreKey);if(nel)fd.set(c.nombreKey,nel.value);const fel=document.getElementById('fld-'+c.fotoKey);if(fel&&fel.files&&fel.files[0])fd.append('foto_file',fel.files[0]);continue;}
+      const el=document.getElementById('fld-'+c.key);if(!el)continue;
+      if(c.type==='foto'){if(el.files&&el.files[0])fd.append('foto_file',el.files[0]);}
+      else if(c.type==='checkbox')fd.set(c.key,el.checked?'true':'false');
+      else fd.set(c.key,el.value);}
+    const m=$('#form-msg');m.textContent='';
+    try{await onGuardar(fd);}catch(e){m.className='msg err';m.textContent=e.message||'Error al guardar';}
+  };
+}
+async function confirmarBorrado(url,nombre,recargar){
+  if(!confirm(`¿Eliminar "${nombre}"?\n\nSi tiene viajes en el histórico se dará de BAJA (no se borra) para no perder los registros.`))return;
+  try{const d=await apiDel(url);toast(d.baja?`"${nombre}" dado de baja (${d.viajes} viajes)`:`"${nombre}" eliminado`);recargar();}catch(e){toast(e.message);}
+}
+
+const UNIDAD_CAMPOS=[
+  {key:'clave',label:'Clave',req:true,ph:'T205 / C012'},
+  {key:'tipo',label:'Tipo',type:'select',options:['TRACTO','CAMION']},
+  {key:'marca',label:'Marca',ph:'Kenworth, Freightliner, Volvo…'},
+  {key:'anio',label:'Año',type:'number',ph:'2019'},
+  {key:'placa',label:'Placa',ph:'704FE2'},
+  {key:'placas_nuevas',label:'Placas nuevas',ph:'92AH5C'},
+  {key:'serie',label:'Serie (VIN)',ph:'3AKJGLD5XPSxxxxxx'},
+  {key:'motor',label:'Motor',ph:'Cummins ISX15'},
+  {key:'motor_cc',label:'Motor (código)',ph:'ISX07 / X15'},
+  {key:'operador_asignado_id',label:'Operador titular',type:'opselect',full:true},
+  {key:'rendimiento_objetivo',label:'Rend. objetivo (km/l)',type:'number',ph:'3.5'},
+  {key:'pct_tolerancia',label:'Tolerancia (fracción)',type:'number',ph:'0.05 (= 5%)'},
+  {key:'descripcion',label:'Descripción',type:'textarea',full:true,ph:'Notas de la unidad: configuración, remolque habitual, etc.'},
+  {key:'usa_remolque',label:'Remolque',type:'checkbox',check:'Engancha remolque'},
+  {key:'activo',label:'Estado',type:'checkbox',check:'Unidad activa'},
+];
+const REMOLQUE_CAMPOS=[
+  {key:'eco',label:'ECO',req:true,ph:'R-204 / 532301'},
+  {key:'eco_nuevo',label:'ECO nuevo',ph:'RB-12'},
+  {key:'marca',label:'Marca',ph:'Utility, Great Dane, Wabash…'},
+  {key:'anio',label:'Año',type:'number',ph:'2021'},
+  {key:'placa',label:'Placa',ph:'77UA2C'},
+  {key:'placas_nuevas',label:'Placas nuevas',ph:'84UB8F'},
+  {key:'serie',label:'Serie',ph:'VIN del remolque'},
+  {key:'serie_thermo',label:'Serie termo',ph:'TK SLXi-400 · 6H55221'},
+  {key:'descripcion',label:'Descripción',type:'textarea',full:true,ph:'Caja refrigerada 53 ft, dolly, etc.'},
+  {key:'es_dolly',label:'Dolly',type:'checkbox',check:'Es dolly'},
+  {key:'usa_combustible',label:'Combustible',type:'checkbox',check:'Consume combustible (termo)'},
+  {key:'activo',label:'Estado',type:'checkbox',check:'Remolque activo'},
+];
+const OPERADOR_CAMPOS=[
+  {key:'perfil',type:'perfil',nombreKey:'nombre',fotoKey:'foto',nombrePh:'JESÚS RAMÍREZ ORTEGA'},
+  {key:'numero',label:'Número',type:'number',ph:'530'},
+  {key:'estatus',label:'Estatus',type:'select',options:['','ACTIVO','VACACIONES','INCAPACIDAD','BAJA']},
+  {key:'rol',label:'Rol',type:'select',options:['TITULAR','RELEVO']},
+  {key:'telefono',label:'Teléfono / WhatsApp',ph:'81 2314 5590'},
+  {key:'licencia',label:'Licencia (folio / tipo)',ph:'LF-04412876 · Federal tipo E'},
+  {key:'licencia_vence',label:'Licencia vence',type:'date'},
+  {key:'ingreso',label:'Ingreso',type:'date'},
+  {key:'activo',label:'Estado',type:'checkbox',check:'Operador activo',def:true},
+  {key:'notas',label:'Notas',type:'textarea',full:true,ph:'Observaciones del operador'},
+];
+
+// Catálogo de operadores para los selectores (se carga una vez y se refresca al resolver).
+async function ensureOpsCat(force){if(force||!window.OPS_CAT){window.OPS_CAT=await api('/api/operadores');}return window.OPS_CAT;}
+async function nuevaUnidad(){await ensureOpsCat();abrirForm('Nueva unidad',UNIDAD_CAMPOS,{tipo:'TRACTO',usa_remolque:true,activo:true},async fd=>{await apiPost('/api/unidades',fd);closeModal();toast('Unidad creada');loadUnidades();},{icono:IC_UNIDAD,subtitulo:'Datos de la unidad motriz'});}
+async function editarUnidad(id){const u=UNIS.find(x=>x.id===id);if(!u)return;await ensureOpsCat();abrirForm('Editar unidad '+u.clave,UNIDAD_CAMPOS,u,async fd=>{await apiPost('/api/unidades/'+id,fd);closeModal();toast('Unidad actualizada');loadUnidades();},{icono:IC_UNIDAD,subtitulo:'Modifica los datos de la unidad'});}
+function eliminarUnidad(id){const u=UNIS.find(x=>x.id===id);if(!u)return;confirmarBorrado('/api/unidades/'+id,u.clave,loadUnidades);}
+// Relacionar operador ↔ unidad (titular). El coordinador puede, sin editar el resto.
+async function cambiarTitular(uid){
+  await ensureOpsCat();
+  const u=UNIS.find(x=>x.id===uid)||{};
+  const ops=(window.OPS_CAT||[]).slice().sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||'')));
+  const opts='<option value="">— sin titular —</option>'+ops.map(o=>`<option value="${o.id}" ${String(o.id)===String(u.operador_asignado_id||'')?'selected':''}>${esc(o.nombre)}${o.numero?' (#'+o.numero+')':''}</option>`).join('');
+  openModal(`<div class="chart-h" style="margin-bottom:4px">Operador titular · ${esc(u.clave||'unidad')}</div>
+    <div class="sub" style="margin-bottom:12px">Quién es el titular de esta unidad (el operador asignado en el catálogo).</div>
+    <select id="tit-op" style="width:100%;padding:10px 12px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:4px;font:inherit">${opts}</select>
+    <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" data-tit-save="${uid}">Guardar</button></div>`);
+}
+document.addEventListener('click',async ev=>{
+  const t=ev.target.closest('[data-titular]');
+  if(t){ cambiarTitular(+t.dataset.titular); return; }
+  const sv=ev.target.closest('[data-tit-save]');
+  if(sv){
+    const uid=sv.dataset.titSave, op=($('#tit-op')||{}).value||'';
+    sv.disabled=true;
+    try{ const fd=new FormData(); fd.append('operador_id',op);
+      const d=await apiPost('/api/unidades/'+uid+'/titular',fd);
+      toast('Titular actualizado'+(d.operador_titular?': '+d.operador_titular:' (sin titular)')); closeModal(); loadUnidades();
+    }catch(e){ sv.disabled=false; toast('No se pudo: '+(e.message||'')); }
+  }
+});
+function nuevoRemolque(){abrirForm('Nuevo remolque',REMOLQUE_CAMPOS,{activo:true},async fd=>{await apiPost('/api/remolques',fd);closeModal();toast('Remolque creado');loadRemolques();},{icono:IC_REMOLQUE,subtitulo:'Datos del remolque o caja'});}
+function editarRemolque(id){const r=REMS.find(x=>x.id===id);if(!r)return;abrirForm('Editar remolque '+r.eco,REMOLQUE_CAMPOS,r,async fd=>{await apiPost('/api/remolques/'+id,fd);closeModal();toast('Remolque actualizado');loadRemolques();},{icono:IC_REMOLQUE,subtitulo:'Modifica los datos del remolque'});}
+function eliminarRemolque(id){const r=REMS.find(x=>x.id===id);if(!r)return;confirmarBorrado('/api/remolques/'+id,r.eco,loadRemolques);}
+function nuevoOperador(){abrirForm('Nuevo operador',OPERADOR_CAMPOS,{estatus:'ACTIVO',rol:'TITULAR',activo:true},async fd=>{const d=await apiPost('/api/operadores',fd);closeModal();toast('Operador creado');await loadOperadores();verOperador(d.id);},{icono:IC_OPERADOR,subtitulo:'Alta de operador'});}
+async function subirFoto(id,el){const file=el.files&&el.files[0];if(!file)return;const fd=new FormData();fd.set('file',file);try{await apiPost('/api/operadores/'+id+'/foto',fd);toast('Foto actualizada');await loadOperadores();verOperador(id);}catch(e){toast(e.message);}}
+async function quitarFoto(id){try{await apiDel('/api/operadores/'+id+'/foto');toast('Foto eliminada');await loadOperadores();verOperador(id);}catch(e){toast(e.message);}}
+function eliminarOperador(id){const o=OPS.find(x=>x.id===id);closeModal();confirmarBorrado('/api/operadores/'+id,o?o.nombre:'este operador',loadOperadores);}
+const VIAJE_CAMPOS=[
+  {key:'kilometros',label:'Kilómetros',type:'number',ph:'912.4'},
+  {key:'lts_scaner',label:'Litros de scanner',type:'number',ph:'349.6'},
+  {key:'lts_real',label:'Litros reales',type:'number',ph:'357.8'},
+  {key:'odometro',label:'Odómetro',type:'number',ph:'533162'},
+  {key:'codigo_cv',label:'Código C (C-C, C-V…)',ph:'C-C'},
+  {key:'descuentos',label:'Descuentos (L)',type:'number'},
+  {key:'analista',label:'Analista (inicial)',ph:'S'},
+  {key:'tipo_config',label:'Tipo de viaje',type:'select',options:['','SENCILLO','FULL','THORTON']},
+  {key:'operador_numero',label:'Nº operador (reasignar, opcional)',type:'number',ph:'530'},
+];
+async function editarViaje(id){const v=await api('/api/viajes/'+id);
+  abrirForm('Completar viaje '+(v.unidad||''),VIAJE_CAMPOS,v,async fd=>{
+    await apiPost('/api/viajes/'+id,fd);closeModal();toast('Viaje actualizado y recalculado');
+    if($('#s-historial').classList.contains('on'))loadViajes();
+    verViaje(id);
+  },{icono:IC_VIAJE,subtitulo:'Captura o corrige los datos faltantes — se recalcula solo'});}
+
+// ── Asignación de viajes ─────────────────────────────────────────────────────
+// El coordinador asigna operador + unidad + destino. El backend mantiene UNA sola
+// asignación activa por operador: al crear una nueva, finaliza la anterior sola.
+const IC_ASIGNAR='<svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round"><path d="M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8 17h6a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h5"></path></svg>';
+async function loadAsignaciones(){
+  const body=$('#asig-body'); if(!body)return;
+  let list=[];
+  try{ list=await api('/api/asignaciones?estado=activa'); }catch(e){ list=[]; }
+  if(!list.length){
+    body.innerHTML='<div class="card"><div class="empty">Sin viajes asignados. Pulsa «Asignar viaje» para crear el primero.</div></div>';
+    return;
+  }
+  const fechaCorta=iso=>{if(!iso)return '—';try{return new Date(iso).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return esc(iso);}};
+  body.innerHTML='<div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table>'+
+    '<thead><tr><th>Operador</th><th>Unidad</th><th>Destino</th><th>Origen</th><th>Nota</th><th>Desde</th><th></th></tr></thead><tbody>'+
+    list.map(a=>`<tr>
+      <td><b>${esc(a.operador_nombre)||'—'}</b>${a.operador_numero?`<br><span class="sub">#${esc(a.operador_numero)}</span>`:''}</td>
+      <td class="mono">${esc(a.unidad_clave)||'—'}</td>
+      <td style="white-space:normal;max-width:280px">${esc(a.destino)||'—'}</td>
+      <td style="white-space:normal;max-width:200px;color:var(--muted)">${esc(a.origen)||'—'}</td>
+      <td style="white-space:normal;max-width:240px;color:var(--muted)">${esc(a.nota)||'—'}</td>
+      <td class="mono" style="color:var(--muted)">${fechaCorta(a.creada_en)}</td>
+      <td style="text-align:right"><button class="mini r" data-finaliza-asig="${a.id}">Finalizar</button></td>
+    </tr>`).join('')+
+    '</tbody></table></div></div>';
+}
+async function abrirAsignarViaje(){
+  let ops=[],unis=[],rems=[];
+  try{ [ops,unis,rems]=await Promise.all([api('/api/operadores'),api('/api/unidades'),api('/api/remolques')]); }
+  catch(e){ toast('No se pudieron cargar los catálogos: '+(e.message||'')); return; }
+  const opOpts=ops.map(o=>`<option value="${o.id}">${esc(o.nombre)}${o.numero?' (#'+esc(o.numero)+')':''}</option>`).join('');
+  const uniOpts=unis.filter(u=>u.activo!==false).map(u=>`<option value="${u.id}">${esc(u.clave)}</option>`).join('');
+  const remOpts=(rems||[]).slice().sort((a,b)=>String(a.eco==null?'':a.eco).localeCompare(String(b.eco==null?'':b.eco),undefined,{numeric:true,sensitivity:'base'})).map(r=>`<option value="${r.id}">${esc(r.eco)}${r.es_dolly?' (dolly)':''}${r.activo===false?' (inactivo)':''}</option>`).join('');
+  const cab=`<div style="margin:-22px -22px 18px;padding:18px 22px;background:linear-gradient(120deg, color-mix(in oklab,var(--accent) 16%,var(--panel)), var(--panel));border-bottom:1px solid var(--line2);border-radius:6px 6px 0 0"><div style="display:flex;align-items:center;gap:13px"><div class="mbadge">${IC_ASIGNAR}</div><div><h3 style="margin:0">Asignar viaje</h3><div class="sub">Operador, unidad y destino del nuevo viaje</div></div></div></div>`;
+  openModal(`${cab}<div class="formcard grid2" style="gap:8px 16px">
+      <div><label>Operador *</label><select id="asig-op"><option value="">— elige operador —</option>${opOpts}</select></div>
+      <div><label>Unidad *</label><select id="asig-uni"><option value="">— elige unidad —</option>${uniOpts}</select></div>
+      <div style="grid-column:1/-1"><label>Destino *</label><input id="asig-dest" type="text" placeholder="Monterrey → CDMX"></div>
+      <div style="grid-column:1/-1"><label>Origen</label><input id="asig-orig" type="text" placeholder="Patio / punto de salida (opcional)"></div>
+      <div style="grid-column:1/-1"><label>Nota</label><textarea id="asig-nota" rows="2" placeholder="Instrucciones o comentarios (opcional)"></textarea></div>
+      <div style="grid-column:1/-1"><label>Remolques (para tractos)</label><select id="asig-rem" multiple size="4">${remOpts}</select><div class="sub" style="margin-top:5px">Opcional, solo para tractos. Mantén Ctrl (Cmd en Mac) para elegir varios. Máximo 2.</div></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px"><button class="btn" onclick="closeModal()">Cancelar</button><button class="btn primary" id="asig-save">Asignar viaje</button></div>
+    <div class="msg" id="asig-msg" style="text-align:right"></div>`);
+  $('#asig-save').onclick=async()=>{
+    const m=$('#asig-msg'); m.textContent='';
+    const op=$('#asig-op').value, uni=$('#asig-uni').value, dest=$('#asig-dest').value.trim();
+    if(!op||!uni||!dest){ m.className='msg err'; m.textContent='Operador, unidad y destino son obligatorios.'; return; }
+    const fd=new FormData();
+    fd.set('operador_id',op); fd.set('unidad_id',uni); fd.set('destino',dest);
+    const orig=$('#asig-orig').value.trim(); if(orig)fd.set('origen',orig);
+    const nota=$('#asig-nota').value.trim(); if(nota)fd.set('nota',nota);
+    const remSel=Array.from($('#asig-rem').selectedOptions).map(o=>o.value).filter(Boolean);
+    if(remSel.length>2){ m.className='msg err'; m.textContent='Un tracto lleva máximo 2 remolques.'; return; }
+    if(remSel.length)fd.set('remolque_ids',remSel.join(','));
+    $('#asig-save').disabled=true;
+    try{ await apiPost('/api/asignaciones',fd); closeModal(); toast('Viaje asignado'); loadAsignaciones(); }
+    catch(e){ $('#asig-save').disabled=false; m.className='msg err'; m.textContent=e.message||'No se pudo asignar el viaje'; }
+  };
+}
+// Delegación: el id va en data-attribute (mismo patrón que solicitudes/eventos).
+document.addEventListener('click',async ev=>{
+  const b=ev.target.closest('[data-finaliza-asig]');
+  if(!b)return;
+  if(!confirm('¿Finalizar este viaje asignado?'))return;
+  b.disabled=true;
+  try{ await apiPost('/api/asignaciones/'+b.dataset.finalizaAsig+'/finalizar',new FormData()); toast('Asignación finalizada'); loadAsignaciones(); }
+  catch(e){ b.disabled=false; toast('No se pudo finalizar: '+(e.message||'')); }
+});
+
+// ── Partículas ───────────────────────────────────────────────────────────────
+function initParts(){const cv=$('#parts');if(!cv)return;const ctx=cv.getContext('2d');let W,H;const rz=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight;};rz();addEventListener('resize',rz);
+  const mouse={x:innerWidth/2,y:innerHeight/2};addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;});
+  const N=32,pts=[];for(let i=0;i<N;i++){const x=Math.random()*innerWidth,y=Math.random()*innerHeight;pts.push({x,y,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,hx:x,hy:y});}
+  const cssVar=v=>{let c=getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#888888';if(c[0]==='#'&&c.length===4)c='#'+c[1]+c[1]+c[2]+c[2]+c[3]+c[3];return c;};
+  const rgba=(hex,a)=>{if(hex[0]!=='#')return hex;const n=parseInt(hex.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;};
+  const tick=()=>{ctx.clearRect(0,0,W,H);const ink=cssVar('--ink'),acc=cssVar('--accent');
+    for(let i=0;i<N;i++){const p=pts[i];const dx=mouse.x-p.x,dy=mouse.y-p.y,d=Math.hypot(dx,dy)||1;
+      if(d<230&&d>90){p.vx+=dx/d*.006;p.vy+=dy/d*.006;}
+      if(d<110){const f=(110-d)/110*.06;p.vx-=dx/d*f;p.vy-=dy/d*f;}
+      p.vx+=(p.hx-p.x)*.0006;p.vy+=(p.hy-p.y)*.0006;p.vx*=.96;p.vy*=.96;
+      const sp=Math.hypot(p.vx,p.vy);if(sp>.55){p.vx*=.55/sp;p.vy*=.55/sp;}
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<-20)p.x=W+20;if(p.x>W+20)p.x=-20;if(p.y<-20)p.y=H+20;if(p.y>H+20)p.y=-20;}
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const a=pts[i],b=pts[j],d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(d<130){ctx.strokeStyle=rgba(ink,.14*(1-d/130));ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
+    for(const p of pts){const dm=Math.hypot(mouse.x-p.x,mouse.y-p.y);
+      ctx.fillStyle=dm<160?rgba(acc,.55):rgba(ink,.28);ctx.beginPath();ctx.arc(p.x,p.y,dm<160?2.2:1.7,0,7);ctx.fill();}
+    requestAnimationFrame(tick);};tick();}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+applyTheme();buildNav();initParts();loadPerfil();
+// El coordinador aterriza en su trabajo real (la bandeja de solicitudes), no en el
+// resumen analítico que es más del admin. Se espera a saber el rol antes de decidir.
+aplicarRol().then(()=>show(ROL==='coordinador'?'solicitudes':'resumen'));
+vigilarAnomalias();   // siembra el estado inicial: no avisa de las anomalías ya existentes
+// Listener de tema en vivo: si la preferencia es 'system', sigue los cambios del SO en
+// caliente (sin recargar). Autocontenido: no depende de applyTheme.
+try{matchMedia('(prefers-color-scheme:dark)').addEventListener('change',e=>{if((localStorage.getItem('tr-theme')||'system')==='system')document.documentElement.dataset.theme=e.matches?'dark':'light';});}catch(e){}
+</script>
+</body>
+</html>

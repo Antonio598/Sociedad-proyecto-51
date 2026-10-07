@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2Day · servidor listo</title>
+<style>
+  :root{
+    --fondo:#14181d; --panel:#1b2026; --linea:#2a313a;
+    --tinta:#e8edf3; --suave:#8b96a5; --ok:#3fbf7f; --acento:#ff7a2e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:24px;
+       background:var(--fondo);color:var(--tinta);
+       font:15px/1.6 'IBM Plex Sans',system-ui,-apple-system,Segoe UI,sans-serif}
+  .caja{width:min(560px,100%);background:var(--panel);border:1px solid var(--linea);
+        border-radius:14px;padding:30px 28px}
+  h1{margin:0 0 4px;font-size:21px;letter-spacing:-.01em}
+  .sub{color:var(--suave);font-size:13.5px;margin:0 0 22px}
+  .marca{font:700 26px/1 'IBM Plex Sans',sans-serif;letter-spacing:-.02em;margin:0 0 18px}
+  .marca span{color:var(--acento)}
+  dl{display:grid;grid-template-columns:auto 1fr;gap:9px 18px;margin:0;font-size:13.5px}
+  dt{color:var(--suave)}
+  dd{margin:0;font-family:'IBM Plex Mono',ui-monospace,monospace;overflow-wrap:anywhere}
+  .ok{color:var(--ok)}
+  .mal{color:var(--acento)}
+  .pie{margin:22px 0 0;padding-top:16px;border-top:1px solid var(--linea);
+       color:var(--suave);font-size:12.5px}
+  svg{width:15px;height:15px;vertical-align:-2px;fill:none;stroke:currentColor;
+      stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+  <div class="caja">
+    <p class="marca">2<span>Day</span></p>
+    <h1>El servidor responde</h1>
+    <p class="sub">Página de prueba. La aplicación todavía no está desplegada aquí.</p>
+
+    <dl>
+      <dt>Dominio</dt>      <dd id="dom">—</dd>
+      <dt>Cifrado</dt>      <dd id="tls">—</dd>
+      <dt>Certificado</dt>  <dd id="cert">—</dd>
+      <dt>Hora del navegador</dt> <dd id="hora">—</dd>
+    </dl>
+
+    <p class="pie">
+      <svg viewBox="0 0 24 24"><path d="M12 3.6 2.2 20.4h19.6zM12 10v4.4M12 17.6v.4"/></svg>
+      Si ves esto sobre <b>https</b> y sin aviso del navegador, la cadena completa
+      &mdash;DNS, puerto&nbsp;80, Let&rsquo;s&nbsp;Encrypt y el proxy&mdash; est&aacute; funcionando.
+    </p>
+  </div>
+
+<script>
+  // Nada de esto necesita servidor: es lo que el propio navegador sabe de la conexión.
+  const seguro = location.protocol === 'https:';
+  document.getElementById('dom').textContent = location.hostname || '(sin dominio)';
+  const t = document.getElementById('tls');
+  t.textContent = seguro ? 'HTTPS' : 'HTTP — sin cifrar';
+  t.className = seguro ? 'ok' : 'mal';
+  // Si el navegador no se quejó y estamos en https, el certificado es válido: uno inválido
+  // habría parado la carga con una pantalla de advertencia antes de llegar hasta aquí.
+  const c = document.getElementById('cert');
+  c.textContent = seguro ? 'válido (el navegador no protestó)' : 'todavía no hay';
+  c.className = seguro ? 'ok' : 'mal';
+  document.getElementById('hora').textContent =
+    new Date().toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+</script>
+</body>
+</html>

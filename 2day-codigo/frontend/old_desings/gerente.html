@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TRAYECTO · Gerencia</title>
+<script>(function(){try{var t=localStorage.getItem('tr-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){document.documentElement.dataset.theme='light';}})();</script>
+<style>
+:root{--bg:#f1ede2;--panel:#f8f5ec;--card:#fcfaf4;--card2:#f3efe4;--ink:#22201a;--muted:#736a59;--line:#ddd6c5;--line2:#c9c1ac;--accent:#F2620F;--accent2:#c94e0a;--green:#1e7a46;--red:#bd3c20;--amber:#b7791f;--shadow:rgba(40,33,20,.16)}
+html[data-theme="dark"]{--bg:#141109;--panel:#1a1610;--card:#201b13;--card2:#17130c;--ink:#ede5d4;--muted:#9b9078;--line:#332d20;--line2:#4a4230;--accent:#FF6E1A;--accent2:#F2620F;--green:#54c17e;--red:#f0704f;--amber:#e5a337;--shadow:rgba(0,0,0,.45)}
+:root{--c-tracto:#D55E00;--c-camion:#0072B2;--c-remolque:#CC79A7}
+html[data-theme="dark"]{--c-remolque:#C06592}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:"Barlow Condensed","IBM Plex Sans",sans-serif;margin:0;letter-spacing:.2px}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+button{font:inherit;cursor:pointer}
+a{color:var(--accent)}
+.app{display:flex;min-height:100vh}
+.side{width:236px;flex:0 0 236px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:16px 16px 12px}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--ink);display:flex;align-items:center;justify-content:center;color:var(--bg);flex:0 0 auto}
+.brand b{font-family:"Barlow Condensed";font-size:21px;letter-spacing:1px;line-height:1}
+.brand .sub{font-size:10.5px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.nav{padding:6px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;flex:1}
+.navbtn{display:flex;align-items:center;gap:11px;padding:10px 12px;border:0;background:transparent;color:var(--ink);border-radius:9px;text-align:left;width:100%;font-weight:600;font-size:13.5px}
+.navbtn .ic{width:19px;height:19px;color:var(--muted)}
+.navbtn:hover{background:var(--card2)}
+.navbtn.on{background:var(--ink);color:var(--bg)}
+.navbtn.on .ic{color:var(--bg)}
+.navbtn .bdg{margin-left:auto;background:var(--amber);color:#fff;font-size:11px;font-weight:700;min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.side .who{padding:10px 16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.side .who .lock{width:14px;height:14px;color:var(--muted)}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:20;background:color-mix(in oklab,var(--bg) 86%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:12px 20px}
+.top .burger{display:none;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:7px;color:var(--ink)}
+.top h1{font-size:23px;flex:1}
+.top .kick{font-size:10.5px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;display:block;font-family:"IBM Plex Sans";font-weight:600}
+.iconbtn{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px;color:var(--ink);display:flex}
+.rochip{font-size:10.5px;font-weight:700;letter-spacing:.4px;color:var(--muted);background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:4px 10px;display:inline-flex;align-items:center;gap:5px}
+.wrap{padding:20px;max-width:1120px;width:100%;margin:0 auto}
+.section{display:none}
+.section.on{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 1px 0 var(--shadow)}
+.card+.card{margin-top:14px}
+.kick{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px}
+.kpi .l{font-size:10.5px;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.kpi .v{font-family:"Barlow Condensed";font-size:34px;line-height:1;margin-top:5px}
+.kpi .h{font-size:11px;color:var(--muted);margin-top:3px}
+.kpi.warn .v{color:var(--amber)}
+.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.chart{width:100%}
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.chh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px}
+.chh h3{font-size:17px}
+.chh .sub{font-size:11px;color:var(--muted)}
+.leg{display:flex;gap:13px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--muted)}
+.leg span{display:inline-flex;align-items:center;gap:6px}
+.leg i{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+.axlbl{font:600 9px 'IBM Plex Mono',monospace;fill:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--accent);color:#fff;border:0;border-radius:10px;padding:11px 16px;font-weight:700;font-size:14px}
+.btn:hover{background:var(--accent2)}
+.btn.gray{background:var(--card2);color:var(--ink);border:1px solid var(--line)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line2)}
+.btn.sm{padding:7px 11px;font-size:12.5px;border-radius:8px}
+.btn.block{width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.spread{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.item{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .who2{flex:1;min-width:0}
+.item .who2 b{font-weight:700}
+.item .who2 .m{font-size:12px;color:var(--muted);margin-top:1px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.empty{color:var(--muted);text-align:center;padding:24px 10px;font-size:13px}
+/* barra horizontal para rankings */
+.hb{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.hb:last-child{border-bottom:0}
+.hb .lb{font-weight:700}
+.hb .track{background:var(--card2);border-radius:6px;height:16px;overflow:hidden}
+.hb .fill{height:100%;border-radius:6px}
+.hb .vl{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto}
+/* consulta IA */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:8px 12px;font-size:12.5px;color:var(--ink);text-align:left}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.ans{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:14px;line-height:1.6}
+.ans h4{font-size:15px;margin:10px 0 4px}
+.ans p{margin:6px 0}
+.ans ul{margin:6px 0;padding-left:20px}
+.ans strong{color:var(--ink)}
+.ans .q{font-size:12.5px;color:var(--muted);border-left:3px solid var(--accent);padding-left:10px;margin-bottom:10px}
+.think{display:inline-flex;gap:5px;align-items:center;color:var(--muted);font-size:13px}
+.think i{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite alternate}
+.think i:nth-child(2){animation-delay:.2s}.think i:nth-child(3){animation-delay:.4s}
+@keyframes pulse{from{opacity:.3}to{opacity:1}}
+.pill{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.pill.ghost{background:var(--card2);color:var(--muted)}
+.catbadge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.catbadge.base{background:color-mix(in oklab,var(--amber) 20%,transparent);color:var(--amber)}
+.catbadge.consistencia{background:color-mix(in oklab,var(--c-camion) 22%,transparent);color:var(--c-camion)}
+.catbadge.fraude{background:color-mix(in oklab,var(--red) 18%,transparent);color:var(--red)}
+.catbadge.telemetria{background:color-mix(in oklab,var(--c-remolque) 28%,transparent);color:var(--c-remolque)}
+.catbadge.roles{background:color-mix(in oklab,var(--accent) 18%,transparent);color:var(--accent)}
+.report{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px}
+.report .rg{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:8px}
+.report .rc .rl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.report .rc .rv{font-weight:700;font-size:15px}
+.alertbar{display:flex;gap:10px;align-items:flex-start;background:color-mix(in oklab,var(--amber) 11%,transparent);border:1px solid color-mix(in oklab,var(--amber) 38%,transparent);color:var(--amber);border-radius:10px;padding:11px 13px;font-size:13px;font-weight:600}
+.ov{position:fixed;inset:0;background:rgba(20,16,8,.5);display:none;align-items:flex-end;justify-content:center;z-index:60}
+.ov.show{display:flex}
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:16px 16px 0 0;width:100%;max-width:560px;max-height:92vh;overflow:auto;padding:18px 18px 24px;box-shadow:0 -8px 40px var(--shadow)}
+@media(min-width:640px){.ov{align-items:center;padding:20px}.sheet{border-radius:16px}}
+.sheet .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sheet h3{font-size:22px}
+.x{background:transparent;border:0;color:var(--muted);padding:4px;display:flex}
+#charttip{position:fixed;z-index:90;background:var(--ink);color:var(--bg);padding:7px 10px;border-radius:8px;font-size:12px;font-weight:600;pointer-events:none;opacity:0;transition:opacity .1s;white-space:nowrap;box-shadow:0 4px 16px var(--shadow);transform:translate(-50%,-115%)}
+#charttip.show{opacity:1}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:11px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:80;max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.scrim{display:none}
+@media(max-width:899px){
+  .side{position:fixed;left:0;top:0;z-index:70;transform:translateX(-100%);transition:transform .22s ease;box-shadow:8px 0 40px var(--shadow)}
+  .app.navopen .side{transform:none}
+  .top .burger{display:flex}
+  .app.navopen .scrim{display:block;position:fixed;inset:0;background:rgba(20,16,8,.4);z-index:65}
+  .charts{grid-template-columns:1fr}
+  .g2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="side" id="side">
+    <div class="brand">
+      <div class="logo"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16M8 16l3-4 3 2 4-6"/></svg></div>
+      <div><b>TRAYECTO</b><div class="sub">Gerencia</div></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="who"><svg class="ic lock" viewBox="0 0 24 24"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v9H5z"/></svg><span id="who">Solo lectura</span></div>
+  </aside>
+  <div class="scrim" onclick="closeNav()"></div>
+  <main class="main">
+    <header class="top">
+      <button class="burger" onclick="toggleNav()" aria-label="Menú"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <h1><span class="kick" id="t-kick">GERENCIA</span><span id="t-title">Panorama</span></h1>
+      <span class="rochip"><svg class="ic" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v9H5z"/></svg>Solo lectura</span>
+      <button class="iconbtn" onclick="cycleTheme()" title="Tema"><svg class="ic" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
+      <a class="iconbtn" href="/logout" title="Salir"><svg class="ic" viewBox="0 0 24 24"><path d="M14 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-2M9 12h11m0 0-3-3m3 3-3 3"/></svg></a>
+    </header>
+    <div class="wrap">
+
+      <!-- PANORAMA -->
+      <section class="section on" id="s-panorama">
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+          <div><div class="kick">Panorama de la flota</div><h2 style="font-size:26px;margin-top:2px" id="hi-nombre">Gerencia</h2>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:2px" id="hi-rango">—</div></div>
+          <button class="btn gray" onclick="show('consulta')"><svg class="ic" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-4 3.5V16H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg> Preguntar a la IA</button>
+        </div>
+        <div class="kpis" style="margin-top:14px" id="kpis"><div class="empty">Cargando…</div></div>
+        <div class="charts" style="margin-top:14px">
+          <div class="card"><div class="chh"><h3>Composición de la flota</h3><span class="sub">unidades activas</span></div><div class="chart" id="ch-pie"><div class="empty">Cargando…</div></div></div>
+          <div class="card"><div class="chh"><h3>Viajes por mes</h3><span class="sub">Tractos vs Camiones</span></div><div class="chart" id="ch-area"><div class="empty">Cargando…</div></div></div>
+          <div class="card"><div class="chh"><h3>Consumo por unidad</h3><span class="sub">litros · top 8</span></div><div class="chart" id="ch-bar"><div class="empty">Cargando…</div></div></div>
+          <div class="card"><div class="chh"><h3>Km vs rendimiento</h3><span class="sub">por viaje · km/l</span></div><div class="chart" id="ch-scatter"><div class="empty">Cargando…</div></div></div>
+        </div>
+      </section>
+
+      <!-- CONSULTA IA -->
+      <section class="section" id="s-consulta">
+        <div class="card">
+          <div class="kick">Consulta con IA</div>
+          <h2 style="font-size:22px;margin:2px 0 4px">Pregunta sobre la flota</h2>
+          <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px">La IA responde con los datos duros de la operación. Es solo consulta — no genera reportes ni cambia información.</p>
+          <textarea id="cq" rows="3" placeholder="p. ej. ¿Cuáles son las unidades con peor rendimiento y qué las explica?"></textarea>
+          <div class="row" style="margin-top:10px"><button class="btn" onclick="preguntar()"><svg class="ic" viewBox="0 0 24 24" style="width:17px;height:17px"><path d="M5 12h14M13 6l6 6-6 6"/></svg> Consultar</button></div>
+          <div class="chips" id="cq-chips"></div>
+          <div id="cq-ans"></div>
+        </div>
+      </section>
+
+      <!-- RENDIMIENTO -->
+      <section class="section" id="s-rendimiento">
+        <div class="card">
+          <div class="chh"><h3>Rendimiento por unidad</h3><span class="sub">km/l · con ≥5 viajes</span></div>
+          <div id="rm-bars"><div class="empty">Cargando…</div></div>
+        </div>
+        <div class="card">
+          <div class="chh"><h3>Motor vs ticket</h3><span class="sub">rendimiento medido por el scanner vs litros reales</span></div>
+          <div class="tablewrap"><table id="rm-svr"><tbody><tr><td class="empty">Cargando…</td></tr></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="chh"><h3>Mejores duplas operador · unidad</h3><span class="sub">por rendimiento real</span></div>
+          <div class="tablewrap"><table id="rm-rank"><tbody><tr><td class="empty">Cargando…</td></tr></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ANOMALÍAS -->
+      <section class="section" id="s-anomalias">
+        <div class="card">
+          <h2 style="font-size:22px;margin-bottom:4px">Anomalías de la flota</h2>
+          <p style="font-size:12.5px;color:var(--muted);margin:0 0 12px">Auditoría de solo lectura. Toca una anomalía para ver la causa y el mini-informe del viaje.</p>
+          <div id="an-list"><div class="empty">Cargando…</div></div>
+        </div>
+      </section>
+
+      <!-- OPERADORES -->
+      <section class="section" id="s-operadores">
+        <div class="card">
+          <div class="spread" style="margin-bottom:10px"><h2 style="font-size:22px">Operadores</h2>
+            <input id="op-q" placeholder="Buscar…" style="max-width:220px;background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;color:var(--ink)" oninput="pintarOperadores()"></div>
+          <div class="tablewrap"><table id="op-tabla"><tbody><tr><td class="empty">Cargando…</td></tr></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- PERFIL -->
+      <section class="section" id="s-perfil">
+        <div class="card">
+          <h2 style="font-size:22px;margin-bottom:10px">Perfil</h2>
+          <div class="item"><div class="who2"><b>Usuario</b></div><span id="pf-user" class="mono">—</span></div>
+          <div class="item"><div class="who2"><b>Rol</b></div><span>Gerente de Operaciones · solo lectura</span></div>
+        </div>
+        <div class="card">
+          <h3 style="font-size:18px;margin-bottom:8px">Personalización</h3>
+          <div id="tr-perfil-mount"></div>
+        </div>
+        <div class="card"><a class="btn ghost block" href="/logout" style="color:var(--red);border-color:var(--red)">Cerrar sesión</a></div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div class="ov" id="ov"><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+<div id="charttip"></div>
+
+<script src="/static/perfil.js"></script>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function api(p,o){const r=await fetch(p,o);if(r.status===401){location.href='/login';throw 0;}const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.detail||('Error '+r.status));return d;}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2800);}
+const nf=n=>Number(n).toLocaleString('es-MX');
+const tLbl=t=>t==='TRACTO'?'Tracto':(t==='CAMION'?'Camión':t);
+function md(t){t=t||'';return t.split('\n').map(l=>{l=esc(l).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');if(/^#{1,4}\s/.test(l))return '<h4>'+l.replace(/^#+\s/,'')+'</h4>';if(/^\s*[-*]\s/.test(l))return '<li>'+l.replace(/^\s*[-*]\s/,'')+'</li>';return l.trim()?'<p>'+l+'</p>':'';}).join('').replace(/(<li>.*?<\/li>)+/gs,m=>'<ul>'+m+'</ul>');}
+function applyTheme(){const t=localStorage.getItem('tr-theme')||'system';const eff=t==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=eff;const c=$('#pf-tema');if(c)c.textContent={light:'Claro',dark:'Oscuro',system:'Sistema'}[t];}
+function cycleTheme(){const cur=localStorage.getItem('tr-theme')||'system';const nx={light:'dark',dark:'system',system:'light'}[cur];localStorage.setItem('tr-theme',nx);applyTheme();toast('Tema: '+({light:'claro',dark:'oscuro',system:'sistema'}[nx]));}
+try{matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{if((localStorage.getItem('tr-theme')||'system')==='system')applyTheme();});}catch(e){}
+
+let ME={}, OPERADORES=[];
+
+const NAV=[
+  ['panorama','Panorama','M4 11.5 12 4l8 7.5M6 10v9h12v-9'],
+  ['consulta','Consulta IA','M4 5h16v11H9l-4 3.5V16H4zM8 9.5h8M8 12.5h5'],
+  ['rendimiento','Rendimiento','M4 20V4M4 20h16M8 16l3-4 3 2 4-6'],
+  ['anomalias','Anomalías','M12 3.2 2 20.5h20zM12 9.5v4.5M12 17.6v.4'],
+  ['operadores','Operadores','M8.5 8a3.5 3.5 0 1 0 7 0 3.5 3.5 0 1 0-7 0M3 20a6 6 0 0 1 12 0M16 11a3 3 0 0 0 0-6M21 20a6 6 0 0 0-4-5.6'],
+  ['perfil','Perfil','M8.5 8a3.5 3.5 0 1 0 7 0 3.5 3.5 0 1 0-7 0M4.5 20a7.5 7.5 0 0 1 15 0'],
+];
+const TIT={panorama:['GERENCIA','Panorama'],consulta:['INTELIGENCIA','Consulta IA'],rendimiento:['ANÁLISIS','Rendimiento'],anomalias:['AUDITORÍA','Anomalías'],operadores:['EQUIPO','Operadores'],perfil:['CUENTA','Perfil']};
+function pintarNav(){$('#nav').innerHTML=NAV.map(([id,lbl,d])=>`<button class="navbtn" data-sec="${id}" onclick="show('${id}')"><svg class="ic" viewBox="0 0 24 24"><path d="${d}"/></svg><span style="flex:1">${lbl}</span>${id==='anomalias'?'<span class="bdg" id="nav-an" style="display:none"></span>':''}</button>`).join('');}
+function toggleNav(){$('#app').classList.toggle('navopen');}
+function closeNav(){$('#app').classList.remove('navopen');}
+function show(sec){
+  $$('.section').forEach(s=>s.classList.remove('on'));
+  const el=$('#s-'+sec); if(el)el.classList.add('on');
+  $$('.navbtn').forEach(b=>b.classList.toggle('on',b.dataset.sec===sec));
+  const t=TIT[sec]||['',sec]; $('#t-kick').textContent=t[0]; $('#t-title').textContent=t[1];
+  closeNav(); window.scrollTo(0,0);
+  if(sec==='panorama')loadPanorama();
+  if(sec==='rendimiento')loadRendimiento();
+  if(sec==='anomalias')loadAnomalias();
+  if(sec==='operadores')loadOperadores();
+  if(sec==='perfil'&&window.TR_montarPerfil)TR_montarPerfil(document.getElementById('tr-perfil-mount'),ME);
+}
+function openSheet(html){$('#sheet').innerHTML=html;$('#ov').classList.add('show');}
+function closeSheet(){$('#ov').classList.remove('show');}
+$('#ov').addEventListener('click',e=>{if(e.target.id==='ov')closeSheet();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet();});
+
+// ══ tooltip + gráficos (SVG puro, temables) ═══════════════════════════════════
+const CTIP=document.getElementById('charttip');
+document.addEventListener('mousemove',e=>{const m=e.target.closest?e.target.closest('[data-tip]'):null;if(m){CTIP.innerHTML=m.getAttribute('data-tip');CTIP.style.left=e.clientX+'px';CTIP.style.top=e.clientY+'px';CTIP.classList.add('show');}else if(CTIP.classList.contains('show'))CTIP.classList.remove('show');});
+const TIPOCOL={TRACTO:'var(--c-tracto)',CAMION:'var(--c-camion)',Tractos:'var(--c-tracto)',Camiones:'var(--c-camion)',Remolques:'var(--c-remolque)'};
+function chartPie(box,data){
+  if(!box)return; const items=Object.entries(data||{}).filter(([,v])=>v>0); const total=items.reduce((a,[,v])=>a+v,0);
+  if(!total){box.innerHTML='<div class="empty" style="padding:14px">Sin datos.</div>';return;}
+  const W=220,H=168,cx=110,cy=82,r=58,sw=26,C=2*Math.PI*r; let acc=0,arcs='';
+  items.forEach(([k,v])=>{const frac=v/total,dash=Math.max(0.5,frac*C-2),col=TIPOCOL[k]||'var(--muted)';
+    arcs+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-dasharray="${dash.toFixed(2)} ${(C-dash).toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}" data-tip="${esc(k+': '+nf(v)+' ('+Math.round(frac*100)+'%)')}"></circle>`;acc+=frac*C;});
+  box.innerHTML='<div class="chart"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Composición de la flota"><g transform="rotate(-90 '+cx+' '+cy+')">'+arcs+`</g><text x="${cx}" y="${cy-1}" text-anchor="middle" font-family="Barlow Condensed" font-size="30" fill="var(--ink)">${nf(total)}</text><text x="${cx}" y="${cy+15}" text-anchor="middle" class="axlbl">unidades</text></svg></div>`
+    +'<div class="leg">'+items.map(([k,v])=>`<span><i style="background:${TIPOCOL[k]}"></i>${esc(k)} · ${nf(v)} (${Math.round(v/total*100)}%)</span>`).join('')+'</div>';
+}
+function chartArea(box,m){
+  if(!box)return; const L=(m&&m.labels)||[]; if(!L.length){box.innerHTML='<div class="empty" style="padding:14px">Sin datos.</div>';return;}
+  const A=m.Tractos||[],B=m.Camiones||[]; const W=340,H=180,padL=28,padR=10,padT=12,padB=26,pw=W-padL-padR,ph=H-padT-padB,base=padT+ph,N=L.length;
+  const maxY=Math.max(1,...L.map((_,i)=>(A[i]||0)+(B[i]||0)))*1.12; const X=i=>padL+(N===1?pw/2:pw*i/(N-1)),Y=v=>base-(v/maxY)*ph;
+  const bottom=L.map((_,i)=>X(i).toFixed(1)+','+Y(A[i]||0).toFixed(1)), cum=L.map((_,i)=>X(i).toFixed(1)+','+Y((A[i]||0)+(B[i]||0)).toFixed(1));
+  const areaA=`${X(0).toFixed(1)},${base} ${bottom.join(' ')} ${X(N-1).toFixed(1)},${base}`, areaB=bottom.concat(cum.slice().reverse()).join(' ');
+  let grid='';[0,.5,1].forEach(f=>{const y=base-f*ph;grid+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--line)"/><text x="${padL-4}" y="${(y+3).toFixed(1)}" text-anchor="end" class="axlbl">${Math.round(f*maxY)}</text>`;});
+  let xl='';L.forEach((lb,i)=>{if(N>7&&i%2)return;xl+=`<text x="${X(i).toFixed(1)}" y="${base+13}" text-anchor="middle" class="axlbl">${esc(lb.slice(5))}</text>`;});
+  let cols='';L.forEach((lb,i)=>{const w=pw/N,x=X(i)-w/2;cols+=`<rect x="${Math.max(padL,x).toFixed(1)}" y="${padT}" width="${w.toFixed(1)}" height="${ph}" fill="transparent" data-tip="${esc(lb+' — Tractos '+(A[i]||0)+' · Camiones '+(B[i]||0))}"></rect>`;});
+  box.innerHTML='<div class="chart"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Viajes por mes por tipo">'+grid+`<polygon points="${areaA}" fill="var(--c-tracto)" fill-opacity="0.85"></polygon><polygon points="${areaB}" fill="var(--c-camion)" fill-opacity="0.8"></polygon><polyline points="${bottom.join(' ')}" fill="none" stroke="var(--card)" stroke-width="1.5"></polyline>`+xl+cols+'</svg></div><div class="leg"><span><i style="background:var(--c-tracto)"></i>Tractos</span><span><i style="background:var(--c-camion)"></i>Camiones</span></div>';
+}
+function chartBar(box,rows){
+  if(!box)return; if(!rows||!rows.length){box.innerHTML='<div class="empty" style="padding:14px">Sin datos.</div>';return;}
+  const W=340,H=180,padL=10,padR=10,padT=16,padB=28,pw=W-padL-padR,ph=H-padT-padB,base=padT+ph,N=rows.length;
+  const maxY=Math.max(1,...rows.map(r=>r.litros))*1.14,slot=pw/N,bw=Math.min(slot*0.6,30); let bars='';
+  rows.forEach((r,i)=>{const x=padL+slot*(i+0.5),h=Math.max(1,(r.litros/maxY)*ph),y=base-h,col=TIPOCOL[r.tipo]||'var(--muted)';
+    bars+=`<rect x="${(x-bw/2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${col}" data-tip="${esc(r.unidad+' · '+tLbl(r.tipo)+' · '+nf(r.litros)+' L')}"></rect>`;
+    bars+=`<text x="${x.toFixed(1)}" y="${(y-4).toFixed(1)}" text-anchor="middle" class="axlbl" fill="var(--muted)">${Math.round(r.litros/1000)}k</text><text x="${x.toFixed(1)}" y="${base+12}" text-anchor="middle" class="axlbl">${esc(r.unidad)}</text>`;});
+  const tipos=[...new Set(rows.map(r=>r.tipo))];
+  box.innerHTML='<div class="chart"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Consumo por unidad"><line x1="'+padL+'" y1="'+base+'" x2="'+(W-padR)+'" y2="'+base+'" stroke="var(--line2)"></line>'+bars+'</svg></div><div class="leg">'+tipos.map(t=>`<span><i style="background:${TIPOCOL[t]}"></i>${esc(tLbl(t))}s</span>`).join('')+'</div>';
+}
+function chartScatter(box,pts){
+  if(!box)return; if(!pts||!pts.length){box.innerHTML='<div class="empty" style="padding:14px">Sin datos.</div>';return;}
+  const W=340,H=192,padL=28,padR=10,padT=10,padB=30,pw=W-padL-padR,ph=H-padT-padB,base=padT+ph;
+  const xmax=Math.max(...pts.map(p=>p.km))*1.05||1; const ys=pts.map(p=>p.rto),ymin=Math.min(...ys),ymax=Math.max(...ys),yp=(ymax-ymin)*0.1||1,y0=Math.max(0,ymin-yp),y1=ymax+yp;
+  const X=v=>padL+(v/xmax)*pw,Y=v=>base-((v-y0)/(y1-y0))*ph;
+  let grid='';[0,.5,1].forEach(f=>{const y=base-f*ph,val=y0+f*(y1-y0);grid+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--line)"></line><text x="${padL-4}" y="${(y+3).toFixed(1)}" text-anchor="end" class="axlbl">${val.toFixed(1)}</text>`;});
+  let xt='';[0,.5,1].forEach(f=>{const x=padL+f*pw;xt+=`<text x="${x.toFixed(1)}" y="${base+13}" text-anchor="middle" class="axlbl">${Math.round(f*xmax)}</text>`;});
+  const dots=pts.map(p=>`<circle cx="${X(p.km).toFixed(1)}" cy="${Y(p.rto).toFixed(1)}" r="2.6" fill="${TIPOCOL[p.tipo]||'var(--muted)'}" fill-opacity="0.6" data-tip="${esc(tLbl(p.tipo)+' · '+Math.round(p.km)+' km · '+p.rto.toFixed(2)+' km/l')}"></circle>`).join('');
+  box.innerHTML='<div class="chart"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Km contra rendimiento por viaje">'+grid+xt+`<text x="${W-padR}" y="${H-3}" text-anchor="end" class="axlbl">km recorridos →</text>`+dots+'</svg></div><div class="leg"><span><i style="background:var(--c-tracto)"></i>Tractos</span><span><i style="background:var(--c-camion)"></i>Camiones</span></div>';
+}
+
+// ══ PANORAMA ══════════════════════════════════════════════════════════════════
+async function loadPanorama(){
+  loadResumenCharts();
+  try{
+    const k=await api('/api/kpis');
+    const kc=(l,v,h,cls)=>`<div class="kpi ${cls||''}"><div class="l">${l}</div><div class="v">${v}</div><div class="h">${h||''}</div></div>`;
+    $('#kpis').innerHTML=
+      kc('Viajes',nf(k.total_viajes),'registrados en bitácora')+
+      kc('Rendimiento',(k.rendimiento_promedio||0).toFixed(2)+' <span style="font-size:15px">km/l</span>','flota completa')+
+      kc('Litros',nf(k.litros_totales),'combustible total')+
+      kc('Unidades',nf(k.unidades),(k.unidades_por_tipo?((k.unidades_por_tipo.TRACTO||0)+' tractos · '+(k.unidades_por_tipo.CAMION||0)+' camiones'):''))+
+      kc('Operadores',nf(k.operadores),'en el padrón')+
+      kc('Anomalías',nf(k.anomalias_pendientes),'pendientes de revisar',k.anomalias_pendientes>0?'warn':'');
+    setBdg('nav-an',k.anomalias_pendientes);
+  }catch(e){ $('#kpis').innerHTML='<div class="empty">No se pudieron cargar los indicadores.</div>'; }
+}
+function setBdg(id,n){const b=$('#'+id);if(!b)return;if(n>0){b.textContent=n;b.style.display='';}else b.style.display='none';}
+async function loadResumenCharts(){
+  try{const d=await api('/api/coordinador/resumen');
+    chartPie($('#ch-pie'),d.composicion);chartArea($('#ch-area'),d.mensual);chartBar($('#ch-bar'),d.consumo);chartScatter($('#ch-scatter'),d.dispersion);
+    if(d.mensual&&d.mensual.labels&&d.mensual.labels.length){const L=d.mensual.labels;$('#hi-rango').textContent='Datos de '+L[0]+' a '+L[L.length-1];}
+  }catch(e){['ch-pie','ch-area','ch-bar','ch-scatter'].forEach(id=>{const b=$('#'+id);if(b)b.innerHTML='<div class="empty">No se pudo cargar.</div>';});}
+}
+
+// ══ CONSULTA IA ═══════════════════════════════════════════════════════════════
+const SUGERENCIAS=[
+  '¿Cuáles son las 3 unidades con peor rendimiento y qué lo explica?',
+  'Resume el estado de la flota en 3 puntos.',
+  '¿Dónde estamos perdiendo más combustible?',
+  '¿Qué tipos de anomalía son los más frecuentes ahora?'
+];
+function pintarChips(){$('#cq-chips').innerHTML=SUGERENCIAS.map(s=>`<button class="chip" onclick="usarSugerencia(this)">${esc(s)}</button>`).join('');}
+function usarSugerencia(btn){$('#cq').value=btn.textContent;preguntar();}
+let PREGUNTANDO=false;
+async function preguntar(){
+  if(PREGUNTANDO)return;
+  const q=$('#cq').value.trim(); if(!q){toast('Escribe una pregunta');return;}
+  PREGUNTANDO=true;
+  $('#cq-ans').innerHTML='<div class="ans"><div class="q">'+esc(q)+'</div><div class="think"><i></i><i></i><i></i> Consultando los datos de la flota…</div></div>';
+  try{
+    const fd=new FormData();fd.append('pregunta',q);
+    const d=await api('/api/consulta',{method:'POST',body:fd});
+    $('#cq-ans').innerHTML='<div class="ans"><div class="q">'+esc(d.pregunta||q)+'</div>'+md(d.respuesta||'')+'</div>';
+  }catch(e){ $('#cq-ans').innerHTML='<div class="ans" style="color:var(--red)">No se pudo obtener la respuesta: '+esc(e.message||'')+'</div>'; }
+  PREGUNTANDO=false;
+}
+
+// ══ RENDIMIENTO ═══════════════════════════════════════════════════════════════
+async function loadRendimiento(){
+  // Barras horizontales de rendimiento por unidad
+  try{const d=await api('/api/stats/rendimiento-unidad');const L=d.labels||[],V=d.valores||[];
+    if(!L.length){$('#rm-bars').innerHTML='<div class="empty">Sin datos.</div>';}
+    else{const max=Math.max(...V)*1.05;const meta=2.8;
+      $('#rm-bars').innerHTML=L.map((lb,i)=>{const v=V[i],w=Math.round(v/max*100),col=v>=meta?'var(--green)':(v>=meta*.85?'var(--amber)':'var(--red)');
+        return `<div class="hb"><div class="lb">${esc(lb)}</div><div class="track"><div class="fill" style="width:${w}%;background:${col}"></div></div><div class="vl">${v.toFixed(2)} km/l</div></div>`;}).join('');}
+  }catch(e){$('#rm-bars').innerHTML='<div class="empty">No se pudo cargar.</div>';}
+  // Scanner vs real
+  try{const s=await api('/api/stats/scanner-vs-real');
+    $('#rm-svr').innerHTML='<thead><tr><th>Unidad</th><th class="num">Motor km/l</th><th class="num">Real km/l</th><th class="num">Brecha</th><th class="num">Viajes</th></tr></thead><tbody>'+
+      s.map(r=>{const gap=(r.rto!=null&&r.rto_real!=null)?(r.rto_real-r.rto):null;const gc=gap==null?'var(--muted)':(gap<-0.15?'var(--red)':(gap>0.15?'var(--green)':'var(--ink)'));
+        return `<tr><td><b>${esc(r.unidad)}</b></td><td class="num">${r.rto!=null?r.rto.toFixed(2):'—'}</td><td class="num">${r.rto_real!=null?r.rto_real.toFixed(2):'—'}</td><td class="num" style="color:${gc}">${gap!=null?(gap>0?'+':'')+gap.toFixed(2):'—'}</td><td class="num">${r.viajes}</td></tr>`;}).join('')+'</tbody>';
+  }catch(e){$('#rm-svr').innerHTML='<tbody><tr><td class="empty">No se pudo cargar.</td></tr></tbody>';}
+  // Ranking operador-unidad
+  try{const rk=await api('/api/stats/ranking-operador-unidad');
+    $('#rm-rank').innerHTML='<thead><tr><th>Operador</th><th>Unidad</th><th class="num">km/l</th><th class="num">Viajes</th></tr></thead><tbody>'+
+      rk.map(r=>`<tr><td><b>${esc(r.operador)}</b></td><td>${esc(r.unidad)} <span style="color:var(--muted);font-size:11px">${esc(tLbl(r.tipo))}</span></td><td class="num" style="color:var(--green)">${r.rto_real!=null?r.rto_real.toFixed(2):'—'}</td><td class="num">${r.viajes}</td></tr>`).join('')+'</tbody>';
+  }catch(e){$('#rm-rank').innerHTML='<tbody><tr><td class="empty">No se pudo cargar.</td></tr></tbody>';}
+}
+
+// ══ ANOMALÍAS (solo lectura) ══════════════════════════════════════════════════
+let ANOMS=[];
+const ANOM_INFO={
+  km_imposible:{l:'Kilómetros imposibles',c:'base',e:'Los kilómetros del viaje son cero o negativos: no puede ser un dato real, casi siempre es un error de captura.'},
+  lts_imposible:{l:'Litros imposibles',c:'base',e:'Los litros cargados son cero o negativos. Revisa el ticket o la lectura.'},
+  odometro_retrocede:{l:'Odómetro retrocede',c:'base',e:'El odómetro es menor que la última lectura registrada de la unidad: no puede ir hacia atrás.'},
+  consumo_atipico:{l:'Consumo atípico',c:'base',e:'El rendimiento de este viaje se sale del comportamiento histórico de la unidad. Puede indicar fuga, robo o un dato mal capturado.'},
+  desviacion_alta:{l:'Desviación alta',c:'base',e:'La diferencia entre litros reales y del scanner supera la tolerancia de la unidad. Se propone un descuento a confirmar.'},
+  rendimiento_fuera_banda_fisica:{l:'Rendimiento fuera de banda física',c:'consistencia',e:'El rendimiento cae fuera de lo físicamente posible para ese tipo de unidad. Revisa km y litros.'},
+  km_vs_odometro:{l:'Km no cuadran con odómetro',c:'consistencia',e:'Los kilómetros reportados no coinciden con el avance del odómetro entre lecturas contiguas.'},
+  reporte_duplicado:{l:'Reporte duplicado',c:'consistencia',e:'Coincide con otro viaje de la misma unidad y fecha: posible captura doble.'},
+  rendimiento_cv_incoherente:{l:'Rendimiento en vacío incoherente',c:'consistencia',e:'Un tramo vacío (sin carga) rinde igual o menos que uno cargado, lo cual no es coherente.'},
+  correccion_sospechosa:{l:'Corrección sospechosa',c:'consistencia',e:'Se corrigió un dato ya reportado de una forma que llama la atención. Verifica el cambio.'},
+  reporte_retractado:{l:'Reporte retractado',c:'consistencia',e:'El reporte de este viaje fue retractado o reemplazado. Revisa qué se cambió y por qué.'},
+  carga_fantasma:{l:'Carga fantasma',c:'fraude',e:'Mucho combustible cargado con casi nada de recorrido ni consumo de motor: posible carga que no usó la unidad.'},
+  ticket_inflado:{l:'Ticket inflado',c:'fraude',e:'Sobreconsumo con rendimiento muy por debajo del histórico y sin manejo agresivo que lo explique: el ticket pudo inflarse.'},
+  sifoneo_tanque:{l:'Sifoneo de tanque',c:'fraude',e:'Exceso de consumo acumulado y persistente en los últimos viajes de la unidad: patrón compatible con extracción (sifoneo) de combustible.'},
+  exceso_velocidad:{l:'Exceso de velocidad',c:'telemetria',e:'La velocidad máxima del viaje es atípica frente al historial de la unidad o supera el tope permitido.'},
+  ralenti_elevado:{l:'Ralentí elevado',c:'telemetria',e:'El motor estuvo en ralentí más de lo normal para esta unidad: desperdicia combustible.'},
+  paradas_panico_recurrentes:{l:'Paradas de pánico',c:'telemetria',e:'Frenadas de emergencia por encima de lo habitual para la unidad: revisa el estilo de manejo o el estado del equipo.'},
+  operador_no_disponible:{l:'Operador no disponible',c:'roles',e:'El operador reportado está en vacaciones, incapacidad, baja o inactivo. Verifica quién condujo en realidad.'},
+  operador_no_asignado:{l:'Operador no asignado',c:'roles',e:'Condujo alguien distinto al titular de la unidad. Confirma si fue un relevo autorizado.'},
+};
+function anomInfo(t){return ANOM_INFO[t]||{l:(t||'anomalía').replace(/_/g,' '),c:'base',e:'Valor fuera de rango detectado por las reglas de validación. Revisa el mini-informe del viaje.'};}
+async function loadAnomalias(){
+  try{ANOMS=await api('/api/anomalias'); ANOMS=ANOMS||[];
+    $('#an-list').innerHTML=ANOMS.length?ANOMS.map(anomItem).join(''):'<div class="empty">Sin anomalías pendientes. Flota en orden.</div>';
+    setBdg('nav-an',ANOMS.length);
+  }catch(e){$('#an-list').innerHTML='<div class="empty">No se pudo cargar.</div>';}
+}
+function anomItem(a){const inf=anomInfo(a.tipo);
+  return `<div class="item" onclick="verAnomalia(${a.id})" style="cursor:pointer">
+    <div class="who2"><b>${esc(a.unidad||'—')}</b> <span class="catbadge ${inf.c}">${esc(inf.l)}</span>
+      <div class="m">${esc(a.descripcion||'')}${a.fecha?' · '+esc(a.fecha.slice(0,10)):''}</div></div>
+    <svg class="ic" viewBox="0 0 24 24" style="color:var(--muted)"><path d="M9 6l6 6-6 6"></path></svg></div>`;
+}
+async function verAnomalia(id){
+  const a=(ANOMS||[]).find(x=>x.id===id)||{}; const inf=anomInfo(a.tipo);
+  openSheet('<div class="empty">Cargando…</div>');
+  let v={}; try{ if(a.viaje_id)v=await api('/api/viajes/'+a.viaje_id); }catch(e){}
+  const rc=(l,val)=>`<div class="rc"><div class="rl">${l}</div><div class="rv">${val}</div></div>`;
+  openSheet(`
+    <div class="sh"><h3>${esc(inf.l)}</h3><button class="x" onclick="closeSheet()"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div style="margin:2px 0 8px"><span class="catbadge ${inf.c}">${inf.c}</span> <span style="font-size:12px;color:var(--muted)">viaje #${a.viaje_id||'—'}</span></div>
+    <div class="alertbar"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3.2 2 20.5h20zM12 9.5v4.5M12 17.6v.4"/></svg><div>${esc(a.descripcion||'Sin detalle')}</div></div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.55;margin:10px 0 0"><b style="color:var(--ink)">¿Por qué salió?</b> ${esc(inf.e)}</p>
+    <div class="report"><div class="kick">Mini-informe del viaje</div><div class="rg">
+      ${rc('Unidad',esc(v.unidad||a.unidad||'—')+(v.tipo_unidad?' · '+tLbl(v.tipo_unidad):''))}
+      ${rc('Operador',esc(v.operador||'—'))}
+      ${rc('Fecha',esc((v.fecha||a.fecha||'—').slice(0,10)))}
+      ${rc('Odómetro',v.odometro!=null?nf(v.odometro)+' km':'—')}
+      ${rc('Km del viaje',v.kilometros!=null?nf(v.kilometros)+' km':'—')}
+      ${rc('Litros reales',v.lts_real!=null?nf(v.lts_real)+' L':'—')}
+      ${rc('Litros scanner',v.lts_scaner!=null?nf(v.lts_scaner)+' L':'—')}
+      ${rc('Rend. real',v.rto_real!=null?v.rto_real.toFixed(2)+' km/l':'—')}
+      ${rc('Rend. scanner',v.rto!=null?v.rto.toFixed(2)+' km/l':'—')}
+      ${rc('Desviación',v.pct!=null?(v.pct*100).toFixed(1)+'%':'—')}
+    </div></div>
+    <div style="margin-top:12px;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px"><svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v9H5z"/></svg> Vista de gerencia: quien resuelve la anomalía es el coordinador.</div>
+  `);
+}
+
+// ══ OPERADORES (solo lectura) ═════════════════════════════════════════════════
+async function loadOperadores(){
+  try{OPERADORES=await api('/api/operadores');pintarOperadores();}
+  catch(e){$('#op-tabla').innerHTML='<tbody><tr><td class="empty">No se pudo cargar.</td></tr></tbody>';}
+}
+function pintarOperadores(){
+  const q=($('#op-q')&&$('#op-q').value||'').toLowerCase().trim();
+  let list=OPERADORES.filter(o=>o.activo!==false);
+  if(q)list=list.filter(o=>(o.nombre||'').toLowerCase().includes(q)||String(o.numero||'').includes(q));
+  list.sort((a,b)=>(b.viajes||0)-(a.viajes||0));
+  $('#op-tabla').innerHTML='<thead><tr><th>Operador</th><th class="num">Viajes</th><th class="num">Rendimiento</th><th>Estatus</th><th></th></tr></thead><tbody>'+
+    (list.length?list.map(o=>`<tr onclick="verOperador(${o.id})" style="cursor:pointer"><td><b>${esc(o.nombre)}</b>${o.numero?' <span style="color:var(--muted);font-size:11px">#'+o.numero+'</span>':''}</td><td class="num">${o.viajes||0}</td><td class="num">${o.rto_real_prom!=null?o.rto_real_prom.toFixed(2)+' km/l':'—'}</td><td>${esc(o.estatus||'—')}</td><td style="text-align:right;color:var(--muted)">›</td></tr>`).join(''):'<tr><td class="empty" colspan="5">Sin operadores.</td></tr>')+'</tbody>';
+}
+async function verOperador(id){
+  openSheet('<div class="empty">Cargando…</div>');
+  let o; try{o=await api('/api/operadores/'+id);}catch(e){openSheet('<div class="empty">No se pudo abrir.</div>');return;}
+  const rc=(l,v)=>`<div class="rc"><div class="rl">${l}</div><div class="rv">${v}</div></div>`;
+  const rend=o.rend_mensual||{labels:[],valores:[]};
+  const maxR=Math.max(0.1,...(rend.valores||[]));
+  const spark=(rend.valores||[]).length?('<div style="display:flex;align-items:flex-end;gap:3px;height:44px;margin-top:8px">'+rend.valores.map((v,i)=>{const h=Math.max(4,Math.round(v/maxR*44));const c=v>=2.8?'var(--green)':(v>=2.38?'var(--amber)':'var(--red)');return `<div title="${esc(rend.labels[i])}: ${v.toFixed(2)} km/l" style="flex:1;min-width:6px;height:${h}px;background:${c};border-radius:3px 3px 0 0"></div>`;}).join('')+'</div>'):'';
+  const unids=(o.unidades||[]).slice(0,6).map(u=>`<span class="pill ghost" style="margin:2px 4px 2px 0">${esc(u.clave)} · ${u.viajes}</span>`).join('')||'<span style="color:var(--muted)">—</span>';
+  const anoms=(o.anomalias||[]).slice(0,5).map(a=>{const inf=anomInfo(a.tipo);return `<div class="item" style="padding:8px 0"><div class="who2"><b>${esc(a.unidad||'—')}</b> <span class="catbadge ${inf.c}">${esc(inf.l)}</span><div class="m">${esc((a.fecha||'').slice(0,10))}</div></div></div>`;}).join('')||'<div class="empty" style="padding:8px">Sin anomalías.</div>';
+  const viajes=(o.ultimos_viajes||[]).slice(0,6).map(v=>`<div class="item" style="padding:7px 0"><div class="who2"><b>${esc(v.unidad||'—')}</b><div class="m">${esc((v.fecha||'').slice(0,10))}${v.tipo?' · '+esc(String(v.tipo).toLowerCase()):''}</div></div><div style="text-align:right;font-size:12.5px">${v.kilometros!=null?Math.round(v.kilometros)+' km':'—'}${v.rto_real!=null?'<div class="m">'+v.rto_real.toFixed(2)+' km/l</div>':''}</div></div>`).join('')||'<div class="empty" style="padding:8px">Sin viajes.</div>';
+  openSheet(`
+    <div class="sh"><h3>${esc(o.nombre)}</h3><button class="x" onclick="closeSheet()"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div style="margin:2px 0 10px;display:flex;gap:8px;flex-wrap:wrap">${o.numero?'<span class="pill ghost">#'+o.numero+'</span>':''}<span class="pill ghost">${esc(o.estatus||'—')}</span>${o.telefono?'<a class="pill ghost" href="tel:'+esc(o.telefono)+'" style="text-decoration:none">'+esc(o.telefono)+'</a>':''}${o.licencia?'<span class="pill ghost">Lic. '+esc(o.licencia)+'</span>':''}</div>
+    <div class="report"><div class="rg" style="grid-template-columns:1fr 1fr 1fr">
+      ${rc('Viajes',nf(o.viajes||0))}
+      ${rc('Rendimiento',o.rto_real_prom!=null?o.rto_real_prom.toFixed(2)+' km/l':'—')}
+      ${rc('Desviación',o.dif_prom!=null?(o.dif_prom>0?'+':'')+o.dif_prom+' L':'—')}
+    </div>${spark?'<div class="rl" style="margin-top:12px">Rendimiento por mes</div>'+spark:''}</div>
+    <div class="report"><div class="kick">Unidades que maneja</div><div style="margin-top:8px">${unids}</div></div>
+    <div class="report"><div class="kick">Anomalías recientes</div>${anoms}</div>
+    <div class="report"><div class="kick">Últimos viajes</div>${viajes}</div>
+  `);
+}
+
+// ── init ──
+(async function(){
+  pintarNav(); applyTheme(); pintarChips();
+  try{ME=await api('/api/me');}catch(e){ME={};}
+  if(window.TR_aplicarPrefs)TR_aplicarPrefs(ME.prefs);
+  $('#who').textContent=(ME.nombre||'Gerencia');
+  $('#pf-user').textContent=ME.username||'—';
+  $('#hi-nombre').textContent=(ME.nombre||'Gerencia');
+  show('panorama');
+})();
+</script>
+</body>
+</html>

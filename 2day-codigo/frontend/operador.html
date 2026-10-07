@@ -1,0 +1,1949 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>2Day · Operador</title>
+<meta name="theme-color" content="#eef1f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12161b" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="icon" href="/static/icon-192.png" sizes="192x192" type="image/png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="2Day">
+<script>(function(){try{var t=localStorage.getItem('tr-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';
+// Los dos <meta theme-color> de arriba siguen al sistema. Si el chofer eligió tema a mano
+// hay que pisarlos, o la barra de estado se queda del color del tema contrario.
+if(t!=='system'){var ms=document.querySelectorAll('meta[name=theme-color]');for(var i=0;i<ms.length;i++)ms[i].removeAttribute('media'),ms[i].content=d?'#12161b':'#eef1f5';}
+}catch(e){document.documentElement.dataset.theme='light';}})();</script>
+<link rel="stylesheet" href="/static/fuentes.css?v=20260920a">
+<link rel="stylesheet" href="/static/base.css?v=20260920c">
+<style>
+*{box-sizing:border-box}
+.ic{width:1em;height:1em;display:inline-block;vertical-align:-.14em;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+html,body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:14px/1.5 "IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+@keyframes drift{0%,100%{transform:translate3d(-2%,-1.5%,0)}50%{transform:translate3d(2%,1.5%,0)}}
+.app{position:relative;z-index:1;display:flex;min-height:100vh}
+aside{flex:0 0 234px;background:var(--nav);border-right:1px solid var(--nav-line);position:sticky;top:0;height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column;padding:calc(16px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
+.brand{display:block;padding:2px 6px 14px}
+.brand .lg{display:none}
+.brand img{width:130px;height:auto;display:block}
+.brand b,.brand>div>span{display:none}
+.brand .tag{display:flex;align-items:center;gap:8px;margin-top:11px}
+.brand .tag i{width:7px;height:15px;background:var(--accent);transform:skewX(-22deg);flex:0 0 auto}
+.brand .tag em{font:600 8.5px 'IBM Plex Mono';letter-spacing:.24em;color:var(--nav-muted);font-style:normal}
+nav{flex:1;min-height:0;display:flex;flex-direction:column;gap:2px;overflow-y:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+.navbtn{position:relative;display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;cursor:pointer;padding:10px 11px;color:var(--nav-item);border-radius:6px;font:500 13.5px 'IBM Plex Sans';text-align:left;transition:color .12s,background .12s}
+.navbtn:hover{background:#161a20;color:#fff}
+.navbtn.on{background:var(--accent-solid);color:var(--accent-ink)}
+.navbtn.on::before{content:none}
+.navbtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+.navbtn .bdg{margin-left:auto;background:var(--danger);color:#fff;border-radius:2px;font:600 10px 'IBM Plex Mono';padding:1px 6px}
+.uwrap{display:flex;align-items:center;gap:10px;padding:12px 8px 4px;border-top:1px solid var(--nav-line);margin-top:8px}
+.av{width:34px;height:34px;border-radius:6px;border:1px solid var(--nav-line);background:var(--u-tracto);color:#fff;font:700 13px 'IBM Plex Sans',sans-serif;cursor:pointer;flex:0 0 auto;overflow:hidden;padding:0}
+.uwrap .nm{font:600 12.5px 'IBM Plex Sans';color:var(--nav-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uwrap .rl{font:600 8.5px 'IBM Plex Mono';letter-spacing:.16em;color:var(--u-tracto);text-transform:uppercase}
+main{flex:1;min-width:0}
+.topbar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:calc(13px + env(safe-area-inset-top)) calc(26px + env(safe-area-inset-right)) 13px 26px;display:flex;align-items:center;gap:14px}
+.crumb{font:600 9px 'IBM Plex Mono';letter-spacing:.16em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title{font:700 21px 'IBM Plex Sans',sans-serif;letter-spacing:.03em;margin:1px 0 0;white-space:pre-line;overflow:hidden;line-height:1.08}
+.iconbtn{border:1px solid var(--line-2);background:var(--card);border-radius:6px;cursor:pointer;display:grid;place-items:center;color:var(--ink);transition:background .12s,border-color .12s;width:36px;height:36px}
+.iconbtn:hover{background:var(--sunken)}
+.iconbtn svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;width:17px;height:17px}
+.burger{display:none}
+.content{padding:22px 26px calc(22px + env(safe-area-inset-bottom));max-width:900px}
+.section{display:none;animation:rise .35s ease both}
+.section.on{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 19px;margin-bottom:16px;box-shadow:var(--sh-2)}
+.card.hero::before{content:"";position:absolute;top:0;left:0;width:34px;height:3px;background:var(--accent);border-radius:0 0 3px 0}
+.kick{font:700 10px 'IBM Plex Sans',sans-serif;letter-spacing:.22em;color:var(--accent);margin-bottom:3px}
+h2{font:700 17px 'IBM Plex Sans',sans-serif;letter-spacing:.03em;margin:0 0 14px}
+label{display:block;font:600 10px 'IBM Plex Sans';letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:14px 0 5px}
+input,select{width:100%;padding:11px 12px;border:1px solid var(--line-2);background:var(--sunken);color:var(--ink);border-radius:6px;font-size:15px;transition:border-color .15s}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+.unidad-box{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line-2);border-radius:8px;background:var(--sunken)}
+.unidad-box .clave{font:700 22px 'IBM Plex Mono'}
+.unidad-box .cx{font-size:11px;color:var(--muted)}
+.foto{border:1.5px dashed var(--line-2);border-radius:12px;padding:15px;text-align:center;margin-top:11px;transition:.2s}
+.bloqueo{display:flex;gap:12px;align-items:flex-start;background:color-mix(in oklab,var(--warn) 11%,transparent);border:1px solid color-mix(in oklab,var(--warn) 40%,transparent);border-radius:10px;padding:14px;margin-top:14px;color:var(--ink)}
+.bloqueo .ic{color:var(--warn);width:26px;height:26px;flex:0 0 auto}
+.bloqueo b{font-size:14.5px}
+.bloqueo p{font-size:12.5px;color:var(--muted);margin:5px 0 0;line-height:1.5}
+.foto .lbl{font:700 11px 'IBM Plex Sans',sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.foto .val{font:600 27px 'IBM Plex Mono';margin-top:5px;line-height:1.1}
+.foto .st{font-size:11.5px;color:var(--muted);margin-top:3px}
+.foto.ok{border-color:color-mix(in oklab,var(--ok) 55%,var(--line-2));background:color-mix(in oklab,var(--ok) 5%,transparent)}
+.foto.ok .val{color:var(--ok)}
+.foto.warn{border-color:color-mix(in oklab,var(--warn) 60%,var(--line-2));background:color-mix(in oklab,var(--warn) 6%,transparent)}
+.foto.load{border-color:var(--accent)}
+.hidden-file{display:none}
+.btn{padding:13px 16px;border:1px solid var(--accent-solid);background:var(--accent-solid);color:var(--accent-ink);font:700 13px 'IBM Plex Sans';letter-spacing:.06em;text-transform:uppercase;border-radius:6px;cursor:pointer;transition:background .12s,border-color .12s}
+.btn:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.btn:active{background:var(--accent-2)}
+.btn.block{width:100%}
+.btn.gray{background:var(--card);color:var(--ink);border-color:var(--line-2)}
+.btn.gray:hover{background:var(--sunken);border-color:var(--line-2)}
+.btn.sm{padding:8px 13px;font-size:11px;min-height:44px}   /* se toca a pulso en la cabina */
+.btn:disabled{opacity:.5}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font:700 10px 'IBM Plex Sans';letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.pill.borrador{background:var(--sunken);color:var(--muted);border:1px solid var(--line-2)}
+.pill.enviada,.pill.en_validacion{background:color-mix(in oklab,var(--warn) 18%,transparent);color:var(--warn)}
+.pill.devuelta{background:color-mix(in oklab,var(--danger) 15%,transparent);color:var(--danger)}
+.pill.autorizada,.pill.conciliada{background:color-mix(in oklab,var(--ok) 16%,transparent);color:var(--ok)}
+.pill.despachada,.pill.facturada{background:color-mix(in oklab,var(--accent) 16%,transparent);color:var(--accent)}
+.pill.rechazada,.pill.anulada{background:var(--sunken);color:var(--muted);border:1px solid var(--line-2)}
+.sol{padding:13px 0;border-bottom:1px solid var(--line)}
+.sol:last-child{border-bottom:0}
+.sol .row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sol .u{font:600 15px 'IBM Plex Mono'}
+.sol .m{font-size:11.5px;color:var(--muted);margin-top:1px}
+.expl{font-size:12.5px;margin-top:7px;padding:8px 11px;border-radius:8px;line-height:1.5}
+.expl.info{background:var(--sunken);color:var(--muted)}
+.expl.warn{background:color-mix(in oklab,var(--danger) 10%,transparent);border:1px solid color-mix(in oklab,var(--danger) 32%,var(--line));color:var(--ink)}
+.expl.ok{background:color-mix(in oklab,var(--ok) 10%,transparent);border:1px solid color-mix(in oklab,var(--ok) 32%,var(--line));color:var(--ink)}
+.stat{background:var(--sunken);border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+.stat .l{font:600 9.5px 'IBM Plex Sans';letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font:600 22px 'IBM Plex Mono';margin-top:2px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.kv:last-child{border-bottom:0}
+.kv .k{color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:22px 8px;font-size:13.5px}
+.home-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.action{position:relative;display:flex;align-items:center;gap:14px;text-align:left;width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 18px;box-shadow:var(--sh-2);cursor:pointer;color:var(--ink);transition:background .12s,border-color .12s}
+.action:hover{background:var(--sunken);border-color:var(--line-2)}
+.action:active{background:var(--sunken)}
+.action .ai{width:46px;height:46px;flex:0 0 auto;border-radius:5px;display:grid;place-items:center;background:color-mix(in oklab,var(--accent) 14%,transparent);color:var(--accent)}
+.action .ai svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.action b{display:block;font:700 15px 'IBM Plex Sans',sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.action small{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.action.primary{background:var(--accent-solid);border-color:var(--accent-solid);color:var(--accent-ink)}
+.action.primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.action.primary .ai{background:rgba(255,255,255,.2);color:#fff}
+.action.primary small{color:rgba(255,255,255,.85)}
+.action .bdg{position:absolute;top:10px;right:12px;background:var(--danger);color:#fff;border-radius:2px;font:600 10px 'IBM Plex Mono';padding:1px 6px}
+.action.primary .bdg{background:#fff;color:var(--accent)}
+.btn.danger{color:var(--danger);border-color:color-mix(in oklab,var(--danger) 40%,var(--line-2));display:flex;align-items:center;justify-content:center;gap:8px}
+.vrow{display:flex;align-items:center;gap:12px}
+.vrow .ai{width:42px;height:42px;flex:0 0 auto;border-radius:5px;display:grid;place-items:center;background:color-mix(in oklab,var(--accent) 14%,transparent);color:var(--accent)}
+.vrow .ai svg{width:22px;height:22px}
+.vlbl{font:600 9.5px 'IBM Plex Sans';letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.vdest{font:700 19px 'IBM Plex Sans',sans-serif;letter-spacing:.02em;margin-top:1px;line-height:1.15}
+.vsub{font-size:12px;color:var(--muted);margin-top:2px}
+.vitem{padding:12px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.vitem:last-child{border-bottom:0}
+.vitem .u{font:600 14px 'IBM Plex Mono'}
+.vitem .m{font-size:11.5px;color:var(--muted);margin-top:1px}
+.vitem .r{text-align:right;font:600 13px 'IBM Plex Mono'}
+.tip{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line)}
+.tip:last-child{border-bottom:0}
+.tip .ti{width:30px;height:30px;flex:0 0 auto;border-radius:5px;display:grid;place-items:center;background:color-mix(in oklab,var(--accent) 12%,transparent);color:var(--accent)}
+.tip .ti svg{width:17px;height:17px}
+.tip b{font:600 13.5px 'IBM Plex Sans'}
+.tip p{margin:2px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5}
+.hihd{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.verlink{font-size:11.5px;color:var(--accent);font-weight:600;cursor:pointer}
+.foto .exp{font-size:12px;color:var(--muted);margin-top:3px}
+.remhd{font:700 10px 'IBM Plex Sans',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px;display:flex;align-items:center;gap:8px}
+.remcount{background:var(--accent-solid);color:var(--accent-ink);border-radius:9px;font:600 10px 'IBM Plex Mono';padding:1px 7px}
+.carousel{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:6px}
+.carousel .foto{scroll-snap-align:start;flex:0 0 84%;margin-top:0}
+.chart{width:100%;margin-top:8px}
+.cbar{width:100%;height:auto;display:block;overflow:visible}
+.hleyenda{display:flex;gap:14px;align-items:center;font-size:11px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+.hleyenda span{display:inline-flex;align-items:center;gap:5px}
+.hleyenda i{width:11px;height:11px;border-radius:2px;flex:0 0 auto}
+.rmrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.rmrow:last-child{border-bottom:0}
+.rmmes{font:600 14px 'IBM Plex Sans',sans-serif;letter-spacing:.03em;text-transform:uppercase}
+.rmsub{font-size:11.5px;color:var(--muted);margin-top:1px}
+.rmright{text-align:right}
+.rmrto{font:700 16px 'IBM Plex Mono'}
+.rtabs{display:flex;gap:6px;margin-top:4px}
+.rtab{flex:1;padding:9px 8px;min-height:44px;border:1px solid var(--line-2);background:var(--card);color:var(--muted);border-radius:7px;font:600 12px 'IBM Plex Sans',sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+.rtab.on{background:var(--accent-solid);color:var(--accent-ink);border-color:var(--accent-solid)}
+.sol.pend .pill{background:color-mix(in oklab,var(--warn) 18%,transparent);color:var(--warn)}
+.notifwrap{position:relative}
+.nbadge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--danger);color:#fff;font:600 10px 'IBM Plex Mono';display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--bg)}
+.npanel{display:none;position:fixed;top:72px;right:calc(12px + env(safe-area-inset-right));left:auto;width:300px;max-width:calc(100vw - 24px);max-height:70vh;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--sh-3);z-index:70}
+.npanel.open{display:block}
+.nhd{font:700 11px 'IBM Plex Sans',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line)}
+.nitem{padding:11px 14px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+.nitem:last-child{border-bottom:0}
+.nitem.unseen{background:color-mix(in oklab,var(--accent) 6%,transparent)}
+.nitem .nic{width:26px;height:26px;flex:0 0 auto;border-radius:5px;display:grid;place-items:center}
+.nitem b{font:600 13px 'IBM Plex Sans'}
+.nitem .nm{font-size:11.5px;color:var(--muted);margin-top:1px}
+.nitem .nt{font-size:10px;color:var(--muted);margin-top:2px}
+@media (max-width:560px){.home-actions{grid-template-columns:1fr}}
+.scrim{display:none}
+.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:8px;font-size:13.5px;font-weight:500;opacity:0;transition:.25s;z-index:var(--z-toast, 150);max-width:90vw;text-align:center;box-shadow:var(--sh-2)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Cámara en vivo */
+.cam{display:none;position:fixed;inset:0;z-index:90;background:#000;flex-direction:column}
+/* Vista de ruta: el operador sólo mira. No hay nada que tocar en el mapa, así que ocupa
+   toda la pantalla y el único control es cerrar. */
+.rutav{display:none;position:fixed;inset:0;z-index:88;background:var(--bg);flex-direction:column}
+.rutav.show{display:flex}
+.rutav .rhd{display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 16px 12px;background:var(--card);border-bottom:1px solid var(--line)}
+.rutav .rlbl{font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.rutav .rdest{font-size:15.5px;font-weight:600;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rutav .rclose{flex:0 0 auto;min-height:44px;border:1px solid var(--line);background:var(--sunken);color:var(--ink);border-radius:8px;padding:8px 13px;font:600 13px 'IBM Plex Sans';cursor:pointer}
+.rutav #rv-map{flex:1;min-height:0}
+.rutav .rpie{padding:12px 16px calc(14px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.cam.show{display:flex}
+.cam video{flex:1;width:100%;object-fit:cover;background:#000}
+.cam .bar{padding:16px calc(16px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));display:flex;align-items:center;justify-content:space-between;background:#000}
+.cam .cancel{background:none;border:0;color:#fff;font-size:15px;cursor:pointer;min-height:44px;padding:0 14px;margin-left:-14px}   /* medía 18 px con la cámara abierta */
+.cam .shutter{width:68px;height:68px;border-radius:99px;border:4px solid #fff;background:rgba(255,255,255,.25);cursor:pointer}
+/* Escaneo de QR: es OTRA cosa que tomar una foto, y se nota. No hay botón de disparo —
+   la captura la decide el lector— así que la pantalla sólo tiene que decir dónde apuntar
+   y cuánto falta. El marco es la mira; el aro es el tiempo. */
+.cam.qr .shutter{display:none}
+.cam .mira{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none}
+.cam.qr .mira{display:flex}
+.cam .marco{width:min(68vw,290px);aspect-ratio:1;border-radius:22px;position:relative;
+  box-shadow:0 0 0 100vmax rgba(0,0,0,.55);transition:box-shadow .25s}
+.cam.leyendo .marco{box-shadow:0 0 0 100vmax rgba(0,0,0,.72)}
+.cam .marco i{position:absolute;width:38px;height:38px;border:3px solid #fff;border-radius:6px}
+.cam .marco i:nth-child(1){top:-3px;left:-3px;border-right:0;border-bottom:0;border-top-left-radius:20px}
+.cam .marco i:nth-child(2){top:-3px;right:-3px;border-left:0;border-bottom:0;border-top-right-radius:20px}
+.cam .marco i:nth-child(3){bottom:-3px;left:-3px;border-right:0;border-top:0;border-bottom-left-radius:20px}
+.cam .marco i:nth-child(4){bottom:-3px;right:-3px;border-left:0;border-top:0;border-bottom-right-radius:20px}
+.cam.leyendo .marco i{border-color:var(--accent,#EC6D1D)}
+.cam .aro{position:absolute;left:50%;bottom:-70px;transform:translateX(-50%);width:54px;height:54px;
+  display:none;place-items:center}
+.cam.leyendo .aro{display:grid}
+.cam .aro svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.cam .aro circle{fill:none;stroke-width:4}
+.cam .aro .pista{stroke:rgba(255,255,255,.25)}
+.cam .aro .marcha{stroke:var(--accent,#EC6D1D);stroke-linecap:round;
+  stroke-dasharray:151;stroke-dashoffset:151;transition:stroke-dashoffset .1s linear}
+.cam .aro b{color:#fff;font:700 19px/1 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+.cam .qrmsg{position:absolute;left:0;right:0;bottom:calc(96px + env(safe-area-inset-bottom));text-align:center;color:#fff;
+  font-size:13.5px;padding:0 24px;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.cam .shutter:active{background:rgba(255,255,255,.5)}
+.cam .hint{position:absolute;top:calc(18px + env(safe-area-inset-top));left:0;right:0;text-align:center;color:#fff;font-size:13px;text-shadow:0 1px 3px #000}
+@media (max-width:820px){
+  aside{position:fixed;left:0;top:0;z-index:60;transform:translateX(-100%);transition:transform .22s}
+  aside.open{transform:none;box-shadow:8px 0 24px var(--sh-2)}
+  .burger{display:grid}
+  .scrim.open{display:block;position:fixed;inset:0;z-index:55;background:color-mix(in oklab,var(--ink) 34%,transparent)}
+  .content{padding:16px calc(14px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left))}
+  .topbar{padding:calc(12px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 12px calc(14px + env(safe-area-inset-left));gap:9px}
+  /* El logo sale de la barra: la marca ya está en el menú lateral, y aquí se comía 36 px de
+     los ~79 que le quedaban al título. Con eso y los huecos más apretados, «Rendimiento» y
+     «solicitudes» dejan de cortarse a media palabra. */
+  /* `!important` porque el logo lleva `display:block` escrito en el marcado, y un estilo
+     en linea gana a cualquier regla de hoja que no lo marque. */
+  .topbar>img{display:none !important}
+  .title{font-size:17px}
+  .crumb{font-size:8.5px}
+  .iconbtn{width:44px;height:44px}   /* en el teléfono es el dedo, no el ratón */
+  .navbtn{min-height:44px}
+  .uwrap .av{width:44px;height:44px}
+  [data-tr]{min-height:44px}          /* motor / termo: elegir mal manda a capturar otra cosa */
+  /* «ver todas →» medía 17 px de alto. Se le agranda la zona sensible con relleno y se le
+     resta el mismo margen, para que crezca lo que responde al dedo y no lo que se ve. */
+  .verlink{display:inline-flex;align-items:center;padding:14px 4px;margin:-14px -4px}
+  .grid3{grid-template-columns:1fr 1fr}
+  .bgfx{opacity:.92}
+  .bgfx .glow{inset:-10%;background:radial-gradient(80vw 40vh at 50% 6%, color-mix(in oklab,var(--accent) 15%,transparent), transparent 72%),radial-gradient(88vw 44vh at 50% 94%, color-mix(in oklab,var(--u-tracto) 12%,transparent), transparent 74%)}
+}
+@media (prefers-reduced-motion:reduce){.bgfx .glow{animation:none}}
+</style>
+</head>
+<body>
+<div class="bgfx" aria-hidden="true"><div class="glow"></div><canvas></canvas></div>
+<div class="app">
+  <aside id="aside">
+    <div class="brand">
+      <img src="/static/logo-2day-word.png" alt="2Day Transport / Logistic">
+      <div class="tag"><i></i><em>APP OPERADOR</em></div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="uwrap">
+      <button class="av" id="uav" data-tr-avatar onclick="show('perfil')">–</button>
+      <div style="flex:1;min-width:0"><div class="nm" id="unm">…</div><div class="rl">Operador</div></div>
+      <button class="iconbtn" title="Cerrar sesión" style="box-shadow:none;border:0;background:none;color:var(--nav-muted)" onclick="cerrarSesion()"><svg viewBox="0 0 24 24"><path d="M14 4h-9v16h9M9 12h12m0 0l-3.5-3.5M21 12l-3.5 3.5"></path></svg></button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim" onclick="closeNav()"></div>
+
+  <main>
+    <div class="topbar">
+      <button class="iconbtn burger" onclick="toggleNav()" title="Menú"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+      <img src="/static/logo-2day-mark.png" alt="2Day" style="height:26px;width:auto;flex:0 0 auto;display:block">
+      <div style="flex:1;min-width:0"><div class="crumb">OPERADOR / <span id="crumb">INICIO</span></div><h1 class="title" id="title">Inicio</h1></div>
+      <div class="notifwrap">
+        <button class="iconbtn" onclick="abrirNotis()" title="Avisos"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 4.5 2 5.5 2 5.5H4S6 13.5 6 9M9.5 20a2.5 2.5 0 0 0 5 0"></path></svg><span class="nbadge" id="nbadge" style="display:none"></span></button>
+        <div class="npanel" id="npanel">
+          <div class="nhd">Avisos</div>
+          <div id="nlist"><div class="empty" style="padding:16px">Sin avisos por ahora.</div></div>
+        </div>
+      </div>
+      <button class="iconbtn" onclick="cycleTheme()" title="Tema"><svg viewBox="0 0 24 24"><path d="M20 13.5A8 8 0 1 1 10.5 4a6.3 6.3 0 0 0 9.5 9.5z"></path></svg></button>
+      <button class="iconbtn" onclick="cerrarSesion()" title="Cerrar sesión"><svg viewBox="0 0 24 24"><path d="M14 4h-9v16h9M9 12h12m0 0l-3.5-3.5M21 12l-3.5 3.5"></path></svg></button>
+    </div>
+
+    <div class="content">
+      <!-- INICIO (home) -->
+      <section class="section on" id="s-inicio">
+        <div class="card hero">
+          <div class="hihd">
+            <div style="flex:1;min-width:0">
+              <div class="kick">HOLA</div>
+              <h2 id="hi-nombre" style="margin:2px 0 0">…</h2>
+            </div>
+            <button class="btn" onclick="show('recarga')" style="flex:0 0 auto;white-space:nowrap">Nueva recarga</button>
+          </div>
+          <div class="grid3" style="margin-top:16px">
+            <div class="stat"><div class="l">Tu unidad</div><div class="v" id="hi-unidad" style="font-size:18px">—</div></div>
+            <div class="stat"><div class="l">Enviadas</div><div class="v" id="hi-env">0</div></div>
+            <div class="stat"><div class="l">Por corregir</div><div class="v" id="hi-dev">0</div></div>
+          </div>
+        </div>
+        <div class="card" id="hv-card">
+          <div class="vrow">
+            <span class="ai"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.7 6-10.5A6 6 0 1 0 6 10.5C6 15.3 12 21 12 21z"></path><circle cx="12" cy="10.5" r="2.3"></circle></svg></span>
+            <div style="flex:1;min-width:0">
+              <div class="vlbl">Viaje actual</div>
+              <div class="vdest" id="hv-destino">—</div>
+              <div class="vsub" id="hv-sub">—</div>
+            </div>
+            <button id="hv-ruta" onclick="verRutaViaje()" style="display:none;flex:0 0 auto;place-items:center;width:44px;height:44px;border:1px solid var(--line);background:var(--sunken);border-radius:11px;cursor:pointer" aria-label="Ver la ruta en el mapa" title="Ver la ruta">
+              <svg class="ic" viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M4 19c4 0 3-6 7-6s3-6 7-6"/><circle cx="4" cy="19" r="1.9"/><circle cx="18" cy="7" r="1.9"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="card" onclick="show('rendimiento')" style="cursor:pointer">
+          <div class="hihd" style="align-items:baseline">
+            <div class="vlbl">Tu rendimiento por mes</div>
+            <span class="verlink">ver detalle →</span>
+          </div>
+          <div id="hi-heat" style="margin-top:10px"><div class="empty" style="padding:8px">…</div></div>
+        </div>
+        <div class="card">
+          <div class="hihd" style="align-items:baseline">
+            <div class="vlbl">Últimas recargas</div>
+            <span class="verlink" onclick="show('solicitudes')">ver todas →</span>
+          </div>
+          <div id="hi-hist" style="margin-top:6px"><div class="empty" style="padding:10px">—</div></div>
+        </div>
+      </section>
+
+      <!-- NUEVA RECARGA -->
+      <section class="section" id="s-recarga">
+        <div class="card hero">
+          <div class="kick">RECARGA</div>
+          <h2>Solicitar recarga</h2>
+          <label>Tu unidad (la asigna tu coordinador)</label>
+          <div class="unidad-box" id="unidad-box">
+            <div><div class="clave" id="u-clave">—</div><div class="cx" id="u-cx">tu viaje actual</div></div>
+          </div>
+
+          <div id="tipo-recarga" style="display:none;gap:6px;margin-top:14px">
+            <button type="button" data-tr="motor" onclick="setTipoRecarga('motor')" style="flex:1;padding:9px;border:1px solid var(--line2,var(--line));border-radius:8px;background:var(--accent-solid);color:var(--accent-ink);font-weight:700;font-size:13px;cursor:pointer">Recarga de motor</button>
+            <button type="button" data-tr="termo" onclick="setTipoRecarga('termo')" style="flex:1;padding:9px;border:1px solid var(--line2,var(--line));border-radius:8px;background:transparent;color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">Recarga de termo</button>
+            <button type="button" data-tr="ambos" onclick="setTipoRecarga('ambos')" style="display:none;flex:1;padding:9px;border:1px solid var(--line2,var(--line));border-radius:8px;background:transparent;color:var(--ink);font-weight:700;font-size:13px;cursor:pointer">Las dos</button>
+          </div>
+          <div id="termo-rem" style="display:none;gap:6px;margin-top:8px"></div>
+          <p id="tipo-hint" style="display:none;font-size:11.5px;color:var(--muted);margin:8px 0 0">El motor y el termo son <b>2 recargas</b>. Registra cada una.</p>
+
+          <p style="font-size:12.5px;color:var(--muted);margin:14px 0 0;line-height:1.5">Toma las fotos que te pide la lista de abajo y envía tu solicitud. <b>Los litros los define tu coordinador</b> al autorizar.</p>
+
+          <div id="fotos"></div>
+
+          <button class="btn block" id="btn-enviar" style="margin-top:18px">Solicitar recarga</button>
+        </div>
+      </section>
+
+      <!-- MIS SOLICITUDES -->
+      <section class="section" id="s-solicitudes">
+        <div class="card"><div id="mis-sol"><div class="empty">Cargando…</div></div></div>
+      </section>
+
+      <!-- MIS VIAJES -->
+      <section class="section" id="s-viajes">
+        <div class="card hero">
+          <div class="kick">VIAJE ACTUAL</div>
+          <div id="mv-activo"><div class="empty" style="padding:8px">Cargando…</div></div>
+        </div>
+        <div class="card">
+          <h2>Viajes anteriores</h2>
+          <div id="mv-hist"><div class="empty">Cargando…</div></div>
+        </div>
+      </section>
+
+      <!-- MI RENDIMIENTO -->
+      <section class="section" id="s-rendimiento">
+        <div class="card hero">
+          <div class="kick">RENDIMIENTO</div>
+          <h2>Tu desempeño</h2>
+          <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px;line-height:1.5">Lo que se detectó en tus viajes, tu rendimiento real (km/l) y el historial de tus recargas.</p>
+          <div class="rtabs">
+            <button class="rtab on" data-rt="avisos" onclick="rendTab('avisos')">Avisos</button>
+            <button class="rtab" data-rt="viaje" onclick="rendTab('viaje')">Por viaje</button>
+            <button class="rtab" data-rt="mes" onclick="rendTab('mes')">Por mes</button>
+            <button class="rtab" data-rt="recargas" onclick="rendTab('recargas')">Recargas</button>
+          </div>
+        </div>
+
+        <!-- AVISOS: lo que el sistema detectó en SUS viajes -->
+        <div class="rtpane" id="rt-avisos">
+          <div class="card">
+            <h2>Avisos</h2>
+            <p style="font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.5">Cosas que se detectaron en tus viajes y que puedes hacer distinto. Sólo aparece aquí lo que ya revisó una persona.</p>
+            <div id="av-lista"><div class="empty">Cargando…</div></div>
+          </div>
+        </div>
+
+        <!-- POR VIAJE COMPLETO -->
+        <div class="rtpane" id="rt-viaje" style="display:none">
+          <div class="card hero">
+            <h2>Rendimiento por viaje completo</h2>
+            <p style="font-size:12px;color:var(--muted);margin:0 0 8px;line-height:1.5">Tu km/l real en cada viaje. La referencia es lo que rindió <b>esa misma unidad</b> la última vez que se le leyó el motor — no es una meta que debas cumplir. Si la unidad no tiene lectura de escáner, no hay con qué comparar y se dice.</p>
+            <div id="rv-chart"></div>
+          </div>
+          <div class="card"><h2>Detalle por viaje</h2><div id="rv-lista"><div class="empty">Cargando…</div></div></div>
+        </div>
+
+        <!-- POR MES -->
+        <div class="rtpane" id="rt-mes" style="display:none">
+          <div class="card hero"><h2>Tu desempeño por mes</h2><div id="rm-heat"></div></div>
+          <div class="card"><h2>Detalle por mes</h2><div id="rm-tabla"><div class="empty">Cargando…</div></div></div>
+        </div>
+
+        <!-- RECARGAS POR VIAJE -->
+        <div class="rtpane" id="rt-recargas" style="display:none">
+          <div class="card"><h2>Historial de recargas por viaje</h2>
+            <p style="font-size:12px;color:var(--muted);margin:0 0 8px">Tus solicitudes de combustible con su folio, litros y estado.</p>
+            <div id="rr-lista"><div class="empty">Cargando…</div></div></div>
+        </div>
+      </section>
+
+      <!-- RECOMENDACIONES / AYUDA -->
+      <section class="section" id="s-ayuda">
+        <div class="card hero">
+          <div class="kick">RECOMENDACIONES</div>
+          <h2>Antes y durante tu carga</h2>
+          <div id="tips"></div>
+        </div>
+        <div class="card">
+          <h2>¿Algún problema?</h2>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Si algo no cuadra —tu unidad, el destino, una recarga rechazada o una falla— avisa a tu coordinador.</p>
+          <button class="btn block" onclick="contactarCoordinador()" style="display:flex;align-items:center;justify-content:center;gap:8px"><svg class="ic" viewBox="0 0 24 24" style="stroke-width:1.9"><path d="M4 5h16v10H9l-4 3.5V5z"></path><path d="M8 9.7h.01M12 9.7h.01M16 9.7h.01"></path></svg> Contactar al coordinador</button>
+        </div>
+      </section>
+
+      <!-- PERFIL -->
+      <section class="section" id="s-perfil">
+        <div class="card hero">
+          <div class="kick">MI CUENTA</div>
+          <h2 id="p-nombre">…</h2>
+          <div class="grid3" style="margin:6px 0 4px">
+            <div class="stat"><div class="l">Enviadas</div><div class="v" id="p-env">0</div></div>
+            <div class="stat"><div class="l">Autorizadas</div><div class="v" id="p-aut">0</div></div>
+            <div class="stat"><div class="l">Por corregir</div><div class="v" id="p-dev">0</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Datos</h2>
+          <div class="kv"><span class="k">Número de operador</span><span id="p-num">—</span></div>
+          <div class="kv"><span class="k">Usuario</span><span id="p-user">—</span></div>
+          <div class="kv"><span class="k">Unidad habitual</span><span id="p-uni">—</span></div>
+        </div>
+        <div class="card">
+          <div class="kick">PREFERENCIAS</div>
+          <h2>Avisos</h2>
+          <div class="kv"><span class="k">Avisos del sistema</span><button class="btn gray sm" onclick="pedirPermisoNotif()" id="cfg-notif">Activar</button></div>
+          <div id="cfg-notif-hint" style="font-size:12px;line-height:1.5;color:var(--muted);margin-top:8px"></div>
+        </div>
+        <div class="card">
+          <h2>Personalización</h2>
+          <p style="font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.5">Tu foto de perfil, color de acento y datos personales. (El nombre y apellidos no se cambian.)</p>
+          <div id="tr-perfil-mount"></div>
+        </div>
+        <button class="btn gray danger block" onclick="cerrarSesion()"><svg class="ic" viewBox="0 0 24 24"><path d="M14 4h-9v16h9M9 12h12m0 0l-3.5-3.5M21 12l-3.5 3.5"></path></svg> Cerrar sesión</button>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- Cámara en vivo -->
+<div class="cam" id="cam">
+  <div class="hint" id="cam-hint">Encuadra el instrumento</div>
+  <video id="cam-video" playsinline autoplay muted></video>
+  <div class="mira">
+    <div class="marco"><i></i><i></i><i></i><i></i>
+      <div class="aro">
+        <svg viewBox="0 0 54 54"><circle class="pista" cx="27" cy="27" r="24"></circle>
+        <circle class="marcha" id="qr-marcha" cx="27" cy="27" r="24"></circle></svg>
+        <b id="qr-cuenta">3</b>
+      </div>
+    </div>
+  </div>
+  <div class="qrmsg" id="qr-msg"></div>
+  <div class="bar">
+    <button class="cancel" onclick="cerrarCamara()">Cancelar</button>
+    <button class="shutter" id="cam-shot" aria-label="Tomar foto"></button>
+    <div style="width:60px"></div>
+  </div>
+</div>
+
+<div class="rutav" id="rutav">
+  <div class="rhd">
+    <div style="flex:1;min-width:0">
+      <div class="rlbl">Ruta del viaje</div>
+      <div class="rdest" id="rv-dest">—</div>
+    </div>
+    <button class="rclose" onclick="cerrarRuta()" aria-label="Cerrar">Cerrar</button>
+  </div>
+  <div id="rv-map"></div>
+  <div class="rpie" id="rv-pie">Cargando la ruta…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Van con `defer`. Sin él, el bloque de abajo —que define show, toggleNav,
+     abrirNotis, cycleTheme, cerrarSesion y verRutaViaje— no corría hasta que terminaran de
+     bajar, y mientras tanto la pantalla ya estaba pintada y se dejaba tocar: cada toque
+     lanzaba un ReferenceError invisible. Con `defer` el bloque en línea corre primero, así
+     que las funciones existen desde el primer instante, y éstos se ejecutan justo antes de
+     DOMContentLoaded, que es cuando `init()` los necesita.
+     jsqr.js NO está aquí: son 130 KB que sólo hacen falta al abrir la cámara sobre un hueco
+     de económico. Lo pide `cargarJsQR()` cuando llega el momento. -->
+<script src="/static/aviso.js?v=20260903a" defer></script>
+<script src="/static/maps.js?v=20260901a" defer></script>
+<script src="/static/perfil.js?v=20260920a" defer></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let YO={}, SOL_ID=null, SOL_ID_TERMO=null, UNIDADES=[], UNIDAD_ID=null, SEC='recarga', VIAJE=null, DRAFT={fotos:{}};
+let CAPTURADAS=new Set();   // llaves de los slots de foto ya cubiertos (#1: todo cubierto para enviar)
+let RETOMADO={};            // valor que ya traía cada slot al retomar un borrador, para enseñarlo
+let SIN_RED=false;          // la última consulta del viaje falló por falta de red, no por no haberlo
+let SUBIENDO=0;             // fotos en vuelo: enviar() no puede ganarle la carrera a una subida
+let IDENTIDAD_CONFIRMADA=false;   // /api/me contestó en ESTA sesión; si no, lo que hay es memoria
+let P_SOL=null;             // la creación de solicitud EN VUELO, para no lanzar dos a la vez
+let MIS_SOLIS=[];           // lo último que devolvió el listado, para el botón de corregir
+let CLIENT_UUID=null;       // llave anti-duplicado de esta captura
+let DRAFT_VIAJE=undefined;  // viaje/unidad para el que se armó el borrador actual (reset si cambia)
+let camStream=null, camTipo=null;
+const PILL={borrador:'Borrador',enviada:'Enviada',en_validacion:'En validación',devuelta:'Devuelta',
+  rechazada:'Rechazada',autorizada:'Autorizada',despachada:'Despachada',facturada:'Facturada',
+  conciliada:'Conciliada',en_discrepancia:'En revisión',anulada:'Anulada'};
+// Qué significa cada estado para el operador y qué debe hacer.
+const EXPL={
+  enviada:['info','Ya la recibió el coordinador. Espera su revisión.'],
+  en_validacion:['info','El coordinador la está revisando ahora.'],
+  devuelta:['warn','Te la regresaron para corregir. Revisa el motivo y vuelve a enviar.'],
+  rechazada:['warn','No procedió. Revisa el motivo.'],
+  autorizada:['ok','¡Autorizada! Ya puedes cargar el diésel.'],
+  despachada:['ok','El diésel ya se cargó.'],
+  facturada:['ok','Carga facturada.'],
+  conciliada:['ok','Ciclo cerrado, todo cuadró.'],
+  en_discrepancia:['warn','Hay algo que no cuadra; lo está revisando el coordinador.'],
+  // `anulada` faltaba, y su ausencia no dejaba sólo a la tarjeta sin explicación: el motivo
+  // se pinta DENTRO de este bloque, así que al no existir la entrada desaparecían los dos.
+  // Al chofer le anulaban una recarga y en pantalla no quedaba ni una palabra del porqué.
+  anulada:['warn','Se canceló. No se surtió diésel contra esta solicitud.']
+};
+let FOTOS=[];
+let RECARGA_TIPO='motor';   // 'motor' | 'termo'
+let REMOLQUE_SEL=null;      // remolque elegido para la recarga de termo (solo tracto)
+// Remolques con termo (refrigerados) del viaje; en camión el termo va pegado a la unidad.
+function remolquesTermo(){ return (VIAJE&&VIAJE.unidad_tipo==='TRACTO'&&Array.isArray(VIAJE.remolques))?VIAJE.remolques.filter(r=>r.termo):[]; }
+function termoRemolque(){ const rt=remolquesTermo(); if(!rt.length)return null; return rt.find(r=>r.id===REMOLQUE_SEL)||rt[0]; }
+async function setTipoRecarga(t){
+  if(t===RECARGA_TIPO)return;
+  RECARGA_TIPO=t; SOL_ID=null; SOL_ID_TERMO=null; P_SOL=null; CLIENT_UUID=null; DRAFT={fotos:{}}; CAPTURADAS.clear(); RETOMADO={};
+  construirFotos(); pintarFotos();   // la pantalla cambia ya, sin esperar al servidor
+  // Y ENSEGUIDA SE RECUPERA LO QUE YA ESTABA SUBIDO. Sin esto, asomarse a la otra pestaña
+  // borraba de la pantalla fotos que seguían existiendo en la base, y la siguiente foto
+  // abría una solicitud nueva porque `SOL_ID` venía en nulo.
+  await adoptarBorrador();
+  pintarFotos();
+}
+async function setRemolqueTermo(id){ REMOLQUE_SEL=id; SOL_ID=null; SOL_ID_TERMO=null; P_SOL=null; CLIENT_UUID=null; DRAFT={fotos:{}}; CAPTURADAS.clear(); construirFotos(); pintarFotos(); await adoptarBorrador(); pintarFotos(); }
+function pintarTipoRecarga(){
+  const box=$('#tipo-recarga'), hint=$('#tipo-hint'), rbox=$('#termo-rem'); if(!box)return;
+  const esCamion=!!(VIAJE&&VIAJE.unidad_tipo==='CAMION');
+  const rt=remolquesTermo();
+  const hayTermo=esCamion||rt.length>0;
+  box.style.display=hayTermo?'flex':'none';
+  if(hint){ hint.style.display=hayTermo?'block':'none'; hint.innerHTML=esCamion?'El camión y su termo comparten económico pero son <b>2 recargas</b>. Registra cada una.':'El tracto y el termo de su remolque son <b>2 recargas</b>. Registra cada una.'; }
+  if(!hayTermo)RECARGA_TIPO='motor';
+  // "Las dos" sólo tiene sentido en un CAMIÓN: es el único caso en que el motor y el termo
+  // comparten económico y se cargan en la misma parada. En un tracto el termo va en el
+  // remolque, que es otro activo y otra solicitud. El servidor rechaza lo contrario.
+  const bAmbos=box.querySelector('[data-tr="ambos"]');
+  if(bAmbos)bAmbos.style.display=esCamion?'block':'none';
+  if(RECARGA_TIPO==='ambos'&&!esCamion)RECARGA_TIPO='motor';
+  box.querySelectorAll('button').forEach(b=>{const on=b.dataset.tr===RECARGA_TIPO;b.style.background=on?'var(--accent)':'transparent';b.style.color=on?'#fff':'var(--ink)';});
+  if(hint&&RECARGA_TIPO==='ambos')hint.innerHTML='Se crearán <b>2 solicitudes</b> con un solo envío: '
+    +'una del motor y otra del termo. Necesitas señal para esta opción.';
+  if(!rbox)return;
+  if(RECARGA_TIPO==='termo'&&rt.length>1){
+    if(!rt.some(r=>r.id===REMOLQUE_SEL))REMOLQUE_SEL=rt[0].id;
+    rbox.style.display='flex';
+    rbox.innerHTML='<span style="align-self:center;font-size:11.5px;color:var(--muted);flex:0 0 auto">Termo de:</span>'+rt.map(r=>`<button type="button" onclick="setRemolqueTermo(${r.id})" style="flex:1;min-height:44px;padding:8px;border:1px solid var(--line2,var(--line));border-radius:8px;background:${r.id===REMOLQUE_SEL?'var(--accent-solid)':'transparent'};color:${r.id===REMOLQUE_SEL?'var(--accent-ink)':'var(--ink)'};font-weight:700;font-size:12.5px;cursor:pointer">${esc(r.eco)}</button>`).join('');
+  } else {
+    rbox.style.display='none';
+    if(rt.length===1)REMOLQUE_SEL=rt[0].id;
+  }
+}
+// Los slots de evidencia se DERIVAN del viaje asignado. BASE para cualquier unidad: 3 fotos
+// (odómetro + kilometraje + económico de la unidad). Un TRACTO suma UN económico por cada
+// remolque enganchado (0 a 2). El económico es OBLIGATORIO en toda combinación (verifica la unidad).
+function construirFotos(){
+  // Recarga de TERMO (diésel del equipo de frío): económico + horas del termo, ligada al
+  // económico correcto — el del REMOLQUE en un tracto, o el de la unidad en un camión.
+  if(RECARGA_TIPO==='termo'){
+    const T=[]; const rem=termoRemolque();
+    if(rem){
+      T.push({key:'eco-rem-'+rem.id,tipo:'eco',eco:true,lbl:'Económico del remolque',esperado:rem.eco,etiqueta:'ECO '+rem.eco});
+    } else if(VIAJE&&VIAJE.unidad_clave){
+      T.push({key:'eco-unidad',tipo:'eco',eco:true,lbl:'Económico de la unidad',esperado:VIAJE.unidad_clave,etiqueta:'ECO '+VIAJE.unidad_clave});
+    }
+    T.push({key:'horas-termo',tipo:'termo',lbl:'Horas del termo'});
+    FOTOS=T; return;
+  }
+  // LAS DOS (sólo camión): un económico —el mismo para los dos— y las dos lecturas que
+  // distinguen una recarga de la otra. `sol:'termo'` marca a qué solicitud va cada evidencia;
+  // sin esa marca las horas del termo acabarían colgando de la solicitud del motor.
+  if(RECARGA_TIPO==='ambos'){
+    const A=[];
+    if(VIAJE&&VIAJE.unidad_clave){
+      A.push({key:'eco-unidad',tipo:'eco',eco:true,lbl:'Económico del camión',
+        esperado:VIAJE.unidad_clave,etiqueta:'ECO '+VIAJE.unidad_clave});
+    }
+    A.push({key:'odometro',tipo:'odometro',lbl:'Odómetro (kilometraje)'});
+    A.push({key:'horas-termo',tipo:'termo',lbl:'Horas del termo',sol:'termo'});
+    FOTOS=A; return;
+  }
+  const F=[];
+  // PRIMERO el económico: es lo que dice DE QUÉ ACTIVO son las lecturas que vienen detrás.
+  // Capturarlo al final dejaba abierta la puerta a fotografiar el tablero de una unidad y el
+  // número de otra sin que nada lo delatara.
+  if(VIAJE&&VIAJE.unidad_clave){
+    F.push({key:'eco-unidad',tipo:'eco',eco:true,lbl:'Económico de la unidad',
+      esperado:VIAJE.unidad_clave,etiqueta:'ECO '+VIAJE.unidad_clave});
+  }
+  // UN SOLO odómetro: el acumulado del tablero ES el kilometraje, en tracto y en camión.
+  // Eran dos fotos del mismo instrumento, y dos oportunidades de que discreparan.
+  F.push({key:'odometro',tipo:'odometro',lbl:'Odómetro (kilometraje)'});
+  const rems=(VIAJE&&VIAJE.unidad_tipo==='TRACTO'&&Array.isArray(VIAJE.remolques))?VIAJE.remolques.slice(0,2):[];
+  rems.forEach((r,i)=>F.push({key:'eco-rem-'+r.id,tipo:'eco',eco:true,remolque:true,
+    lbl:'Económico Remolque '+(i+1),esperado:r.eco,etiqueta:'ECO Remolque '+(i+1)}));
+  // Un TRACTO NO lleva horómetro de motor —lo confirmó el dueño el 2-sep-2026—, así que no
+  // se pide esa foto. Las horas existen en el TERMO, y el termo va en el remolque: se
+  // capturan en la recarga de termo, con el económico del remolque. Pedirlas aquí era pedir
+  // una foto que no se puede tomar, y dejaba la solicitud incompleta para siempre.
+  FOTOS=F;
+}
+const NAV=[['inicio','Inicio','M4 11.5 12 4l8 7.5M6 10v9h12v-9'],
+  ['recarga','Nueva recarga','M6 21V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v16M4 21h12M6 9h8M15 8l3 2v7a1.5 1.5 0 0 0 3 0V10l-3-3'],
+  ['solicitudes','Mis solicitudes','M5 3h14v18l-7-3-7 3zM9 8h6M9 12h6'],
+  ['viajes','Mis viajes','M4 19c4 0 3-6 7-6s3-6 7-6 M2.4 19a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0 M16.4 7a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0'],
+  ['rendimiento','Rendimiento','M4 20V4M4 20h16M8 16l3-4 3 2 4-6'],
+  ['ayuda','Recomendaciones','M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M9.7 9.5a2.4 2.4 0 0 1 4.5 1.2c0 1.6-2.2 2-2.2 3.3M12 17h.01'],
+  ['perfil','Perfil','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M4.5 20a7.5 7.5 0 0 1 15 0']];
+const TIT={inicio:['Inicio','INICIO'],recarga:['Nueva recarga','RECARGA'],solicitudes:['Mis solicitudes','SOLICITUDES'],viajes:['Mis viajes','VIAJES'],rendimiento:['Mi\nRendimiento','RENDIMIENTO'],ayuda:['Ayuda','AYUDA'],perfil:['Perfil','PERFIL']};
+
+// ── Lo que se guarda en el teléfono es de UNA persona ──────────────────────────────
+// `tr-theme` NO entra en la lista: es una preferencia del aparato, y conservarla evita el
+// fogonazo blanco al siguiente que entre.
+const CLAVES_PERSONALES=['tr-yo','tr-viaje','tr-notis','tr-notif-seen'];
+function limpiarDatosLocales(){
+  try{ CLAVES_PERSONALES.forEach(k=>localStorage.removeItem(k)); }catch(_){}
+  try{ sessionStorage.clear(); }catch(_){}
+  NOTIS=[]; VIAJE=null;
+}
+function cerrarSesion(){ limpiarDatosLocales(); location.href='/logout'; }
+
+// Toda petición se rinde sola. Sin esto, una red que acepta la conexión y luego no
+// contesta —lo normal al perder cobertura en carretera— dejaba el botón de enviar
+// deshabilitado y los paneles en «Cargando…» para siempre, sin forma de salir.
+//
+// Subir una foto lleva su propio plazo, mucho más largo: son cientos de kilobytes y además
+// el servidor tiene que leerla con la IA. Doce segundos ahí cortarían envíos buenos.
+const API_PLAZO=12000, API_PLAZO_FOTO=75000;
+async function api(p,o){
+  o=o||{};
+  const esFoto = o.body instanceof FormData && /\/evidencia|\/qr$/.test(p);
+  const ms = o.plazo || (esFoto?API_PLAZO_FOTO:API_PLAZO);
+  const ctrl = new AbortController();
+  const reloj = setTimeout(()=>ctrl.abort(), ms);
+  let r;
+  try{ r=await fetch(p,{...o, signal:ctrl.signal}); }
+  catch(e){
+    // Se traduce a un mensaje que `errDeRed()` ya reconoce, para que todos los catch que ya
+    // existen lo traten como lo que es: falta de red, no un fallo del servidor.
+    throw new Error(e && e.name==='AbortError' ? 'network: la conexión tardó demasiado'
+                                               : (e && e.message) || 'network');
+  }
+  finally{ clearTimeout(reloj); }
+  if(r.status===401){ limpiarDatosLocales(); location.href='/login'; throw 0; }
+  const d=await r.json().catch(()=>({}));if(!r.ok){const dt=d.detail;const e=new Error(typeof dt==='string'?dt:((dt&&dt.mensaje)||('Error '+r.status)));e.cuerpo=dt;e.status=r.status;throw e;};return d;}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);}
+const ICONS={
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  alert:'<path d="M12 3.6 2.2 20.4h19.6zM12 10v4.4M12 17.6v.4"/>',
+  camera:'<path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><path d="M8.6 13a3.4 3.4 0 1 0 6.8 0a3.4 3.4 0 1 0-6.8 0"/>',
+  pin:'<path d="M12 21s6-5.7 6-10.5A6 6 0 1 0 6 10.5C6 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.3"/>',
+  chat:'<path d="M4 5h16v10H9l-4 3.5V5z"/><path d="M8 9.7h.01M12 9.7h.01M16 9.7h.01"/>',
+  bulb:'<path d="M9.5 17.5h5M10.3 20.5h3.4"/><path d="M12 3a6.2 6.2 0 0 0-3.7 11.2c.6.5 1 1.1 1.1 1.8h5.2c.1-.7.5-1.3 1.1-1.8A6.2 6.2 0 0 0 12 3z"/>',
+  map:'<path d="M9 4 4 6v14l5-2 6 2 5-2V4l-5 2-6-2z"/><path d="M9 4v14M15 6v14"/>'
+};
+function ic(n,extra){return '<svg class="ic'+(extra?' '+extra:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[n]||'')+'</svg>';}
+function applyTheme(){const t=localStorage.getItem('tr-theme')||'system';const eff=t==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=eff;const c=$('#cfg-tema');if(c)c.textContent={light:'Claro',dark:'Oscuro',system:'Sistema'}[t];}
+function cycleTheme(){const cur=localStorage.getItem('tr-theme')||'system';const nx={light:'dark',dark:'system',system:'light'}[cur];localStorage.setItem('tr-theme',nx);applyTheme();toast('Tema: '+({light:'claro',dark:'oscuro',system:'sistema'}[nx]));}
+try{matchMedia('(prefers-color-scheme:dark)').addEventListener('change',function(){if((localStorage.getItem('tr-theme')||'system')==='system')applyTheme();});}catch(e){}
+function toggleNav(){$('#aside').classList.toggle('open');$('#scrim').classList.toggle('open');}
+function closeNav(){$('#aside').classList.remove('open');$('#scrim').classList.remove('open');}
+
+function buildNav(){
+  $('#nav').innerHTML=NAV.map(([id,lbl,d])=>`<button class="navbtn" data-sec="${id}"><svg viewBox="0 0 24 24"><path d="${d}"></path></svg><span style="flex:1">${lbl}</span>${id==='solicitudes'?'<span class="bdg" id="bdg-sol" style="display:none"></span>':''}</button>`).join('');
+}
+function show(sec){
+  SEC=sec;
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('on',b.dataset.sec===sec));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
+  $('#s-'+sec).classList.add('on');
+  $('#title').textContent=TIT[sec][0];$('#crumb').textContent=TIT[sec][1];
+  closeNav();
+  if(sec==='solicitudes'||sec==='perfil'||sec==='inicio')cargarMisSolicitudes();
+  if(sec==='inicio') loadInicioResumen();
+  if(sec==='recarga') loadMiViaje();   // revalida el viaje activo antes de capturar (#2)
+  if(sec==='viajes'){ loadMiViaje(); loadMisViajes(); }
+  if(sec==='rendimiento'){ const on=document.querySelector('.rtab.on'); rendTab(on?on.dataset.rt:'avisos'); }
+  if(sec==='ayuda') pintarRecomendaciones();
+  if(sec==='perfil'&&window.TR_montarPerfil)TR_montarPerfil(document.getElementById('tr-perfil-mount'),YO);
+}
+
+async function init(){
+  applyTheme(); buildNav();
+  // EL MENÚ RESPONDE DESDE EL PRIMER INSTANTE. Este enganche vivía en la última línea de
+  // init(), detrás de /api/me y de loadMiViaje: con 12 s de plazo por petición, el chofer
+  // veía el menú pintado y normal durante hasta medio minuto sin que le respondiera al dedo.
+  // No depende de YO ni de VIAJE, así que no tiene por qué esperar a ninguno de los dos.
+  if(!init._menu){ init._menu=true;
+    document.querySelectorAll('.navbtn').forEach(b=>b.addEventListener('click',()=>show(b.dataset.sec)));
+  }
+  let hayIdentidad=true;
+  try{
+    // Se lee la copia ANTES de pisarla: es la única forma de saber si el que entra es otro.
+    let previo=null; try{ previo=JSON.parse(localStorage.getItem('tr-yo')||'null'); }catch(_){}
+    YO=await api('/api/me');
+    IDENTIDAD_CONFIRMADA=true;
+    if(previo && previo.id!==YO.id) limpiarDatosLocales();
+    try{localStorage.setItem('tr-yo',JSON.stringify(YO));}catch(_){}
+  }
+  catch(e){
+    // Si /api/me falla se usa la identidad guardada de la última vez, sólo para poder pintar
+    // el nombre y no abrir una pantalla anónima. No habilita nada: sin servidor no hay viaje
+    // que cargar ni solicitud que enviar, y el resto de init lo dirá al fallar.
+    try{ const c=localStorage.getItem('tr-yo'); if(c){ YO=JSON.parse(c); toast('Sin conexión: se muestran tus últimos datos guardados'); } else { hayIdentidad=false; } }catch(_){ hayIdentidad=false; }
+  }
+  if(!hayIdentidad){
+    // NO SE ABANDONA init() EN SILENCIO. Aquí había dos `return` y salir por ellos dejaba la
+    // app muerta y muda: sin fotos, sin campana y sin sección abierta. Ahora se dice lo que
+    // pasa y se deja un botón para reintentar, que es lo único que el chofer puede hacer.
+    SIN_RED=true;
+    pintarFotos();
+    show('recarga');
+    return;
+  }
+  if(window.TR_aplicarPrefs)TR_aplicarPrefs(YO.prefs);
+  const nom=YO.operador_nombre||YO.nombre||YO.username;
+  $('#unm').textContent=nom; $('#p-nombre').textContent=nom;
+  $('#hi-nombre').textContent='Hola, '+((nom||'').split(' ')[0]||nom||'');
+  { const _uav=$('#uav'); if(YO.tiene_foto){ _uav.innerHTML='<img src="/api/perfil/foto?t='+Date.now()+'" alt="" style="width:100%;height:100%;object-fit:cover">'; } else { _uav.textContent=(nom||'?').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase(); } }
+  $('#p-num').textContent=YO.operador_numero||'—';
+  $('#p-user').textContent=YO.username;
+  $('#p-uni').textContent=YO.unidad_sugerida_clave||'—';
+  $('#hi-unidad').textContent=YO.unidad_sugerida_clave||'—';
+  const hc=$('#hi-coord'); if(hc)hc.textContent=YO.coordinador_whatsapp?'por WhatsApp':'a tu coordinador';
+  // La unidad, el botón y las fotos SIEMPRE dependen del viaje ACTIVO (#2): lo resuelve
+  // loadMiViaje y lo pinta pintarFotos (bloquea si no hay viaje). No se fija nada con la
+  // unidad "sugerida" aquí para no contradecir la regla.
+  await loadMiViaje();
+  pintarFotos();
+  pintarRecomendaciones();
+  iniciarAvisos();                  // campana + sondeo de cambios de estado
+  show('inicio');
+}
+
+// La unidad la ESTABLECE el coordinador (viaje asignado): el operador no la elige ni cambia.
+function unidadElegida(){ return UNIDAD_ID||''; }
+
+function pintarFotos(){
+  const btn=$('#btn-enviar');
+  // La unidad y las fotos SIEMPRE dependen del viaje que levanta el coordinador.
+  const uc=$('#u-clave'), ucx=$('#u-cx');
+  // #2: sin viaje LEVANTADO no se puede solicitar. Se bloquea la captura y el envío.
+  if(!VIAJE){
+    if(uc)uc.textContent='Sin viaje';
+    if(ucx)ucx.textContent='tu coordinador aún no lo levanta';
+    $('#fotos').innerHTML = SIN_RED
+      ? '<div class="bloqueo">'+ic('alert')+'<div><b>Sin conexión.</b>'
+        +'<p>No pude comprobar si tienes un viaje asignado. Busca señal y vuelve a intentarlo.</p>'
+        +'<button class="btn sm" style="margin-top:10px" data-recomprobar>Volver a comprobar</button></div></div>'
+      : '<div class="bloqueo">'+ic('alert')+'<div><b>Aún no tienes un viaje asignado.</b>'
+        +'<p>Tu coordinador debe levantar tu viaje (unidad y destino) antes de que puedas solicitar combustible.</p>'
+        +'<button class="btn sm" style="margin-top:10px" data-recomprobar>Volver a comprobar</button></div></div>';
+    if(btn){ btn.disabled=true; btn.textContent='Espera tu viaje asignado'; }
+    return;
+  }
+  if(uc)uc.textContent=VIAJE.unidad_clave||'—';
+  if(ucx)ucx.textContent='asignada por tu coordinador';
+  if(btn){ btn.disabled=false; btn.textContent='Solicitar recarga'; }
+  pintarTipoRecarga();
+  const done=k=>CAPTURADAS.has(k);
+  const slot=f=>`
+    <div class="foto${done(f.key)?' ok':''}" id="foto-${f.key}" data-key="${f.key}">
+      <div class="lbl">${esc(f.lbl)}</div>
+      <div class="val" id="val-${f.key}">${done(f.key)&&RETOMADO[f.key]!=null?esc(String(RETOMADO[f.key])):'—'}</div>
+      <div class="st" id="st-${f.key}">${done(f.key)?(RETOMADO[f.key]!=null?'Ya capturado':'Listo'):'Sin foto'}</div>
+      ${f.eco?`<div class="exp">Esperado: <b>${esc(f.esperado||'—')}</b></div>`:''}
+      <button class="btn gray sm" style="margin-top:10px" data-cam="${f.key}">${ic('camera')} ${
+        f.eco&&hayLectorQR()&&!f.sinQR ? (done(f.key)?'Volver a escanear':'Escanear QR')
+                             : (done(f.key)?'Volver a tomar':'Tomar foto')}</button>
+      <input class="hidden-file" type="file" accept="image/*" capture="environment" id="file-${f.key}">
+    </div>`;
+  const base=FOTOS.filter(f=>!f.remolque), rems=FOTOS.filter(f=>f.remolque);
+  let html=base.map(slot).join('');
+  if(rems.length){
+    // Varios remolques: se capturan en un carrusel por secciones.
+    html+=`<div class="remhd">Remolques <span class="remcount">${rems.length}</span></div>
+      <div class="carousel">${rems.map(slot).join('')}</div>`;
+  }
+  $('#fotos').innerHTML=html;
+  // Sin conexión no hay lectura por IA: revela la casilla del odómetro para capturarlo a mano.
+}
+
+// ── Cámara en vivo (directo, sin selector de archivos) ──
+// ── Lectura de QR ───────────────────────────────────────────────────────────
+// El económico se captura escaneando el QR pegado al activo. Es mejor que fotografiarlo
+// por dos motivos concretos: el texto llega EXACTO (no hay número borroso ni mal leído) y
+// no gasta una llamada de IA por cada económico. La foto sigue estando: si el sticker se
+// despegó o el teléfono no sabe leer códigos, el operador no se queda tirado.
+let qrDetector=null, qrTimer=null, qrVisto=null, qrDesde=0, qrLienzo=null, qrOcupado=false;
+let qrPlazo=null;           // el plazo tras el cual se ofrece la foto como salida
+const QR_SEGUNDOS=3;            // hay que sostener el código enfocado este tiempo
+const QR_ANCHO=480;             // a cuánto se reduce el fotograma antes de decodificar
+
+// DOS LECTORES, y el orden importa. `BarcodeDetector` es nativo y lo resuelve el sistema:
+// es más rápido y no gasta batería, pero sólo existe en Chromium de Android. En iOS no
+// existe ni va a existir —Apple no lo implementa, y allí todos los navegadores usan el
+// motor de Safari—, así que sin la segunda vía el iPhone se quedaba sin escáner y la
+// cámara caía a foto sin decirlo. jsQR decodifica en JavaScript y funciona en cualquiera.
+// ── El lector de QR se trae cuando se necesita ───────────────────────────────────────
+// jsQR son 130 KB y sólo sirven al abrir la cámara sobre un económico. Se guarda la promesa
+// para que dos aperturas seguidas no pidan el archivo dos veces.
+let _jsqrProm=null, _jsqrRoto=false;
+function cargarJsQR(){
+  if(typeof window.BarcodeDetector!=='undefined') return Promise.resolve(true);  // no hace falta
+  if(typeof window.jsQR==='function') return Promise.resolve(true);
+  if(_jsqrProm) return _jsqrProm;
+  _jsqrProm = new Promise(res=>{
+    const s=document.createElement('script');
+    s.src='/static/jsqr.js?v=1.4.0';
+    s.onload =()=>res(typeof window.jsQR==='function');
+    s.onerror=()=>{ _jsqrProm=null; _jsqrRoto=true; res(false); };
+    document.head.appendChild(s);
+  });
+  return _jsqrProm;
+}
+function hayLectorQR(){
+  // Es la CAPACIDAD del teléfono, no «¿está ya la biblioteca en memoria?». Preguntar por
+  // `window.jsQR` aquí haría que el botón dijera «Tomar foto» en el primer arranque de
+  // cualquier iPhone —justo donde no hay lector nativo—, que es el defecto que se cerró al
+  // hacer que la etiqueta dijera la verdad.
+  return typeof window.BarcodeDetector!=='undefined' || typeof window.jsQR==='function' || !_jsqrRoto;
+}
+
+// La zona del MARCO, en coordenadas del fotograma. El marco era puro dibujo: se
+// decodificaba el fotograma entero, y como la vista previa va con `object-fit:cover`, ese
+// fotograma es más ancho que lo que se ve en pantalla. En una gasolinera con dos tractos
+// pegados se podía capturar el código del vecino —que el chofer no tenía delante— y soltarle
+// «el código es de otra unidad» sobre algo que nunca vio.
+function qrRegion(v){
+  const vw=v.videoWidth, vh=v.videoHeight;
+  const cw=v.clientWidth||vw, ch=v.clientHeight||vh;
+  const factor=Math.max(cw/vw, ch/vh);                 // el mismo que aplica 'cover'
+  const visW=Math.min(vw, cw/factor), visH=Math.min(vh, ch/factor);
+  const m=document.querySelector('.cam .marco');
+  const rect=m?m.getBoundingClientRect().width:0;
+  // si el marco aún no tiene medida (arranca oculto) se usa su propia fórmula del CSS
+  const ladoCliente = rect>20 ? rect : Math.min(cw, ch, cw*0.68, 290);
+  // un 15% de holgura: el marco es una guía para encuadrar, no un cepo
+  const lado = Math.max(40, Math.min(visW, visH, ladoCliente*(visW/cw)*1.15));
+  return { sx:Math.round((vw-lado)/2), sy:Math.round((vh-lado)/2),
+           sw:Math.round(lado), sh:Math.round(lado) };
+}
+
+async function qrLeerFotograma(v){
+  // Se recorta SIEMPRE al marco, y se reduce: jsQR recorre todos los píxeles y a resolución
+  // de cámara no termina entre un tick y el siguiente, con lo que la interfaz se traba.
+  const r = qrRegion(v);
+  qrLienzo = qrLienzo || document.createElement('canvas');
+  const f = Math.min(1, QR_ANCHO/r.sw);
+  const w = Math.max(1, Math.round(r.sw*f)), h = Math.max(1, Math.round(r.sh*f));
+  if(qrLienzo.width!==w || qrLienzo.height!==h){ qrLienzo.width=w; qrLienzo.height=h; }
+  const cx = qrLienzo.getContext('2d',{willReadFrequently:true});
+  cx.drawImage(v, r.sx,r.sy,r.sw,r.sh, 0,0,w,h);
+  if(qrDetector){
+    // Al nativo se le entrega el MISMO recorte, no el elemento de vídeo: si no, seguiría
+    // viendo la franja que la pantalla oculta.
+    try{ const c=await qrDetector.detect(qrLienzo); return (c&&c.length&&c[0].rawValue)||null; }
+    catch(_){ return null; }      // un fotograma ilegible no es un error
+  }
+  if(typeof window.jsQR!=='function')return null;
+  try{
+    const rr = window.jsQR(cx.getImageData(0,0,w,h).data, w, h, {inversionAttempts:'dontInvert'});
+    return (rr&&rr.data)||null;
+  }catch(_){ return null; }
+}
+function qrPintarCuenta(restan){
+  const c=$('#qr-cuenta'), m=$('#qr-marcha');
+  if(c)c.textContent=Math.max(0,Math.ceil(restan/1000));
+  // 151 es la longitud del círculo (2·π·24): el trazo se va cerrando conforme avanza.
+  if(m)m.style.strokeDashoffset=String(151*(restan/(QR_SEGUNDOS*1000)));
+}
+function qrReiniciar(msg){
+  qrVisto=null; qrDesde=0;
+  $('#cam').classList.remove('leyendo');
+  const m=$('#qr-msg'); if(m)m.textContent=msg||'';
+}
+async function iniciarLecturaQR(){
+  if(!hayLectorQR())return;
+  // Si el nativo existe se usa; si no, `qrDetector` se queda nulo y `qrLeerFotograma` cae
+  // sola a jsQR. Antes un fallo aquí abortaba la lectura entera.
+  if(typeof window.BarcodeDetector!=='undefined'){
+    try{ qrDetector = qrDetector || new BarcodeDetector({formats:['qr_code']}); }
+    catch(e){ qrDetector=null; }
+  }
+  const v=$('#cam-video');
+  clearInterval(qrTimer);
+  clearTimeout(qrPlazo);
+  // LA SALIDA. Si en 12 segundos no se decodificó nada, se ofrece la foto. Sin esto el
+  // chofer se quedaba en bucle: el obturador está oculto por CSS en modo QR (.cam.qr
+  // .shutter{display:none}), el diálogo de "no coincide" sólo aparece si el código SÍ se
+  // leyó, y el económico es obligatorio para enviar. Con un sticker roto —o en los 16
+  // activos que no tienen etiqueta— esa recarga no se podía terminar de ninguna forma.
+  qrPlazo = setTimeout(function rendirse(){
+    const c=$('#cam'); if(!c||!c.classList.contains('show'))return;
+    // NO SE RINDE MIENTRAS ESTÁ LEYENDO. El plazo sólo miraba si la cámara seguía abierta.
+    // El chofer encuadraba la calcomanía en el segundo 11, veía arrancar la cuenta de 3, y
+    // en el 12 se le apagaban el marco y la cuenta en la cara —con el escaneo a punto de
+    // cuadrar—. Si hay un código enfocado, se le dan otros 12 segundos.
+    if(qrVisto){ qrPlazo=setTimeout(rendirse, 12000); return; }
+    c.classList.remove('qr');          // devuelve el obturador a la pantalla
+    const m=$('#qr-msg');
+    if(m)m.textContent='¿No lee el código? Toma la foto del número económico.';
+    const f=FOTOS.find(x=>x.key===camTipo); if(f)f.sinQR=true;
+    clearInterval(qrTimer); qrTimer=null;
+    pintarFotos();   // el botón deja de prometer un escáner que ya no va a abrirse
+  }, 12000);
+  qrOcupado=false;
+  qrReiniciar('Acerca el código al marco');
+  qrTimer=setInterval(async()=>{
+    if(!camStream||!v.videoWidth)return;
+    // jsQR tarda más que el intervalo en teléfonos modestos. Sin este cerrojo se apilarían
+    // decodificaciones y la cuenta atrás avanzaría a saltos.
+    if(qrOcupado)return;
+    qrOcupado=true;
+    let txt=null;
+    try{ txt = await qrLeerFotograma(v); }
+    finally{ qrOcupado=false; }
+
+    if(!txt){
+      // Se perdió de vista: se reinicia la cuenta. Sostenerlo 3 s es lo que evita que un
+      // código que pasa de refilón por el encuadre —el de la unidad de al lado— se capture.
+      if(qrVisto)qrReiniciar('Acerca el código al marco');
+      return;
+    }
+    if(txt!==qrVisto){ qrVisto=txt; qrDesde=Date.now(); $('#cam').classList.add('leyendo');
+      const m=$('#qr-msg'); if(m)m.textContent='Sostén el código quieto'; }
+    const pasado=Date.now()-qrDesde, restan=QR_SEGUNDOS*1000-pasado;
+    qrPintarCuenta(restan);
+    if(restan<=0){
+      const tipo=camTipo;
+      clearInterval(qrTimer); qrTimer=null;
+      cerrarCamara();
+      enviarQR(tipo, txt);
+    }
+  }, 120);
+}
+async function enviarQR(tipo, texto){
+  const f=FOTOS.find(x=>x.key===tipo)||{};
+  const st=$('#st-'+tipo), val=$('#val-'+tipo);
+  if(st)st.textContent='Leyendo código…';
+  try{
+    const sid=await sidDe(f);
+    const fd=new FormData();
+    fd.append('texto',texto);
+    if(f.esperado)fd.append('esperado',f.esperado);
+    if(f.etiqueta)fd.append('etiqueta',f.etiqueta);
+    const d=await api('/api/solicitudes/'+sid+'/qr',{method:'POST',body:fd});
+    if(d.resuelve && d.coincide!==false){
+      // Cuadra. La evidencia YA quedó registrada en el servidor por el POST de arriba, así
+      // que aquí sólo se marca el slot.
+      // OJO CON DOS COSAS, que costaron un fallo cada una:
+      //  · NO va a DRAFT.fotos. Eso es la cola de lo que está PENDIENTE de subir sin
+      //    conexión, y al enviar la solicitud se comprueba si tiene algo para decidir si
+      //    encolar. Meter aquí un dato ya enviado hacía que la app dijera "sin conexión"
+      //    teniendo señal.
+      //  · NO se llama a pintarFotos(): repinta los slots desde cero y borraría el
+      //    económico que se acaba de escribir. El flujo de la foto tampoco lo llama.
+      CAPTURADAS.add(tipo);
+      if(val)val.textContent=d.activo||'—';
+      if(st)st.textContent='Escaneado ✓';
+      const c=$('#foto-'+tipo); if(c)c.classList.add('ok');
+      toast('Económico '+(d.activo||'')+' verificado');
+    }else{
+      // NO cuadra: no se da por bueno. Se explica qué salió y se vuelve a escanear, que es
+      // lo que arregla el caso real —apuntar al sticker de la unidad de al lado—. Si el
+      // sticker está roto o es el que no es, desde aquí se sale a tomar la foto de siempre.
+      CAPTURADAS.delete(tipo);
+      if(val)val.textContent=d.activo||'?';
+      if(st)st.textContent='No coincide';
+      const c=$('#foto-'+tipo); if(c)c.classList.remove('ok');
+      const esperado=(FOTOS.find(x=>x.key===tipo)||{}).esperado||'la unidad asignada';
+      // El motivo REAL lo manda el servidor en `aviso`: puede ser que el código esté en
+      // conflicto (pegado en dos unidades según el maestro), retirado, o que el activo aún no
+      // exista. Decir siempre "no es de ningún activo" mandaba a buscar un problema que no era.
+      const dice = d.aviso ? d.aviso
+                 : d.activo ? ('El código es de '+d.activo+', y el viaje tiene asignada '+esperado+'.')
+                 : ('Ese código no corresponde a ningún activo, y el viaje tiene asignada '+esperado+'.');
+      const rep = await confirmar(dice, 'Volver a escanear', 'Tomar foto');
+      if(rep)abrirCamara(tipo); else forzarFoto(tipo);
+    }
+  }catch(e){
+    // Si falló por RED, el escaneo no se puede encolar (el código se valida contra el
+    // catálogo, que está en el servidor). Se dice claro y se ofrece la foto, que sí sabe
+    // guardarse sin conexión y esperar a que haya señal.
+    if(st)st.textContent='Sin leer';
+    if(errDeRed(e)){
+      const f2=await confirmar('No hay conexión para verificar el código. Inténtalo otra vez '
+        +'cuando tengas señal, o toma la foto del número.', 'Tomar foto', 'Cancelar');
+      if(f2)forzarFoto(tipo);
+    } else {
+      toast('No se pudo registrar el código: '+(e.message||''));
+    }
+  }
+}
+// Pregunta de dos salidas, sin depender de confirm() (que en la app instalada no siempre
+// se muestra). Devuelve true si el operador elige la primera.
+function confirmar(texto, si, no){
+  return new Promise(res=>{
+    const w=document.createElement('div');
+    // z-index 400: por encima de la cámara y del mapa (antes 95 quedaba debajo de ellos).
+    w.style.cssText='position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:22px';
+    w.innerHTML=`<div role="alertdialog" aria-modal="true" style="background:var(--card,#fff);border-radius:14px;padding:20px;max-width:340px;width:100%">
+      <div style="font-size:14.5px;line-height:1.5;margin-bottom:16px">${esc(texto)}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn gray sm" style="flex:1" data-r="0">${esc(no)}</button>
+        <button class="btn sm" style="flex:1" data-r="1">${esc(si)}</button>
+      </div></div>`;
+    // Escape responde «no» y se queda AQUÍ: antes cerraba la cámara de abajo y la pregunta
+    // se quedaba colgando. Se escucha en captura para adelantarse al Escape de la cámara.
+    const fin=v=>{ document.removeEventListener('keydown',onKey,true); w.remove(); res(v); };
+    const onKey=ev=>{ if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); fin(false); } };
+    document.addEventListener('keydown',onKey,true);
+    w.addEventListener('click',ev=>{
+      const b=ev.target.closest('[data-r]'); if(!b)return;
+      fin(b.dataset.r==='1');
+    });
+    document.body.appendChild(w);
+    const b1=w.querySelector('[data-r="1"]'); if(b1)b1.focus({preventScroll:true});
+  });
+}
+// Salida de emergencia: captura el económico con foto aunque el slot sea de QR.
+function forzarFoto(tipo){
+  const f=FOTOS.find(x=>x.key===tipo); if(f)f.sinQR=true;
+  abrirCamara(tipo);
+}
+
+async function abrirCamara(tipo){
+  camTipo=tipo;
+  const f=FOTOS.find(x=>x.key===tipo)||{};
+  const quiereQR = !!f.eco && !f.sinQR && hayLectorQR();
+  // La descarga del lector arranca EN PARALELO con la cámara: pedir el permiso y levantar el
+  // stream tarda bastante más que traer un archivo del propio servidor.
+  const pLector = quiereQR ? cargarJsQR() : Promise.resolve(false);
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    const qr = quiereQR && await pLector;
+    $('#cam-hint').textContent = qr?('Apunta al QR de '+(f.esperado||'la unidad'))
+      : f.eco?('Encuadra el ECONÓMICO '+(f.esperado||'')):('Encuadra: '+(f.lbl||'la lectura'));
+    $('#cam-video').srcObject=camStream;
+    $('#cam').classList.add('show');
+    $('#cam').classList.toggle('qr', qr);
+    if(qr)iniciarLecturaQR();
+    // Si se quería escanear y el lector no llegó, se deja constancia: el botón dejará de
+    // prometer un escáner, en vez de repetir el mismo intento fallido cada vez.
+    else if(quiereQR){ f.sinQR=true; pintarFotos(); }
+  }catch(e){
+    // Sin cámara disponible (o permiso denegado): cae al selector del teléfono.
+    $('#file-'+tipo).click();
+  }
+}
+function cerrarCamara(){
+  clearTimeout(qrPlazo); qrPlazo=null;
+  $('#cam').classList.remove('show','qr','leyendo');
+  clearInterval(qrTimer); qrTimer=null; qrVisto=null; qrDesde=0;
+  if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
+}
+function capturar(){
+  const v=$('#cam-video'); if(!v.videoWidth)return;
+  // SE GUARDA LO QUE SE VIO, NO EL FOTOGRAMA ENTERO.
+  //
+  // La vista previa lleva `object-fit:cover` (.cam video), que recorta el sobrante del lado
+  // largo: en vertical, del orden de un cuarto del ancho. Guardar el fotograma completo
+  // mandaba una foto MÁS ANCHA que la encuadrada, con los instrumentos vecinos dentro y la
+  // lectura ocupando bastante menos. Se repite aquí el mismo recorte que hace el CSS, para
+  // que «Encuadra» signifique algo.
+  const vw=v.videoWidth, vh=v.videoHeight;
+  const cw=v.clientWidth||vw, ch=v.clientHeight||vh;
+  const factor=Math.max(cw/vw, ch/vh);          // el que aplica 'cover' para cubrir la caja
+  const sw=Math.min(vw, Math.round(cw/factor)), sh=Math.min(vh, Math.round(ch/factor));
+  const sx=Math.round((vw-sw)/2), sy=Math.round((vh-sh)/2);
+  const cv=document.createElement('canvas'); cv.width=sw; cv.height=sh;
+  cv.getContext('2d').drawImage(v, sx,sy,sw,sh, 0,0,sw,sh);
+  cv.toBlob(b=>{ const tipo=camTipo; cerrarCamara(); if(b)subirFoto(tipo,new File([b],'foto.jpg',{type:'image/jpeg'})); },'image/jpeg',0.9);
+}
+
+// Retoma el borrador que este operador ya tiene abierto para esta unidad y este tipo.
+//
+// EL DEFECTO QUE CIERRA: `SOL_ID` vivía SÓLO en una variable de JavaScript. Cada recarga de
+// página la perdía, y la siguiente foto creaba otra solicitud desde cero. El operador 551
+// dejó 5 borradores en 12 minutos sin hacer nada raro: estaba recargando. No es disciplina
+// del operador, es estado que no sobrevivía a un F5.
+//
+// SE RESUELVE CONTRA EL SERVIDOR, no con localStorage. El borrador ya existe en la base con
+// sus evidencias; el almacenamiento del navegador sólo sabría el id, y al volver con el id
+// pero sin `CAPTURADAS` el operador tendría que fotografiarlo todo otra vez —y cada foto
+// repetida es una fila más y otra llamada a la IA—. Además así también se retoma desde otro
+// teléfono, que es lo que pasa cuando se le acaba la batería a mitad de la captura.
+async function adoptarBorrador(){
+  if(SOL_ID) return;
+  const quiero = RECARGA_TIPO==='ambos' ? ['motor','termo'] : [RECARGA_TIPO];
+  let lista=[];
+  try{ lista=((await api('/api/solicitudes?limite=30')).solicitudes||[]); }catch(e){ return; }
+  // SÓLO borradores RECIENTES. Filtrar por unidad y tipo no bastaba: el mismo chofer suele
+  // repetir unidad en viajes distintos, así que un borrador abandonado ayer se retomaba
+  // sobre el viaje de hoy y el odómetro viejo acababa autorizando litros nuevos.
+  //
+  // Se mide una VENTANA y no el día natural a propósito: el servidor guarda en UTC y el
+  // chofer vive en hora de México, así que a partir de las seis de la tarde "hoy" en UTC ya
+  // es mañana y una captura empezada hace diez minutos quedaría descartada. Una captura en
+  // curso tiene minutos de vida; doce horas es holgado y deja fuera la de ayer igual.
+  const LIMITE_MS = 12*60*60*1000;
+  const ahora = Date.now();
+  const reciente = s => {
+    const t = Date.parse(String(s.creada_en||'').replace(' ','T'));
+    return Number.isFinite(t) && (ahora - t) < LIMITE_MS;
+  };
+  const mios = lista.filter(s=>s.estado==='borrador'
+                 && (!UNIDAD_ID || s.unidad_id===UNIDAD_ID)
+                 && quiero.includes(s.tipo_recarga||'motor')
+                 && reciente(s))
+               .sort((a,b)=>b.id-a.id);
+  if(!mios.length) return;
+
+  const deTipo = t => mios.filter(s=>(s.tipo_recarga||'motor')===t)[0] || null;
+  let principal = RECARGA_TIPO==='ambos' ? deTipo('motor') : mios[0];
+  let hermano   = RECARGA_TIPO==='ambos' ? deTipo('termo') : null;
+  // EL TERMO HUÉRFANO SE PUEDE RETOMAR. Tras un envío a medias de «las dos», la del motor ya
+  // salió y `RECARGA_TIPO` sigue valiendo 'ambos'; aquí quedaba sólo el borrador del termo,
+  // `deTipo('motor')` devolvía null y se salía sin adoptar nada. Es justo el caso en que el
+  // aviso del envío parcial le dice al chofer que vuelva a terminarla.
+  if(RECARGA_TIPO==='ambos' && !principal && hermano){
+    RECARGA_TIPO='termo'; principal=hermano; hermano=null;
+    construirFotos(); pintarTipoRecarga();
+  }
+  if(!principal) return;
+  SOL_ID = principal.id;
+  SOL_ID_TERMO = hermano ? hermano.id : null;
+
+  await sembrarEvidencias([SOL_ID, SOL_ID_TERMO].filter(Boolean));
+  if(CAPTURADAS.size) toast('Se retomó tu solicitud de hoy · revisa los datos');
+}
+
+// Marca como cubiertos los slots que ya tienen evidencia BUENA en esas solicitudes, y guarda
+// su valor para enseñarlo. Lo usan dos caminos: retomar un borrador en curso y corregir una
+// devuelta. Un económico ilegible o que no coincide NO cuenta: ese slot sigue pendiente.
+// Retoma una solicitud DEVUELTA para corregirla y volver a enviarla.
+//
+// No crea nada: fija `SOL_ID` sobre la que ya existe, así que `enviar()` la transiciona de
+// DEVUELTA a ENVIADA en vez de abrir otra. El grafo lo permite al operador; lo que faltaba
+// era el camino en pantalla.
+document.addEventListener('click', ev=>{
+  const b=ev.target.closest && ev.target.closest('[data-corregir]');
+  if(b) corregirDevuelta(Number(b.dataset.corregir));
+});
+
+async function corregirDevuelta(id){
+  const s=(MIS_SOLIS||[]).filter(x=>x.id===id)[0];
+  if(!s) return;
+  if(!VIAJE){ toast('Necesitas un viaje asignado para reenviarla'); return; }
+  // GUARDA: una devuelta puede ser de un viaje anterior y de OTRA unidad. Reenviarla con las
+  // fotos de la unidad de hoy metería evidencia del camión equivocado.
+  if(s.unidad_id && UNIDAD_ID && s.unidad_id!==UNIDAD_ID){
+    // `VIAJE` viene de /api/mi-viaje, que expone `unidad_clave`. `VIAJE.unidad` no existe:
+    // el mensaje caía siempre al literal 'otra' y no le decía cuál trae hoy.
+    toast('Esa solicitud es de '+(s.unidad||'otra unidad')+' y hoy traes '+(VIAJE.unidad_clave||'otra')+'. Habla con tu coordinador.');
+    return;
+  }
+  SOL_ID=s.id;
+  SOL_ID_TERMO=(s.hermana_id||null);
+  P_SOL=null; CLIENT_UUID=null;
+  RECARGA_TIPO=s.tipo_recarga||'motor';
+  // Y SU REMOLQUE. Sin esto, `construirFotos` para 'termo' caía al primer remolque de la
+  // lista: en un tracto con dos refrigerados se le pedía el económico del que no era, y la
+  // corrección volvía devuelta por segunda vez con el mismo aspecto de culpa suya.
+  if(s.remolque_id) REMOLQUE_SEL=s.remolque_id;
+  CAPTURADAS.clear(); RETOMADO={};
+  construirFotos();
+  await sembrarEvidencias([SOL_ID, SOL_ID_TERMO].filter(Boolean));
+  pintarFotos();
+  show('recarga');
+  toast(s.motivo ? 'Corrige lo que te indicaron y vuelve a enviar' : 'Revisa la evidencia y vuelve a enviar');
+}
+
+async function sembrarEvidencias(ids){
+  for(const sid of ids){
+    let det=null;
+    try{ det=await api('/api/solicitudes/'+sid); }catch(e){ continue; }
+    const evs=det.evidencias||[];
+    FOTOS.forEach(f=>{
+      const e=evs.filter(x=>x.tipo===f.tipo && (x.etiqueta||'')===(f.etiqueta||'')).pop();
+      if(!e) return;
+      if(f.eco && e.coincide!==true) return;
+      CAPTURADAS.add(f.key);
+      // Se guarda el valor para ENSEÑARLO. Marcar el recuadro en verde con la palabra
+      // "Listo" y sin el número le pedía al chofer que confiara a ciegas en algo que él no
+      // acaba de capturar; si el dato está mal, tiene que poder verlo y repetir la foto.
+      const v = e.valor_final!=null ? e.valor_final
+              : e.valor_ia!=null    ? e.valor_ia
+              : e.texto_ia || null;
+      if(v!=null) RETOMADO[f.key]=v;
+    });
+  }
+}
+
+function nuevoUuid(){
+  try{ if(crypto&&crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+  return 'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+}
+
+async function asegurarSolicitud(){
+  if(SOL_ID)return SOL_ID;
+  // La promesa EN VUELO se comparte. La guarda de arriba sola no bastaba: `SOL_ID` se
+  // escribe después del await, así que dos llamadores simultáneos la veían nula los dos y
+  // cada uno creaba su solicitud, partiendo la evidencia en dos.
+  if(P_SOL)return P_SOL;
+  P_SOL=(async()=>{
+    const uid=unidadElegida();
+    const fd=new FormData(); if(uid)fd.append('unidad_id',uid);
+    fd.append('tipo_recarga',RECARGA_TIPO);
+    if(RECARGA_TIPO==='termo'){ const rem=termoRemolque(); if(rem)fd.append('remolque_id',rem.id); }
+    // La llave anti-duplicado del servidor, que existía y nadie mandaba. Se conserva
+    // durante toda la captura, así que si el POST llega pero la respuesta se pierde, el
+    // reintento recupera la MISMA solicitud en vez de crear otra.
+    CLIENT_UUID = CLIENT_UUID || nuevoUuid();
+    fd.append('client_uuid', CLIENT_UUID);
+    // Sin litros: los define el coordinador al autorizar (el operador no los fija).
+    const d=await api('/api/solicitudes',{method:'POST',body:fd});
+    SOL_ID=d.id;
+  // Con 'ambos' el servidor crea DOS borradores hermanos y devuelve el segundo en `id_termo`.
+  // Se guarda porque las horas del termo tienen que ir a esa otra solicitud: juntar los
+  // litros de motor y de termo en un solo registro no se puede deshacer después.
+    SOL_ID_TERMO = d.id_termo || null;
+    return SOL_ID;
+  })();
+  // Se suelta pase lo que pase: si el POST falló, el siguiente intento vuelve a probar en
+  // vez de quedarse pegado a una promesa rota.
+  P_SOL.catch(()=>{}).then(()=>{ P_SOL=null; });
+  return P_SOL;
+}
+// A qué solicitud pertenece cada evidencia. Sólo se separan en 'ambos'; en los demás modos
+// hay una sola solicitud y todo va a ella.
+async function sidDe(f){
+  const sid=await asegurarSolicitud();
+  return (f && f.sol==='termo' && SOL_ID_TERMO) ? SOL_ID_TERMO : sid;
+}
+// Comprime la foto en el teléfono ANTES de subir: la reescala (lado máx 1600px) y la
+// re-codifica JPEG. Así una foto de cámara de 8-12 MB baja a ~300-500 KB — no choca con el
+// tope del servidor y no infla la base (las fotos se guardan en base64 en la fila). La IA de
+// todos modos lee a 1024px, así que no se pierde calidad útil. Si algo falla, sube la original.
+async function comprimirImagen(file, maxLado, calidad){
+  maxLado=maxLado||1600; calidad=calidad||0.82;
+  try{
+    if(!file || !/^image\//.test(file.type||'')) return file;
+    let w=0,h=0,src=null,bmp=null;
+    try{ bmp=await createImageBitmap(file); w=bmp.width; h=bmp.height; src=bmp; }catch(_){ bmp=null; }
+    if(!src){
+      const url=URL.createObjectURL(file);
+      const img=await new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=url;});
+      URL.revokeObjectURL(url);
+      if(!img||!img.naturalWidth) return file;
+      w=img.naturalWidth; h=img.naturalHeight; src=img;
+    }
+    if(!w||!h) return file;
+    const escala=Math.min(1, maxLado/Math.max(w,h));
+    const nw=Math.max(1,Math.round(w*escala)), nh=Math.max(1,Math.round(h*escala));
+    const cv=document.createElement('canvas'); cv.width=nw; cv.height=nh;
+    cv.getContext('2d').drawImage(src,0,0,nw,nh);
+    if(bmp&&bmp.close)bmp.close();
+    const blob=await new Promise(res=>cv.toBlob(res,'image/jpeg',calidad));
+    if(!blob) return file;
+    if(blob.size>=file.size && file.size<5*1024*1024) return file;   // ya era chica: no la agrandes
+    return new File([blob],(file.name||'foto').replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'});
+  }catch(e){ return file; }
+}
+// Guarda el valor que el chofer teclea cuando la IA no pudo leer la foto.
+//
+// Va contra el MISMO endpoint que usa el coordinador para corregir una lectura
+// (POST /api/solicitudes/{id}/evidencia/{ev_id}), así que queda registrado como corrección
+// a mano y no se confunde con una lectura automática. La foto sigue ahí como prueba: esto
+// no la sustituye, la completa.
+async function subirFoto(key,file){
+  const f=FOTOS.find(x=>x.key===key)||{key,tipo:key};
+  let box=$('#foto-'+key), st=$('#st-'+key), val=$('#val-'+key);
+  if(st){st.textContent='Preparando la foto…';} if(box){box.className='foto load';}
+  // El hueco deja de contar como cubierto EN CUANTO arranca la subida. Antes sólo se quitaba
+  // al llegar una lectura mala, así que mientras se repetía una foto el slot seguía dando
+  // por bueno el valor VIEJO —el que el chofer estaba corrigiendo—.
+  CAPTURADAS.delete(key);
+  SUBIENDO++;
+  try{
+    file=await comprimirImagen(file);   // aligera antes de subir (evita el tope de 5 MB)
+    if(st)st.textContent='Leyendo la foto…'; if(box)box.className='foto load';
+    const sid=await sidDe(f);
+    const fd=new FormData(); fd.append('tipo',f.tipo); fd.append('file',file);
+    if(f.eco){ fd.append('esperado',f.esperado||''); fd.append('etiqueta',f.etiqueta||''); }
+    const d=await api('/api/solicitudes/'+sid+'/evidencia',{method:'POST',body:fd});
+    // LOS NODOS SE VUELVEN A BUSCAR. Los de arriba se capturaron antes de esperar al
+    // servidor; si la pantalla se repintó mientras subía la foto, ya no están en el
+    // documento y escribir en ellos no se ve —ni siquiera el «no se leyó el número»—.
+    box=$('#foto-'+key); st=$('#st-'+key); val=$('#val-'+key);
+    CAPTURADAS.add(key);   // #1: este slot ya quedó cubierto
+    if(f.eco){
+      if(val)val.textContent=d.texto_ia||'—';
+      // TRES estados, no dos. `coincide` vale true, false o null, y null es "no se pudo
+      // leer": pintarlo como "no coincide" acusaba de económico equivocado a una unidad
+      // correcta, que es justo lo que pasa al fotografiar la etiqueta en un iPhone, donde
+      // no hay lector de códigos y la cámara cae a foto sin avisar.
+      if(d.coincide===true){ if(st)st.innerHTML=ic('check')+' Coincide'; if(box)box.className='foto ok'; }
+      else if(d.coincide===false){ if(st)st.innerHTML=ic('alert')+' No coincide con '+esc(f.esperado||''); if(box)box.className='foto warn'; }
+      else{
+        CAPTURADAS.delete(key);   // sin lectura no hay evidencia: el slot sigue pendiente
+        if(st)st.innerHTML=ic('alert')+' '+esc(d.aviso||'No se pudo leer el económico');
+        if(box)box.className='foto warn';
+      }
+    }else{
+      if(val)val.textContent=d.valor_ia!=null?d.valor_ia:'—';
+      if(d.valor_ia==null){
+        // Sin número NO hay slot cubierto: el dueño lo decidió así (20-sep-2026). La foto
+        // se repite hasta que salga. El servidor lo exige igual, así que saltarse esto por
+        // el teléfono no serviría de nada; aquí sólo se le dice al chofer cuanto antes.
+        CAPTURADAS.delete(key);
+        if(st)st.innerHTML=ic('alert')+' No se leyó el número · repite la foto';
+        if(box)box.className='foto warn';
+      }
+      else if(d.aviso){ if(st)st.innerHTML=ic('alert')+' '+esc(d.aviso); if(box)box.className='foto warn'; }
+      else{ if(st)st.textContent='Leído'+(d.confianza?' · confianza '+d.confianza:''); if(box)box.className='foto ok'; }
+    }
+  }catch(e){
+    box=$('#foto-'+key); st=$('#st-'+key);   // igual que arriba: pudo repintarse mientras subía
+    if(st)st.textContent = errDeRed(e) ? 'Sin conexión: vuelve a intentarlo' : ('No se pudo: '+(e.message||''));
+    if(box)box.className='foto warn';
+  }finally{ SUBIENDO--; }
+}
+async function enviar(){
+  const btn=$('#btn-enviar');
+  // #2: no se puede solicitar sin un viaje LEVANTADO por el coordinador.
+  if(!VIAJE){ toast('Aún no tienes un viaje asignado por tu coordinador'); return; }
+  const uid=unidadElegida()||(VIAJE&&VIAJE.unidad_id)||'';
+  // #3: ninguna foto a medio subir. Una subida tarda hasta 75 s (API_PLAZO_FOTO) y el envío
+  // podía ganarle la carrera: entonces el POST de la evidencia caía sobre una solicitud que
+  // ya no era borrador, el servidor lo rechazaba con 409, y al coordinador le llegaba la
+  // lectura vieja —la que el chofer acababa de corregir— sin que nadie se enterara.
+  if(SUBIENDO>0){ toast('Espera a que termine de subir la foto'); return; }
+  // #1: todos los datos cubiertos — toda foto del viaje debe estar tomada antes de enviar.
+  const faltan=FOTOS.filter(f=>!CAPTURADAS.has(f.key));
+  if(faltan.length){ toast('Faltan por tomar: '+faltan.map(f=>f.lbl).join(', ')); return; }
+  btn.disabled=true;
+  try{
+    const sid=await asegurarSolicitud();
+    const fd=new FormData(); fd.append('destino','enviada');
+    await api('/api/solicitudes/'+sid+'/transicion',{method:'POST',body:fd});
+    // Con 'ambos' hay una segunda solicitud que también tiene que salir de borrador. Si esta
+    // falla, la del motor YA se envió: se dice cuál quedó, en vez de un "no se pudo" que
+    // haría repetir todo y duplicar la del motor.
+    let media=false;
+    if(SOL_ID_TERMO){
+      try{
+        const f2=new FormData(); f2.append('destino','enviada');
+        await api('/api/solicitudes/'+SOL_ID_TERMO+'/transicion',{method:'POST',body:f2});
+      }catch(e2){ media=true; }
+    }
+    // «Solicitudes» filtra los borradores antes de pintar, así que mandarlo ahí era mandarlo
+    // a mirar donde no está. Donde sí está es en «Nueva recarga», que ahora la retoma sola.
+    toast(media ? 'Se envió la del motor. La del termo quedó a medias: vuelve a «Nueva recarga» para terminarla.'
+        : (SOL_ID_TERMO ? 'Enviadas las 2 solicitudes al coordinador'
+                        : 'Solicitud enviada al coordinador'));
+    SOL_ID=null; SOL_ID_TERMO=null; P_SOL=null; CLIENT_UUID=null; DRAFT={fotos:{}}; CAPTURADAS.clear(); pintarFotos();
+    cargarMisSolicitudes(); show('solicitudes');
+  }catch(e){
+    // Sin cola detrás, un fallo de red se dice tal cual y la captura se queda en pantalla
+    // para reintentar: es preferible a dar por enviada una solicitud que nadie recibió.
+    toast(errDeRed(e) ? 'Sin conexión: no se pudo enviar. Inténtalo otra vez cuando tengas señal.'
+                      : ('No se pudo enviar: '+(e.message||'')));
+    btn.disabled=false;
+  }
+  btn.disabled=false;
+}
+
+async function cargarMisSolicitudes(){
+  const pendHTML='';
+  let ss=[];
+  try{ const d=await api('/api/solicitudes?limite=30'); ss=(d.solicitudes||[]).filter(x=>x.estado!=='borrador'); }
+  catch(e){
+    $('#mis-sol').innerHTML = pendHTML || '<div class="empty">Sin conexión. No se pudo cargar el historial.</div>';
+    // Los contadores se ponen en raya, no en cero. El salir por aquí dejaba intactos los
+    // ceros del marcado, y un cero se lee como «no tienes nada»: el chofer creía que no
+    // tenía ninguna devuelta esperándolo cuando lo que pasaba era que no había señal.
+    // `#hi-env` («Enviadas» del inicio) se había quedado fuera: seguía enseñando el cero
+    // del marcado, que es justo la mentira que se corrigió en los contadores de al lado.
+    ['#p-env','#p-aut','#p-dev','#hi-dev','#hi-env'].forEach(sel=>{
+      const el=$(sel); if(el){ el.textContent='—'; el.title='Sin conexión'; }
+    });
+    return;
+  }
+  detectarCambios(ss);   // avisa si alguna solicitud cambió de estado desde la última vez
+  // avisos: cuántas necesitan acción (devueltas)
+  const dev=ss.filter(x=>x.estado==='devuelta').length;
+  // badge de "por corregir" en el menú lateral y en la tarjeta del home
+  ['#bdg-sol','#bdg-home'].forEach(sel=>{const b=$(sel);if(b){if(dev){b.style.display='inline-block';b.textContent=dev;}else b.style.display='none';}});
+  // stats del perfil y del inicio
+  $('#p-env').textContent=ss.length;
+  $('#p-aut').textContent=ss.filter(x=>['autorizada','despachada','facturada','conciliada'].includes(x.estado)).length;
+  $('#p-dev').textContent=dev;
+  $('#hi-env').textContent=ss.length;
+  $('#hi-dev').textContent=dev;
+  // Resumen del inicio: las últimas 3 recargas.
+  const hh=$('#hi-hist');
+  if(hh){ hh.innerHTML = ss.length ? ss.slice(0,3).map(s=>`<div class="vitem">
+      <div><div class="u">${esc(s.unidad)||'—'}${(s.litros_reales!=null||s.litros_autorizados!=null)?' · '+esc(s.litros_reales!=null?s.litros_reales:s.litros_autorizados)+' L':''}</div>
+        <div class="m">${esc((s.creada_en||'').replace('T',' ').slice(0,16))}</div></div>
+      <span class="pill ${esc(s.estado)}">${PILL[s.estado]||esc(s.estado)}</span></div>`).join('')
+    : '<div class="empty" style="padding:10px">Aún no has enviado recargas.</div>'; }
+  MIS_SOLIS=ss;
+  const serverHTML=ss.map(s=>{
+    const ex=EXPL[s.estado];
+    // EL MOTIVO ES DEL ESTADO QUE LO ESCRIBIÓ. `app/solicitudes.py` sólo lo graba en estos
+    // cuatro y nunca lo limpia al salir de ellos, así que pintarlo en cualquier estado
+    // dejaba el texto de la devolución colgando debajo de un «¡Autorizada!» semanas después.
+    // La lista es exactamente la del backend: ni uno más, ni uno menos.
+    const motivo = ['devuelta','rechazada','anulada','en_discrepancia'].includes(s.estado) ? s.motivo : null;
+    // Y si el estado le manda leer un motivo que nadie escribió, se le dice en vez de
+    // dejarlo buscando un texto que no está. El motivo sólo es obligatorio en la
+    // discrepancia, así que este hueco es un caso real, no una rareza.
+    const faltaMotivo=!motivo&&['devuelta','rechazada','anulada','en_discrepancia'].includes(s.estado);
+    return `<div class="sol">
+      <div class="row">
+        <div><div class="u">${esc(s.unidad)||'—'}${(s.litros_reales!=null||s.litros_autorizados!=null)?' · '+esc(s.litros_reales!=null?s.litros_reales:s.litros_autorizados)+' L':''}</div>
+          <div class="m">${s.tipo_recarga==='termo'?'Termo · ':''}${esc((s.creada_en||'').replace('T',' ').slice(0,16))}${s.folio?' · '+esc(s.folio):''}</div></div>
+        <span class="pill ${esc(s.estado)}">${PILL[s.estado]||esc(s.estado)}</span>
+      </div>
+      ${ex?`<div class="expl ${ex[0]}">${ex[1]}${
+        motivo?'<br><b>Motivo:</b> '+esc(motivo)
+             :faltaMotivo?'<br><span style="opacity:.75">No dejaron un motivo escrito. Pregunta a tu coordinador.</span>':''
+      }</div>`:''}
+      ${s.estado==='devuelta'?`<button class="btn block" style="margin-top:10px" data-corregir="${s.id}">${ic('camera')} Corregir y volver a enviar</button>`:''}
+    </div>`;
+  }).join('');
+  $('#mis-sol').innerHTML = (pendHTML+serverHTML) || '<div class="empty">Aún no has enviado ninguna solicitud.</div>';
+}
+
+// ── Viaje asignado (unidad + destino que levanta el coordinador) ──
+// Abre la ruta del viaje en un mapa de sólo lectura. No deja fijar ni editar nada: el
+// operador no decide el trayecto, sólo necesita verlo.
+let _rutaAbierta=false, _rutaPie='', _rutaViajeId=null;
+async function verRutaViaje(){
+  if(!VIAJE||VIAJE.origen_lat==null||VIAJE.destino_lat==null){ toast('Este viaje no tiene ruta trazada'); return; }
+  $('#rv-dest').textContent=VIAJE.destino||'—';
+  $('#rutav').classList.add('show');
+  // EL MAPA SE REHACE SI EL VIAJE CAMBIÓ. El cerrojo sólo decía «ya se construyó una vez»,
+  // así que si el coordinador cambiaba el destino entre dos aperturas, la cabecera enseñaba
+  // el nuevo y el mapa seguía siendo el del viaje anterior.
+  if(_rutaViajeId!==null && _rutaViajeId!==VIAJE.id){ _rutaAbierta=false; _rutaPie=''; }
+  if(_rutaAbierta){
+    // Y SE REIMPRIME EL PIE. «Cargando la ruta…» se escribía ANTES de mirar el cerrojo, y al
+    // salir por él ya nadie volvía a escribirlo: de la segunda apertura en adelante el pie se
+    // quedaba cargando para siempre. Si `_rutaPie` está vacío es que de verdad sigue cargando.
+    $('#rv-pie').textContent=_rutaPie||'Cargando la ruta…';
+    return;
+  }
+  $('#rv-pie').textContent='Cargando la ruta…';
+  _rutaAbierta=true; _rutaViajeId=VIAJE.id;
+  try{
+    // La ruta se pide al endpoint del operador: el general es de gestión y a él le devuelve
+    // 403, con lo que el mapa acababa dibujando la recta en vez del camino.
+    let ruta=null;
+    try{ ruta=await api('/api/mi-viaje/ruta'); }catch(_){ ruta=null; }
+    const r=await Mapas.verRuta($('#rv-map'), VIAJE.origen_lat, VIAJE.origen_lng,
+                                VIAJE.destino_lat, VIAJE.destino_lng, ruta);
+    // El respaldo también sigue al coordinador: si no hay ruta trazada es justo cuando
+    // suele haber corregido los kilómetros a mano, y son los suyos los que valen.
+    const km = r&&r.km!=null ? r.km : (VIAJE.km_destino!=null?VIAJE.km_destino:VIAJE.km_estimado);
+    // Se dice de dónde salen los kilómetros: una recta no es una carretera, y el operador
+    // merece saber si lo que ve es el camino o el atajo del dibujo.
+    const nota = r&&r.fuente==='recta' ? ' (en línea recta: no se pudo trazar por carretera)' : '';
+    _rutaPie = (km!=null? (Number(km).toLocaleString('es-MX')+' km'+nota) : 'Sin kilómetros calculados')
+      + (VIAJE.origen? ' · desde '+VIAJE.origen : '');
+    $('#rv-pie').textContent=_rutaPie;
+  }catch(e){
+    _rutaAbierta=false; _rutaViajeId=null; _rutaPie='';
+    $('#rv-pie').textContent='No se pudo cargar el mapa.';
+  }
+}
+function cerrarRuta(){ $('#rutav').classList.remove('show'); }
+
+// ESCAPE CIERRA EL MAPA Y LA CÁMARA. Las dos ocupan la pantalla entera y su única salida era
+// un botón; no había ni un `keydown` en todo el archivo. Se cede el paso a los diálogos, que
+// ya traen su propio Escape en dialog.js y marcan el evento al atenderlo.
+document.addEventListener('keydown', ev=>{
+  if(ev.key!=='Escape' || ev.defaultPrevented) return;
+  const rv=$('#rutav'); if(rv && rv.classList.contains('show')){ ev.preventDefault(); cerrarRuta(); return; }
+  const cam=$('#cam'); if(cam && cam.classList.contains('show')){ ev.preventDefault(); cerrarCamara(); }
+});
+
+async function loadMiViaje(){
+  SIN_RED=false;
+  try{ const d=await api('/api/mi-viaje'); VIAJE=d.activo||null; try{localStorage.setItem('tr-viaje',JSON.stringify(VIAJE));}catch(_){} }
+  catch(e){
+    // Se recuerda POR QUÉ falló. Sin esto, una caída de cobertura acababa pintando el
+    // bloqueo que dice «tu coordinador aún no lo levanta»: culpar a una persona por un
+    // problema de antena, y encima mandar al chofer a llamarla para nada.
+    SIN_RED=errDeRed(e);
+    try{ const c=localStorage.getItem('tr-viaje'); if(c)VIAJE=JSON.parse(c); }catch(_){}
+  }
+  const dest=$('#hv-destino'), sub=$('#hv-sub');
+  const bmap=$('#hv-ruta');
+  if(VIAJE){
+    if(dest)dest.textContent=VIAJE.destino;
+    if(sub)sub.textContent='Unidad '+(VIAJE.unidad_clave||'—')+(VIAJE.origen?(' · desde '+VIAJE.origen):'');
+    // «Tu unidad» del inicio se escribía una sola vez, en init(), desde la unidad HABITUAL
+    // del operador, y no se volvía a tocar. La que manda es la del viaje de hoy.
+    { const hu=$('#hi-unidad'); if(hu&&VIAJE.unidad_clave) hu.textContent=VIAJE.unidad_clave; }
+    // El botón sólo aparece si hay los DOS extremos: con uno solo no hay ruta que enseñar,
+    // y un botón que abre un mapa vacío es peor que no tenerlo.
+    if(bmap)bmap.style.display=(VIAJE.origen_lat!=null&&VIAJE.destino_lat!=null)?'grid':'none';
+  }else{
+    if(bmap)bmap.style.display='none';
+    if(dest)dest.textContent='Sin viaje asignado';
+    if(sub)sub.textContent=YO.unidad_sugerida_clave?('Unidad habitual '+YO.unidad_sugerida_clave):'Tu coordinador aún no te asigna un viaje';
+  }
+  // Si cambió el viaje/unidad respecto al borrador en curso, EMPIEZA captura fresca: si no,
+  // fotos de la unidad anterior podrían quedar marcadas "Listo" y enviarse por la solicitud
+  // vieja (evidencia de la unidad equivocada). Solo resetea cuando de verdad cambia el viaje.
+  const vidActual = VIAJE ? (VIAJE.id || ('u'+VIAJE.unidad_id)) : null;
+  if(vidActual !== DRAFT_VIAJE){
+    CAPTURADAS.clear(); RETOMADO={}; SOL_ID=null; SOL_ID_TERMO=null; P_SOL=null; CLIENT_UUID=null; DRAFT={fotos:{}}; DRAFT_VIAJE=vidActual;
+  }
+  UNIDAD_ID = VIAJE ? VIAJE.unidad_id : null;   // la unidad SIEMPRE sale del viaje activo
+  pintarViajeActivo();
+  construirFotos();   // los slots de evidencia dependen del viaje (unidad + remolques)
+  // Después de construir los slots y ANTES de pintarlos: la adopción necesita `FOTOS` para
+  // saber qué slot cubre cada evidencia, y `pintarFotos` necesita `CAPTURADAS` ya sembrado.
+  await adoptarBorrador();
+  pintarFotos();      // refresca captura/bloqueo (#2) según haya viaje o no
+}
+function pintarViajeActivo(){
+  const box=$('#mv-activo'); if(!box) return;
+  if(!VIAJE){ box.innerHTML='<div class="empty" style="padding:8px">No tienes un viaje asignado ahora. Tu coordinador lo asigna.</div>'; return; }
+  box.innerHTML=`<div class="vrow" style="margin-bottom:12px">
+      <span class="ai">${ic('pin')}</span>
+      <div style="flex:1;min-width:0"><div class="vlbl">Destino</div><div class="vdest">${esc(VIAJE.destino)}</div></div>
+    </div>
+    <div class="kv"><span class="k">Unidad</span><span>${esc(VIAJE.unidad_clave||'—')}</span></div>
+    ${VIAJE.origen?`<div class="kv"><span class="k">Origen</span><span>${esc(VIAJE.origen)}</span></div>`:''}
+    ${VIAJE.nota?`<div class="kv"><span class="k">Nota</span><span>${esc(VIAJE.nota)}</span></div>`:''}
+    <div class="kv"><span class="k">Asignado</span><span>${esc((VIAJE.creada_en||'').replace('T',' ').slice(0,16))}</span></div>`;
+}
+async function loadMisViajes(){
+  const box=$('#mv-hist'); if(!box) return;
+  try{
+    const d=await api('/api/mis-viajes'); const vs=d.viajes||[];
+    if(!vs.length){ box.innerHTML='<div class="empty">Aún no tienes viajes registrados.</div>'; return; }
+    box.innerHTML=vs.map(v=>`<div class="vitem">
+      <div><div class="u">${esc(v.unidad||'—')}</div><div class="m">${esc((v.fecha||'').slice(0,10))}${v.tipo?' · '+esc(String(v.tipo).toLowerCase()):''}</div></div>
+      <div class="r">${v.kilometros!=null?Math.round(v.kilometros)+' km':'—'}${v.rto_real!=null?'<div class="m" style="text-align:right">'+Number(v.rto_real).toFixed(2)+' km/l</div>':''}</div>
+    </div>`).join('');
+  }catch(e){ box.innerHTML='<div class="empty">No se pudo cargar.</div>'; }
+}
+function mesLargo(ym){ const p=ym.split('-'); const n=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; return (n[+p[1]]||p[1])+' '+p[0]; }
+async function loadRendimiento(){
+  const heat=$('#rm-heat'), tabla=$('#rm-tabla'); if(!tabla)return;
+  try{
+    const d=await api('/api/mi-rendimiento'); const ms=d.meses||[];
+    if(!ms.length){ if(heat)heat.innerHTML=''; tabla.innerHTML='<div class="empty">Aún no hay viajes registrados para calcular tu rendimiento.</div>'; return; }
+    const col=p=>p==null?'var(--muted)':(p>=1?'var(--ok)':(p>=0.85?'var(--warn)':'var(--danger)'));
+    if(heat)heat.innerHTML=svgRendimiento(ms, false);
+    tabla.innerHTML=ms.slice().reverse().map(m=>{
+      const pct=m.pct!=null?Math.round(m.pct*100)+'%':'—';
+      return `<div class="rmrow">
+        <div><div class="rmmes">${esc(mesLargo(m.mes))}</div><div class="rmsub">${m.viajes} viaje(s) · ${m.recargas} recarga(s)${m.km?' · '+m.km+' km':''}</div></div>
+        <div class="rmright"><div class="rmrto" style="color:${col(m.pct)}">${m.rto_real!=null?m.rto_real+' km/l':'—'}</div><div class="rmsub">${m.rto_ideal!=null?('ref. '+Number(m.rto_ideal).toFixed(2)+' · '+pct):'sin referencia'}</div></div>
+      </div>`;
+    }).join('');
+  }catch(e){ if(heat)heat.innerHTML=''; tabla.innerHTML='<div class="empty">No se pudo cargar.</div>'; }
+}
+// Gráfica combinada: barras = tu rendimiento real (km/l), línea con puntos = la referencia
+// del escáner de esa unidad. Gris cuando no hay con qué comparar: no se colorea lo que no se
+// puede juzgar. SVG puro (sin librerías, funciona offline y con tema).
+function svgRendimiento(ms, mini){
+  if(!ms || !ms.length) return '<div class="empty" style="padding:'+(mini?'8px':'12px')+'">Aún no hay datos de rendimiento.</div>';
+  const W=360, H=mini?118:184;
+  const padL=mini?16:24, padR=mini?10:14, padT=mini?14:18, padB=mini?18:24;
+  const plotW=W-padL-padR, plotH=H-padT-padB, base=padT+plotH;
+  const N=ms.length, slot=plotW/N;
+  const vals=[]; ms.forEach(m=>{ if(m.rto_real!=null)vals.push(m.rto_real); if(m.rto_ideal!=null)vals.push(m.rto_ideal); });
+  const maxV=vals.length?Math.max.apply(null,vals):1;
+  const maxY=maxV>0?maxV*1.18:1;
+  const y=v=>base-(v/maxY)*plotH;
+  const cx=i=>padL+slot*(i+0.5);
+  const col=p=>p==null?'var(--muted)':(p>=1?'var(--ok)':(p>=0.85?'var(--warn)':'var(--danger)'));
+  const barW=Math.min(slot*0.52, mini?18:24);
+  const showVal=N<=7;
+  let bars='', dots='', labels='';
+  const segs=[]; let cur=[];
+  ms.forEach((m,i)=>{
+    const x=cx(i);
+    if(m.rto_real!=null){
+      const bh=Math.max(1.5, base-y(m.rto_real)), by=base-bh;   // ancla la barra al eje aun con valor ~0
+      bars+=`<g><title>${esc(mesLargo(m.mes))}: ${m.rto_real} km/l${m.rto_ideal!=null?' · ref. '+Number(m.rto_ideal).toFixed(2):' · sin referencia'}</title>`
+        +`<rect x="${(x-barW/2).toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="2.5" fill="${col(m.pct)}" opacity="0.92"></rect></g>`;
+      if(showVal) labels+=`<text x="${x.toFixed(1)}" y="${(by-4).toFixed(1)}" text-anchor="middle" font-size="${mini?8:9}" font-weight="700" fill="var(--ink)">${m.rto_real}</text>`;
+    }
+    if(m.rto_ideal!=null){ const yi=y(m.rto_ideal); cur.push(x.toFixed(1)+','+yi.toFixed(1)); dots+=`<circle cx="${x.toFixed(1)}" cy="${yi.toFixed(1)}" r="${mini?2.2:2.8}" fill="var(--ink)"></circle>`; }
+    else if(cur.length){ segs.push(cur); cur=[]; }
+    labels+=`<text x="${x.toFixed(1)}" y="${(base+(mini?11:13)).toFixed(1)}" text-anchor="middle" font-size="${mini?7.5:8}" fill="var(--muted)" font-family="'IBM Plex Mono',monospace">${esc(m.mes.slice(5)+'·'+m.mes.slice(2,4))}</text>`;
+  });
+  if(cur.length) segs.push(cur);
+  const line=segs.map(s=>`<polyline points="${s.join(' ')}" fill="none" stroke="var(--ink)" stroke-width="${mini?1.6:2}" stroke-linejoin="round" stroke-linecap="round"></polyline>`).join('');
+  const baseline=`<line x1="${padL}" y1="${base}" x2="${W-padR}" y2="${base}" stroke="var(--line-2)" stroke-width="1"></line>`;
+  const svg=`<svg class="cbar" viewBox="0 0 ${W} ${H}" role="img" aria-label="Rendimiento por mes: las barras son tu rendimiento real; la línea es la referencia de tu unidad. En gris, los meses sin referencia.">${baseline}${bars}${line}${dots}${labels}</svg>`;
+  const leg=`<div class="hleyenda" style="margin-top:${mini?6:8}px">`
+    +`<span><svg width="16" height="8" style="flex:0 0 auto" aria-hidden="true"><line x1="0" y1="4" x2="16" y2="4" stroke="var(--ink)" stroke-width="2"></line><circle cx="8" cy="4" r="2.2" fill="var(--ink)"></circle></svg>referencia</span>`
+    +`<span><i style="background:var(--ok)"></i>igual o mejor</span>`
+    +`<span><i style="background:var(--warn)"></i>algo por debajo</span>`
+    +`<span><i style="background:var(--danger)"></i>muy por debajo</span>`
+    +`<span><i style="background:var(--muted)"></i>sin referencia</span></div>`;
+  return '<div class="chart">'+svg+'</div>'+leg;
+}
+// Cambia de pestaña dentro de Rendimiento y carga (perezosamente) la vista activa.
+// Los avisos del chofer. Lo que se enseña y lo que no lo decide el servidor
+// (app/avisos.py): aquí sólo se pinta. En particular NO llega nada de la categoría de
+// fraude, y nada sin confirmar por una persona.
+async function cargarAvisos(){
+  const box=$('#av-lista'); if(!box) return;
+  let d=null;
+  try{ d=await api('/api/mis-avisos'); }
+  catch(e){ box.innerHTML='<div class="empty">No se pudieron cargar tus avisos.</div>'; return; }
+  const av=d.avisos||[];
+  if(!av.length){
+    // «Todo en orden» no es algo que esta lista pueda saber: sólo trae lo que ya revisó una
+    // persona, y las categorías de fraude se excluyen a propósito. Vacía significa «no hay
+    // nada que enseñarte aquí», no que no haya nada.
+    box.innerHTML='<div class="empty">'+ic('check')+'<div style="margin-top:6px">Sin avisos para ti por ahora.</div></div>';
+    return;
+  }
+  box.innerHTML=av.map(a=>`<div class="sol">
+    <div class="row">
+      <div><div class="u">${esc(a.titulo)}</div>
+        <div class="m">${esc((a.fecha||'').slice(0,10))}${a.unidad?' · '+esc(a.unidad):''}${a.km?' · '+a.km+' km':''}</div></div>
+    </div>
+    <div class="expl warn">${esc(a.texto)}</div>
+  </div>`).join('');
+}
+
+function rendTab(t){
+  document.querySelectorAll('.rtab').forEach(b=>b.classList.toggle('on', b.dataset.rt===t));
+  document.querySelectorAll('.rtpane').forEach(p=>p.style.display='none');
+  const pane=$('#rt-'+t); if(pane)pane.style.display='';
+  if(t==='avisos') cargarAvisos();
+  else if(t==='viaje') loadRendimientoViaje();
+  else if(t==='mes') loadRendimiento();
+  else if(t==='recargas') loadRecargas();
+}
+// #1 Rendimiento por VIAJE COMPLETO: km/l real contra la referencia del escáner.
+async function loadRendimientoViaje(){
+  const chart=$('#rv-chart'), lista=$('#rv-lista'); if(!lista) return;
+  try{
+    const d=await api('/api/mis-viajes'); const vs=(d.viajes||[]).filter(v=>v.rto_real!=null);
+    if(!vs.length){ if(chart)chart.innerHTML=''; lista.innerHTML='<div class="empty">Aún no hay viajes completos con rendimiento.</div>'; return; }
+    if(chart)chart.innerHTML=svgViajes(vs.slice(0,12).slice().reverse());   // últimos 12, cronológico
+    // Sin referencia el número va en gris. Antes cualquier `pct` nulo caía en el mismo
+    // color que un mal rendimiento, así que a la unidad SIN escáner se la pintaba igual que
+    // a la que rinde mal: se acusaba por falta de dato.
+    const col=p=>p==null?'var(--muted)':(p>=1?'var(--ok)':(p>=0.85?'var(--warn)':'var(--danger)'));
+    lista.innerHTML=vs.map(v=>{
+      const pct=v.pct!=null?Math.round(v.pct*100)+'%':'—';
+      return `<div class="rmrow">
+        <div><div class="rmmes">${esc(v.unidad||'—')}${v.tipo?' · '+esc(String(v.tipo).toLowerCase()):''}</div><div class="rmsub">${esc((v.fecha||'').slice(0,10))}${v.kilometros!=null?' · '+Math.round(v.kilometros)+' km':''}</div></div>
+        <div class="rmright"><div class="rmrto" style="color:${col(v.pct)}">${v.rto_real!=null?Number(v.rto_real).toFixed(2)+' km/l':'—'}</div><div class="rmsub">${v.rto_ideal!=null?('ref. '+Number(v.rto_ideal).toFixed(2)+' · '+pct):'sin referencia'}</div></div>
+      </div>`;
+    }).join('');
+  }catch(e){ if(chart)chart.innerHTML=''; lista.innerHTML='<div class="empty">No se pudo cargar.</div>'; }
+}
+// Gráfica por viaje: barras = km/l real, línea = la referencia del escáner de esa unidad.
+// Gris cuando no hay referencia: no se colorea lo que no se puede comparar. SVG puro.
+function svgViajes(vs){
+  if(!vs || !vs.length) return '<div class="empty" style="padding:12px">Aún no hay datos de rendimiento por viaje.</div>';
+  const W=360,H=184,padL=24,padR=14,padT=18,padB=26,plotW=W-padL-padR,plotH=H-padT-padB,base=padT+plotH;
+  const N=vs.length,slot=plotW/N;
+  const vals=[]; vs.forEach(m=>{ if(m.rto_real!=null)vals.push(m.rto_real); if(m.rto_ideal!=null)vals.push(m.rto_ideal); });
+  const maxV=vals.length?Math.max.apply(null,vals):1, maxY=maxV>0?maxV*1.18:1;
+  const y=v=>base-(v/maxY)*plotH, cx=i=>padL+slot*(i+0.5);
+  const col=p=>p==null?'var(--muted)':(p>=1?'var(--ok)':(p>=0.85?'var(--warn)':'var(--danger)'));
+  const barW=Math.min(slot*0.52,24), showVal=N<=8;
+  let bars='',dots='',labels=''; const segs=[]; let cur=[];
+  vs.forEach((m,i)=>{ const x=cx(i);
+    if(m.rto_real!=null){ const bh=Math.max(1.5, base-y(m.rto_real)), by=base-bh;
+      bars+=`<g><title>${esc((m.fecha||'').slice(5,10))} ${esc(m.unidad||'')}: ${Number(m.rto_real).toFixed(2)} km/l${m.rto_ideal!=null?' · ref. '+Number(m.rto_ideal).toFixed(2):' · sin referencia'}</title>`
+        +`<rect x="${(x-barW/2).toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="2.5" fill="${col(m.pct)}" opacity="0.92"></rect></g>`;
+      if(showVal) labels+=`<text x="${x.toFixed(1)}" y="${(by-4).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--ink)">${m.rto_real}</text>`;
+    }
+    if(m.rto_ideal!=null){ const yi=y(m.rto_ideal); cur.push(x.toFixed(1)+','+yi.toFixed(1)); dots+=`<circle cx="${x.toFixed(1)}" cy="${yi.toFixed(1)}" r="2.8" fill="var(--ink)"></circle>`; }
+    else if(cur.length){ segs.push(cur); cur=[]; }
+    labels+=`<text x="${x.toFixed(1)}" y="${(base+13).toFixed(1)}" text-anchor="middle" font-size="7.5" fill="var(--muted)" font-family="'IBM Plex Mono',monospace">${esc((m.fecha||'').slice(5,10))}</text>`;
+  });
+  if(cur.length) segs.push(cur);
+  const line=segs.map(s=>`<polyline points="${s.join(' ')}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>`).join('');
+  const baseline=`<line x1="${padL}" y1="${base}" x2="${W-padR}" y2="${base}" stroke="var(--line-2)" stroke-width="1"></line>`;
+  const svg=`<svg class="cbar" viewBox="0 0 ${W} ${H}" role="img" aria-label="Rendimiento por viaje: las barras son tu rendimiento real; la línea es la referencia de esa unidad. En gris, los viajes sin referencia.">${baseline}${bars}${line}${dots}${labels}</svg>`;
+  const leg=`<div class="hleyenda" style="margin-top:8px">`
+    +`<span><svg width="16" height="8" style="flex:0 0 auto" aria-hidden="true"><line x1="0" y1="4" x2="16" y2="4" stroke="var(--ink)" stroke-width="2"></line><circle cx="8" cy="4" r="2.2" fill="var(--ink)"></circle></svg>referencia</span>`
+    +`<span><i style="background:var(--ok)"></i>igual o mejor</span><span><i style="background:var(--warn)"></i>algo por debajo</span>`
+    +`<span><i style="background:var(--danger)"></i>muy por debajo</span><span><i style="background:var(--muted)"></i>sin referencia</span></div>`;
+  return '<div class="chart">'+svg+'</div>'+leg;
+}
+// #3 Historial de recargas por viaje.
+async function loadRecargas(){
+  const box=$('#rr-lista'); if(!box) return;
+  try{
+    const d=await api('/api/mis-recargas'); const rs=d.recargas||[];
+    if(!rs.length){ box.innerHTML='<div class="empty">Aún no tienes recargas registradas.</div>'; return; }
+    const EST={borrador:['Borrador','var(--muted)'],enviada:['Enviada','var(--u-tracto)'],en_validacion:['En validación','var(--u-tracto)'],devuelta:['Devuelta','var(--warn)'],rechazada:['Rechazada','var(--danger)'],autorizada:['Autorizada','var(--ok)'],despachada:['Despachada','var(--ok)'],facturada:['Facturada','var(--ok)'],conciliada:['Conciliada','var(--ok)'],en_discrepancia:['Discrepancia','var(--warn)'],anulada:['Anulada','var(--muted)']};
+    box.innerHTML=rs.map(r=>{ const e=EST[r.estado]||[r.estado,'var(--muted)'];
+      return `<div class="vitem">
+        <div><div class="u">${r.folio?esc(r.folio):'Solicitud #'+r.id}</div><div class="m">${esc((r.fecha||'').slice(0,10))}${r.unidad?' · '+esc(r.unidad):''}</div></div>
+        <div class="r">${r.litros!=null?Math.round(r.litros)+' L':'—'}<div class="m" style="text-align:right;color:${e[1]}">${esc(e[0])}</div></div>
+      </div>`;
+    }).join('');
+  }catch(e){ box.innerHTML='<div class="empty">No se pudo cargar.</div>'; }
+}
+async function loadInicioResumen(){
+  const heat=$('#hi-heat'); if(!heat)return;
+  try{
+    const d=await api('/api/mi-rendimiento'); const ms=(d.meses||[]).slice(-6);
+    heat.innerHTML=svgRendimiento(ms, true);
+  }catch(e){ heat.innerHTML='<div class="empty" style="padding:8px">No se pudo cargar.</div>'; }
+}
+function contactarCoordinador(){
+  const tel=String(YO.coordinador_whatsapp||'').replace(/\D/g,'');
+  if(!tel){ toast('El contacto del coordinador aún no está configurado'); return; }
+  const nom=YO.operador_nombre||YO.nombre||'';
+  const num=YO.operador_numero?(' (op #'+YO.operador_numero+')'):'';
+  const uni=(VIAJE&&VIAJE.unidad_clave)||YO.unidad_sugerida_clave||'';
+  // NO SE FIRMA CON UN NOMBRE QUE NO SE PUDO CONFIRMAR. Si /api/me falló, lo que hay en `YO`
+  // es lo guardado del último que entró, y estos teléfonos se comparten: el mensaje le
+  // llegaría al coordinador firmado por otra persona y con su número de operador.
+  if(!IDENTIDAD_CONFIRMADA) toast('No pude confirmar tu sesión: el mensaje saldrá sin tu nombre');
+  const msg = IDENTIDAD_CONFIRMADA
+    ? ('Hola, soy '+nom+num+(uni?(' — unidad '+uni):'')+'. Tengo un problema: ')
+    : ('Hola, escribo desde la app de 2Day'+(uni?(' — unidad '+uni):'')+'. Tengo un problema: ');
+  window.open('https://wa.me/'+tel+'?text='+encodeURIComponent(msg),'_blank');
+}
+const TIPS=[
+  ['camera','Fotos claras','Encuadra el odómetro de frente, con buena luz y sin reflejos en el cristal del tablero. Si el número no se lee, tu recarga se retrasa.'],
+  ['pin','Confirma tu viaje','Antes de solicitar, revisa que la unidad y el destino sean los correctos. Si no coinciden, avisa a tu coordinador.'],
+  ['alert','Reporta a tiempo','Si notas una fuga, un consumo raro o una falla, repórtalo de inmediato con el botón de contacto.'],
+  ['check','Revisa antes de enviar','Comprueba que las lecturas sean de TU unidad y que se lean claras. Corregir después toma más tiempo.']
+];
+function pintarRecomendaciones(){
+  const box=$('#tips'); if(!box) return;
+  box.innerHTML=TIPS.map(t=>`<div class="tip"><span class="ti">${ic(t[0])}</span><div><b>${esc(t[1])}</b><p>${esc(t[2])}</p></div></div>`).join('');
+}
+
+// Sin cola de envío: la app necesita conexión y lo dice cuando no la hay. La versión
+// anterior guardaba en el teléfono lo capturado sin señal y lo reenviaba sola, pero en la
+// práctica confundía —una solicitud "enviada" podía seguir en el aparato— y el operador no
+// tenía forma de saber si el coordinador ya la había visto.
+function nuevoUUID(){ return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():('id-'+Date.now()+'-'+Math.random().toString(36).slice(2)); }
+// Un fallo de RED se distingue por el error, no por `navigator.onLine`: incluirlo hacía que
+// cualquier 400 o 409 pasara por problema de conexión y se ocultara el motivo verdadero.
+// El bloqueo prometía «en cuanto lo haga, aquí aparecerán las fotos» y no se refrescaba
+// nunca: sólo `show('recarga')` recarga el viaje, y el chofer ya estaba dentro. Ahora tiene
+// un botón, que además sirve para reintentar cuando vuelve la señal.
+document.addEventListener('click', ev=>{
+  const b=ev.target.closest && ev.target.closest('[data-recomprobar]');
+  if(!b) return;
+  b.disabled=true; b.textContent='Comprobando…';
+  // Si ni siquiera hay identidad, lo que falta es el arranque entero, no sólo el viaje.
+  const reintento = (YO && YO.id) ? loadMiViaje() : init();
+  reintento.finally(()=>{ /* pintarFotos() ya redibuja el bloqueo entero */ });
+});
+
+function errDeRed(e){ return /fetch|network|failed to|load failed|networkerror/i.test((e&&e.message)||''); }
+
+// ── Avisos dentro de la app (sondeo de cambios de estado) ────────────────────
+// Sin push real (requiere HTTPS/SW); mientras la app está abierta, cada tanto revisa si
+// alguna solicitud cambió de estado y avisa (toast + campana + aviso del sistema si se
+// activó). El "visto" se guarda para no repetir el mismo aviso.
+let NOTIS=[];
+const NOTIF_ESTADOS={
+  autorizada:['ok','Autorizada','Ya puedes cargar el diésel.'],
+  devuelta:['warn','Devuelta','Revisa el motivo y vuelve a enviar.'],
+  rechazada:['warn','Rechazada','No procedió. Revisa el motivo.'],
+  despachada:['ok','Despachada','El diésel ya se cargó.'],
+  conciliada:['ok','Conciliada','Ciclo cerrado, todo cuadró.'],
+  en_discrepancia:['warn','En revisión','Algo no cuadra; lo revisa el coordinador.'],
+  // `anulada` faltaba aquí igual que faltaba en EXPL: sin entrada en esta tabla,
+  // `detectarCambios` no avisa de nada, así que al chofer le cancelaban la recarga y no
+  // sonaba ni aparecía en la campana. Se entera al llegar a la bomba.
+  anulada:['warn','Anulada','Se canceló. No se surtió diésel contra esta solicitud.']
+};
+function _seenMap(){ try{ return JSON.parse(localStorage.getItem('tr-notif-seen')||'{}'); }catch(_){ return {}; } }
+function _saveSeen(m){ try{ localStorage.setItem('tr-notif-seen',JSON.stringify(m)); }catch(_){} }
+function _loadNotis(){ try{ NOTIS=JSON.parse(localStorage.getItem('tr-notis')||'[]'); }catch(_){ NOTIS=[]; } }
+function _saveNotis(){ try{ localStorage.setItem('tr-notis',JSON.stringify(NOTIS.slice(0,30))); }catch(_){} }
+function _hace(ts){ const s=Math.max(0,Math.floor((Date.now()-ts)/1000)); if(s<60)return 'hace un momento'; const m=Math.floor(s/60); if(m<60)return 'hace '+m+' min'; const h=Math.floor(m/60); if(h<24)return 'hace '+h+' h'; return 'hace '+Math.floor(h/24)+' d'; }
+
+function detectarCambios(ss){
+  const seen=_seenMap(); let nuevos=0;
+  ss.forEach(s=>{
+    const prev=seen[s.id];
+    if(prev!==s.estado){
+      // Solo se avisa de un CAMBIO real (prev definido) a un estado que le importa al operador.
+      if(prev!==undefined && NOTIF_ESTADOS[s.estado]){
+        const meta=NOTIF_ESTADOS[s.estado]; const folio=s.folio||('#'+s.id);
+        NOTIS.unshift({cls:meta[0], titulo:meta[1], msg:meta[2], folio, ts:Date.now(), seen:false});
+        nuevos++; toast(meta[1]+' · '+folio); notifSistema(meta[1]+' · '+folio, meta[2]);
+        // Suena y vibra. 'devuelta' y 'rechazada' con el tono urgente: son las que exigen
+        // que el operador haga algo, no las que sólo le informan de que va bien.
+        // 'anulada' entra en el tono urgente con las otras dos: las tres le cortan el
+        // viaje a la bomba, y enterarse tarde de una anulación cuesta lo mismo que de un
+        // rechazo.
+        try{ Aviso.sonar(['devuelta','rechazada','anulada'].includes(s.estado)); }catch(_){}
+      }
+      seen[s.id]=s.estado;
+    }
+  });
+  _saveSeen(seen);
+  if(nuevos){ NOTIS=NOTIS.slice(0,30); _saveNotis(); }
+  pintarNotisBadge();
+}
+function notifSistema(titulo,cuerpo){
+  try{ if('Notification' in window && Notification.permission==='granted'){
+    new Notification('2Day — '+titulo,{body:cuerpo,icon:'/static/icon-192.png',tag:'2day'});
+  } }catch(_){}
+}
+function pintarNotisBadge(){
+  const n=NOTIS.filter(x=>!x.seen).length; const b=$('#nbadge');
+  if(b){ if(n){ b.style.display='flex'; b.textContent=n>9?'9+':String(n); } else b.style.display='none'; }
+}
+function pintarNotisPanel(){
+  const box=$('#nlist'); if(!box) return;
+  if(!NOTIS.length){ box.innerHTML='<div class="empty" style="padding:16px">Sin avisos por ahora.</div>'; return; }
+  box.innerHTML=NOTIS.map(x=>{
+    const col=x.cls==='warn'?'var(--danger)':'var(--ok)';
+    return `<div class="nitem ${x.seen?'':'unseen'}">
+      <span class="nic" style="background:color-mix(in oklab,${col} 14%,transparent);color:${col}">${ic(x.cls==='warn'?'alert':'check')}</span>
+      <div style="flex:1;min-width:0"><b>${esc(x.titulo)} · ${esc(x.folio)}</b><div class="nm">${esc(x.msg)}</div><div class="nt">${_hace(x.ts)}</div></div>
+    </div>`;
+  }).join('');
+}
+function abrirNotis(){
+  const p=$('#npanel'); if(!p) return;
+  if(p.classList.toggle('open')){
+    // El `top` del CSS es sólo el valor de arranque. La barra no mide siempre lo mismo —crece
+    // con la muesca del teléfono y con los botones de 44 px—, así que se mide al abrir: con el
+    // 54 px que había clavado, el panel se abría DENTRO de la barra.
+    const bar=document.querySelector('.topbar');
+    if(bar) p.style.top=Math.round(bar.getBoundingClientRect().bottom+8)+'px';
+    pintarNotisPanel(); NOTIS.forEach(x=>x.seen=true); _saveNotis(); pintarNotisBadge();
+  }
+}
+function pedirPermisoNotif(){
+  if(!('Notification' in window)){ toast('Este navegador no soporta avisos del sistema'); return; }
+  if(!window.isSecureContext){ toast('Los avisos del sistema requieren una conexión segura (HTTPS)'); return; }
+  if(Notification.permission==='denied'){ toast('Están bloqueados en el navegador; actívalos desde los ajustes del sitio'); return; }
+  try{ Notification.requestPermission().then(()=>{
+    const ok=Notification.permission==='granted';
+    toast(ok?'Avisos del sistema activados':'No se activaron los avisos'); actualizarCfgNotif();
+  }).catch(()=>{}); }catch(_){ toast('Los avisos del sistema requieren HTTPS'); }
+}
+function actualizarCfgNotif(){
+  const b=$('#cfg-notif'); if(!b) return;
+  const h=$('#cfg-notif-hint');
+  const sop=('Notification' in window);
+  let hint='';
+  if(!sop){ b.textContent='No disponible'; b.disabled=true;
+    hint='Tu navegador no soporta avisos del sistema. La campana de avisos dentro de la app sí funciona.'; }
+  else if(!window.isSecureContext){ b.textContent='Requiere HTTPS'; b.disabled=true;
+    hint='Los avisos fuera de la app requieren una conexión segura (HTTPS). Ahora entras por HTTP, pero la campana de avisos dentro de la app funciona igual.'; }
+  else if(Notification.permission==='denied'){ b.textContent='Bloqueado'; b.disabled=true;
+    hint='Bloqueaste los avisos en el navegador. Actívalos desde los ajustes del sitio (el candado junto a la dirección) y vuelve a intentar.'; }
+  else if(Notification.permission==='granted'){ b.textContent='Activados'; b.disabled=true;
+    hint='Listo: te avisaremos de los cambios mientras tengas la app abierta.'; }
+  else { b.textContent='Activar'; b.disabled=false;
+    hint='Actívalos para que los cambios te salten en pantalla mientras usas la app.'; }
+  if(h) h.textContent=hint;
+}
+function iniciarAvisos(){
+  _loadNotis(); pintarNotisBadge(); actualizarCfgNotif();
+  setInterval(()=>{ if(document.visibilityState==='visible') cargarMisSolicitudes(); }, 45000);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') cargarMisSolicitudes(); });
+  document.addEventListener('click',e=>{ const p=$('#npanel'); if(p&&p.classList.contains('open')&&!e.target.closest('.notifwrap')) p.classList.remove('open'); });
+}
+
+// Eventos
+document.addEventListener('click',e=>{
+  const cam=e.target.closest('[data-cam]'); if(cam){ abrirCamara(cam.dataset.cam); }
+});
+document.addEventListener('change',e=>{ if(e.target.type==='file'&&e.target.files[0]){ subirFoto(e.target.id.replace('file-',''),e.target.files[0]); } });
+$('#btn-enviar').addEventListener('click',enviar);
+$('#cam-shot').addEventListener('click',capturar);
+// El service worker se DESINSTALA, no basta con dejar de registrarlo. Los teléfonos que ya
+// visitaron la app lo tienen instalado, y un service worker no muere porque el código deje de
+// llamarlo: sigue interceptando y sirviendo la versión cacheada, así que el operador se
+// quedaría con la app vieja para siempre y sin forma de enterarse. Estas líneas lo retiran y
+// vacían las cachés; cuando todos los teléfonos hayan pasado una vez, sobran.
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations()
+    .then(rs=>Promise.all(rs.map(r=>r.unregister())))
+    .then(hubo=>{ if(hubo.some(Boolean) && 'caches' in window)
+      return caches.keys().then(k=>Promise.all(k.map(c=>caches.delete(c)))); })
+    .catch(()=>{});
+}
+// `init()` espera a DOMContentLoaded: los scripts de arriba llevan `defer` y se ejecutan
+// justo antes de ese evento, así que para cuando corre esto ya están `Aviso`, `Mapas`,
+// `jsQR` y `TR_aplicarPrefs`. Las funciones de la pantalla, en cambio, quedaron definidas
+// al instante, que era el problema.
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+</script>
+<script src="/static/bgfx.js?v=20260827d" defer></script>
+</body>
+</html>

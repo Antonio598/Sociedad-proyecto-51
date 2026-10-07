@@ -1,0 +1,7 @@
+**/__pycache__
+**/*.pyc
+**/.env
+*.tar.gz
+2day/
+2day-codigo/frontend/old_desings/
+.git/

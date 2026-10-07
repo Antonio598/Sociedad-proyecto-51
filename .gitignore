@@ -1,0 +1,16 @@
+# Secretos: las variables van en EasyPanel, nunca en el repositorio.
+.env
+**/.env
+
+# Fotos, licencias y PDF del motor: viven en el volumen del servidor.
+data/
+
+# Copias empaquetadas y respaldos.
+*.tar.gz
+*.dump
+*.tgz
+
+__pycache__/
+*.pyc
+.venv/
+venv/

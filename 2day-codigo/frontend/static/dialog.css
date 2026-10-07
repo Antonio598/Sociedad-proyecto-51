@@ -1,0 +1,369 @@
+/* ============================================================================
+   2Day · dialog.css — el diálogo único
+   Requiere base.css (tokens). Copiar a backend/frontend/static/dialog.css
+
+   Reemplaza las CINCO implementaciones actuales:
+     .modal-bg / .modal      dashboard          radio 12, 720px, z-50
+     .ov / .sheet            coord/ger/comb     radio 16, 560px, z-60
+     #ask-bg / #ask-modal    dashboard, coord   440px, overlay propio en JS
+     #mapov                  las 4             sin velo, sin z-index, sin Escape
+   (#chat-panel se queda: es un panel persistente, no un diálogo. Solo adopta
+    --z-panel.)
+
+   REGLAS
+   · Un ancho por tamaño: data-size="xs|sm|md|lg|full". Nunca style.maxWidth.
+   · Tres regiones: .dlg-hd fija · .dlg-bd con scroll · .dlg-ft fija.
+   · El cierre es SIEMPRE la X de la cabecera. El pie es solo para acciones.
+   · Bajo 640px la misma caja se ancla abajo como sheet. No hay segunda clase.
+   ========================================================================== */
+
+:root{
+  /* El velo es un token: antes era rgba(10,12,15,.55) en crudo y en tema
+     oscuro no oscurecía nada. */
+  --scrim:rgba(16,20,24,.52);
+  --dlg-sh:0 24px 64px rgba(16,20,24,.22);
+  /* Una sola escala de apilamiento para toda la app. Antes: modal en 50,
+     sheet en 60, mapa sin declarar, y un modal abierto desde un sheet
+     aparecía detrás. */
+  --z-nav:40;
+  --z-panel:60;
+  --z-scrim:100;
+  --z-toast:200;
+}
+html[data-theme="dark"]{
+  --scrim:rgba(0,0,0,.66);
+  --dlg-sh:0 28px 72px rgba(0,0,0,.72);
+}
+
+@keyframes dlgScrim{from{opacity:0}to{opacity:1}}
+@keyframes dlgPop{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes dlgSheet{from{transform:translateY(100%)}to{transform:none}}
+@keyframes dlgShimmer{to{background-position:200% 0}}
+
+/* ------------------------------------------------------------------- VELO */
+.dlg-scrim{
+  position:fixed;inset:0;z-index:var(--z-scrim);
+  background:var(--scrim);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;overflow-y:auto;
+  animation:dlgScrim .18s ease both;
+}
+/* apilado: cada nivel sube 10 */
+.dlg-scrim[data-level="1"]{z-index:calc(var(--z-scrim) + 10)}
+.dlg-scrim[data-level="2"]{z-index:calc(var(--z-scrim) + 20)}
+/* el velo del nivel superior no vuelve a oscurecer ni a desenfocar */
+.dlg-scrim[data-level="1"],.dlg-scrim[data-level="2"]{backdrop-filter:none}
+
+/* ------------------------------------------------------------------ CAJA */
+.dlg{
+  width:100%;background:var(--panel);
+  border:1px solid var(--line-2);border-radius:var(--r-2);
+  /* La sombra ya no es `0 24px 60px var(--sh-2)`: --sh-2 es una sombra
+     completa, no un color, y el navegador descartaba la regla entera. */
+  box-shadow:var(--dlg-sh);
+  display:flex;flex-direction:column;
+  max-height:calc(100vh - 48px);
+  /* dvh = alto REAL visible (descuenta la barra del navegador en iPhone/Android).
+     Con solo vh el pie quedaba tapado. Los navegadores viejos se quedan con la línea de arriba. */
+  max-height:calc(100dvh - 48px);
+  overflow:hidden;
+
+  /* `backwards`, NUNCA `both`: con `both` el fotograma final queda aplicado y
+     `transform:none` sigue contando como transformacion aplicada, lo que hace de
+     .dlg el bloque contenedor de sus descendientes position:fixed. Cualquier
+     .dlg-pop se desplazaria el offset entero del dialogo (~250px en 1440). */
+  animation:dlgPop .2s cubic-bezier(.2,.8,.3,1) backwards;
+}
+.dlg[data-size="xs"]  {max-width:400px}
+.dlg[data-size="sm"]  {max-width:520px}
+.dlg[data-size="md"]  {max-width:660px}   /* el defecto */
+.dlg[data-size="lg"]  {max-width:940px}
+.dlg[data-size="full"]{max-width:96vw}
+.dlg:not([data-size]) {max-width:660px}
+/* la caja recibe el foco al abrir en táctil: sin anillo naranja alrededor de toda la hoja */
+.dlg:focus{outline:none}
+
+/* --------------------------------------------------------------- CABECERA */
+.dlg-hd{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:16px 18px;border-bottom:1px solid var(--line);
+  flex:0 0 auto;
+}
+/* variante sin borde, para los xs de confirmación */
+.dlg-hd[data-bare]{border-bottom:0;padding-bottom:14px}
+.dlg-hd>.t{flex:1;min-width:0}
+.dlg-hd .eyebrow{
+  font:var(--t-eyebrow);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--accent);
+}
+/* Un solo tamaño de título. Antes: 22px en .sheet, 20px en .modal y 19px
+   puesto en línea en seis llamadas distintas. */
+.dlg-hd h3{font:var(--t-h3);margin:5px 0 0;letter-spacing:0;overflow-wrap:anywhere}
+/* sin eyebrow encima, el título va alineado con la X */
+.dlg-hd .t>h3:first-child{margin-top:0}
+.dlg-hd[data-bare] h3{margin:0}
+.dlg-hd .sub{font:var(--t-sm);color:var(--muted);margin-top:3px}
+.dlg-hd .pills{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:8px}
+/* icono de intención, para confirmaciones */
+.dlg-hd .icon{
+  width:34px;height:34px;border-radius:var(--r-1);display:grid;place-items:center;
+  flex:0 0 auto;
+}
+.dlg-hd .icon svg{width:18px;height:18px;fill:none;stroke:currentColor;
+  stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.dlg-hd .icon[data-tone="danger"]{background:var(--danger-bg);color:var(--danger)}
+.dlg-hd .icon[data-tone="warn"]  {background:var(--warn-bg);color:var(--warn)}
+.dlg-hd .icon[data-tone="info"]  {background:var(--info-bg);color:var(--info)}
+.dlg-hd .icon[data-tone="ok"]    {background:var(--ok-bg);color:var(--ok)}
+
+/* El cierre: una sola forma, un solo tamaño, siempre en el mismo sitio.
+   Antes era .x icónica, o un .mini que decía «Cerrar», o un «Entendido» en el
+   pie, o solo el clic en el velo. */
+.dlg-x{
+  width:36px;height:36px;flex:0 0 auto;
+  border:1px solid var(--line-2);background:var(--card);color:var(--muted);
+  border-radius:var(--r-1);display:grid;place-items:center;cursor:pointer;
+  transition:background .12s,color .12s;
+}
+.dlg-x:hover{background:var(--sunken);color:var(--ink)}
+.dlg-x svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.9;
+  stroke-linecap:round}
+
+/* ----------------------------------------------------------------- CUERPO */
+/* Solo esta región hace scroll. Antes el scroll era del contenedor entero,
+   con max-height de 88vh, 92vh o 56vh según la llamada, y la cabecera se iba
+   con él. */
+.dlg-bd{--dlg-pad:18px;padding:var(--dlg-pad);overflow-y:auto;flex:1 1 auto;min-height:0}
+.dlg-bd[data-flush]{padding:0}
+.dlg-bd>.sech:first-child{margin-top:0}
+.dlg-bd .sech{
+  font:var(--t-eyebrow);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted);margin:20px 0 11px;
+}
+
+/* rejilla de lecturas: etiqueta a la izquierda, cifra mono a la derecha */
+.dlg-kv{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
+.dlg-kv>div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;
+  border-bottom:1px solid var(--line)}
+.dlg-kv .k{font:var(--t-sm);color:var(--muted)}
+.dlg-kv .v{font:var(--t-num);font-variant-numeric:tabular-nums}
+@media(max-width:560px){.dlg-kv{grid-template-columns:1fr}}
+
+/* dos columnas: asignar viaje, depurar duplicados */
+.dlg-2col{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;align-items:start}
+@media(max-width:720px){.dlg-2col{grid-template-columns:1fr}}
+
+/* -------------------------------------------------------------------- PIE */
+/* Orden fijo: destructivo a la izquierda y separado; cancelar y confirmar
+   juntos a la derecha, primaria al final. Antes: text-align:right en unas
+   llamadas, flex-end en otras, gap de 10 o 12 px, y el destructivo a veces
+   pegado a la primaria. */
+.dlg-ft{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:14px 18px;border-top:1px solid var(--line);background:var(--sunken);
+  flex:0 0 auto;
+}
+.dlg-ft .spacer{flex:1}
+/* La nota del pie: dice qué falta para que la acción primaria se habilite. */
+.dlg-ft .dlg-nota{font:400 12.5px/1.4 var(--f-sans,'IBM Plex Sans');color:var(--muted);align-self:center}
+.dlg-ft>button[disabled]{opacity:.45;cursor:not-allowed}
+.dlg-ft>button{white-space:nowrap}
+/* en xs las dos acciones reparten el ancho */
+.dlg[data-size="xs"] .dlg-ft>button{flex:1}
+
+/* -------------------------------------------------------- ESTADOS DEL CUERPO */
+/* Los tres con el mismo min-height: la caja no salta al resolverse la carga.
+   Antes «Cargando…» se pintaba de dos formas y el error de tres. */
+.dlg-state{min-height:150px;display:grid;place-items:center;text-align:center;
+  padding:18px}
+.dlg-state .icon{width:40px;height:40px;border-radius:var(--r-1);
+  display:grid;place-items:center;margin:0 auto 12px}
+.dlg-state .icon svg{width:20px;height:20px;fill:none;stroke:currentColor;
+  stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.dlg-state .icon[data-tone="danger"]{background:var(--danger-bg);color:var(--danger)}
+.dlg-state .icon[data-tone="ok"]{background:var(--ok-bg);color:var(--ok)}
+.dlg-state b{display:block;font:600 13.5px/1.35 var(--f-sans);margin-bottom:5px}
+.dlg-state p{font:var(--t-sm);color:var(--muted);margin:0 auto;max-width:320px}
+.dlg-state .btn{margin-top:14px}
+
+.dlg-skel{min-height:150px;display:flex;flex-direction:column;gap:10px;
+  justify-content:center;padding:18px}
+.dlg-skel i{
+  display:block;height:12px;border-radius:var(--r-pill);
+  background:linear-gradient(90deg,var(--sunken) 25%,var(--line) 50%,var(--sunken) 75%);
+  background-size:200% 100%;animation:dlgShimmer 2.4s linear infinite;
+}
+.dlg-skel i:nth-child(1){width:44%}
+.dlg-skel i:nth-child(2){width:100%;animation-delay:.15s}
+.dlg-skel i:nth-child(3){width:82%;animation-delay:.3s}
+.dlg-skel i:nth-child(4){width:60%;animation-delay:.45s}
+
+/* ------------------------------------------------ DESPLEGABLE ANCLADO */
+/* Cualquier lista flotante DENTRO del cuerpo (autocompletado de ubicaciones,
+   selector de operador, menu de acciones de fila) NO puede ir en
+   position:absolute: .dlg-bd tiene overflow-y:auto y la recorta, con lo que se
+   pierde la mitad de las opciones. Va en position:fixed, anclada al rectangulo
+   medido del campo, y se cierra al desplazarse cualquier contenedor.
+
+   JS minimo:
+     var r = input.getBoundingClientRect();
+     var below = innerHeight - r.bottom - 12, above = r.top - 12;
+     var flip  = below < estH && above > below;
+     Object.assign(list.style, {
+       left: r.left + 'px',
+       top:  (flip ? Math.max(8, r.top - Math.min(estH, above) - 6) : r.bottom + 6) + 'px',
+       width: r.width + 'px',
+       maxHeight: Math.max(120, Math.min(236, flip ? above : below)) + 'px'
+     });
+   REGLA 1 · el estado de la lista es UNO: {campo, rectangulo} o cerrado. No
+   dos variables. Si el indice puede existir sin rectangulo medido, alguna ruta
+   acabara pintando una lista de 0x0 en la esquina superior izquierda. Toda
+   apertura pasa por una sola funcion que mide, y si no hay campo medible no
+   abre:
+     function openPop(input){
+       if(!input) return closePop();
+       state.pop = { input: input, rect: input.getBoundingClientRect() };
+       place(state.pop);
+     }
+
+   REGLA 2 · al abrir por codigo (no desde un evento de foco) hay que medir
+   DESPUES del commit del DOM. Al agregar una fila el framework reutiliza el
+   nodo del input, asi que no salta ningun evento de foco del que colgarse:
+     render(); requestAnimationFrame(function(){ openPop(nuevoInput); });
+
+   REGLA 3 · al desplazarse hay que RE-ANCLAR, no cerrar:
+     document.addEventListener('scroll', reanchor, true);
+     function reanchor(){                      // throttle con rAF
+       if(!state.pop || raf) return;
+       raf = requestAnimationFrame(function(){ raf = null; openPop(state.pop.input); });
+     }
+   Cerrar en scroll parece equivalente pero rompe el PRIMER clic en cualquier
+   campo que no este del todo a la vista: el navegador lo desplaza para
+   enfocarlo, ese scroll llega en el mismo tick que la apertura, y la lista
+   muere al nacer. Sintoma: hay que pinchar dos veces.
+
+   REQUISITO: .dlg no puede llevar una transformacion aplicada, o el fixed se
+   resuelve contra el dialogo y no contra el viewport. Por eso la entrada usa
+   animation-fill-mode:backwards y no both. */
+.dlg-pop{
+  position:fixed;z-index:calc(var(--z-scrim) + 20);
+  background:var(--panel);border:1px solid var(--line-2);border-radius:var(--r-1);
+  box-shadow:var(--sh-3);overflow-y:auto;max-height:236px;
+}
+.dlg-pop>button{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  padding:9px 12px;border:0;border-bottom:1px solid var(--line);
+  background:none;cursor:pointer;
+}
+.dlg-pop>button:last-child{border-bottom:0}
+.dlg-pop>button:hover,.dlg-pop>button[aria-selected="true"]{background:var(--sunken)}
+.dlg-pop .tag{
+  width:24px;height:24px;border-radius:var(--r-1);display:grid;place-items:center;
+  flex:0 0 auto;font:600 9px/1 var(--f-mono);background:var(--sunken);color:var(--muted);
+}
+.dlg-pop .nm{display:block;font:600 12.5px/1.35 var(--f-sans);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dlg-pop .ad{display:block;font:var(--t-micro);color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ------------------------------------------------------- MÓVIL · SHEET */
+/* La misma caja, anclada abajo. Un @media, no una segunda implementación. */
+@media(max-width:640px){
+  .dlg-scrim{align-items:flex-end;padding:0}
+  .dlg,.dlg[data-size]{
+    max-width:none;max-height:92vh;max-height:92dvh;
+    border-radius:var(--r-2) var(--r-2) 0 0;border-bottom:0;
+    animation:dlgSheet .24s cubic-bezier(.2,.8,.3,1) backwards;
+  }
+  /* asidero, para que se lea como arrastrable */
+  .dlg::before{
+    content:"";display:block;flex:0 0 auto;
+    width:38px;height:4px;border-radius:var(--r-pill);background:var(--line-2);
+    margin:9px auto 0;
+  }
+  .dlg-hd{padding:12px 16px 14px}
+  .dlg-bd{--dlg-pad:16px;padding:var(--dlg-pad)}
+  /* el margen de la zona segura va UNA vez: en el pie si lo hay, si no en el cuerpo */
+  .dlg-bd:last-child{padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+  .dlg-ft{
+    flex-wrap:wrap;padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  }
+  /* en móvil las acciones van a ancho completo y en orden inverso: la
+     primaria arriba, donde llega el pulgar */
+  /* Dos por fila (antes cada botón ocupaba la fila entera y un pie de 4 acciones
+     medía ~240px, dejando el cuerpo diminuto). Si quedan impares, el último se estira.
+     La primaria va al final: a la derecha, donde llega el pulgar. */
+  .dlg-ft{gap:8px}
+  .dlg-ft>button{flex:1 1 calc(50% - 4px);min-height:44px;min-width:0;white-space:normal;order:1}
+  .dlg-ft>button.primary{order:3}
+  .dlg-ft .dlg-nota{flex:1 1 100%;order:0}
+  .dlg-ft .spacer{display:none}
+  /* Un ancho puesto en línea (style.maxWidth) no puede encoger la hoja en el celular */
+  .dlg[style]{max-width:none!important}
+
+  /* ── Contenido de los paneles dentro de un diálogo ─────────────────────────
+     Los cuerpos traen rejillas de 2 columnas fijas (en línea o con .grid2/.g2) que en
+     el celular aplastaban cifras y formularios. Aquí se apilan, sin tocar cada modal. */
+  /* .grid2 también se usa para pares etiqueta/valor (esos SÍ caben en 2): solo se apila
+     cuando trae campos de formulario */
+  .dlg-bd .grid2:has(input,select,textarea),.dlg-bd .g2,
+  .dlg-bd [style*="grid-template-columns:1fr 1fr"],
+  .dlg-bd [style*="grid-template-columns: 1fr 1fr"],
+  .dlg-bd [style*="grid-template-columns:repeat(2,1fr)"],
+  .dlg-bd [style*="grid-template-columns:1fr 1.15fr"],
+  .dlg-bd [style*="grid-template-columns:330px 1fr"],
+  .dlg-bd [style*="grid-template-columns:minmax(0,1fr) minmax(0,340px)"]{grid-template-columns:minmax(0,1fr)!important}
+  /* minmax(300px+) dentro de 343px de ancho útil desbordaba de lado */
+  .dlg-bd [style*="auto-fit,minmax("],.dlg-bd [style*="auto-fill,minmax(2"]{grid-template-columns:minmax(0,1fr)!important}
+  /* 3-4 cifras por fila: en celular, de 2 en 2 */
+  .dlg-bd [style*="grid-template-columns:repeat(3,1fr)"],
+  .dlg-bd [style*="grid-template-columns:1fr 1fr 1fr"],
+  .dlg-bd [style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  /* filas flex sin wrap (botones, píldoras) */
+  .dlg-bd [style*="display:flex"]:not([style*="nowrap"]){flex-wrap:wrap}
+  /* tablas: que se desplacen ellas, no el diálogo entero */
+  /* tablas: celdas que pueden partirse en dos líneas en vez de empujar el ancho */
+  .dlg-bd table{width:100%;max-width:100%}
+  .dlg-bd td,.dlg-bd th{padding:8px 10px;white-space:normal!important}
+  .dlg-bd img,.dlg-bd canvas,.dlg-bd svg{max-width:100%}
+  /* scrolls anidados fijos (330px, 340px, 56vh): en la hoja sobran, ya hace scroll el cuerpo */
+  .dlg-bd [style*="max-height"][style*="overflow"]{max-height:none!important}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .dlg-scrim,.dlg{animation:none}
+  .dlg-skel i{animation:none}
+}
+
+@media print{
+  .dlg-scrim{display:none!important}
+}
+
+/* ---------------------------------------------------- PUENTE DE MIGRACIÓN */
+/* Diálogos que aún se abren con el puente openModal()/openSheet(): su cuerpo
+   ya trae su propio <h3> y su fila de botones, así que la cabecera del diálogo
+   se reduce a la X. Sin esto quedaría una franja vacía con borde encima del
+   título real. Se borra cuando no queden llamadas al puente. */
+.dlg-hd[data-bridge]{border-bottom:0;padding:10px 14px 0}
+.dlg-hd[data-bridge] h3{display:none}
+/* al repintar un cuerpo nuevo, el subtítulo/píldoras del anterior no deben quedarse */
+.dlg-hd[data-bridge] .t>:not(h3){display:none}
+.dlg-hd[data-bridge] .dlg-x{margin-left:auto}
+
+/* ---------------------------------------------------- TABLET · 641-1024px */
+/* En tablet vertical (768) un `lg` de 940 o un ancho en línea mayor ocupa todo: se deja
+   un margen y las rejillas de muchas columnas bajan un escalón. */
+@media(min-width:641px) and (max-width:1024px){
+  .dlg-scrim{padding:16px}
+  .dlg-bd [style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .dlg-bd [style*="auto-fit,minmax(4"],.dlg-bd [style*="auto-fit,minmax(38"]{grid-template-columns:minmax(0,1fr)!important}
+}
+
+/* ------------------------------------------- TÁCTIL · sin zoom al enfocar */
+/* iPhone hace zoom a cualquier campo con letra < 16px y descoloca la hoja. */
+@media (hover:none) and (pointer:coarse){
+  .dlg input:not([type=checkbox]):not([type=radio]):not([type=range]),
+  .dlg select,.dlg textarea{font-size:16px!important}
+  .dlg-ft>button{min-height:44px}
+  .dlg-x{width:40px;height:40px}
+}

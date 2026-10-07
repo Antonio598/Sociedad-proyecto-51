@@ -1,0 +1,30 @@
+# Primera etapa del despliegue: SOLO el proxy y una página estática.
+#
+# POR QUÉ EMPEZAR POR AQUÍ. Lo que más falla al desplegar no es la aplicación: es la cadena
+# DNS -> puerto 80 -> Let's Encrypt -> certificado. Si eso se prueba con un HTML de tres
+# líneas, cuando algo no funciona se sabe exactamente qué. Metiendo la app desde el principio,
+# un fallo de certificado y uno de la aplicación se parecen demasiado.
+#
+# Cuando esta etapa funcione, a este mismo fichero se le añaden Postgres y la app, y el
+# Caddyfile pasa de servir ficheros a hacer de proxy. Nada de lo de aquí se tira.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"      # Let's Encrypt lo necesita para validar el dominio. No se puede cerrar.
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./sitio:/srv:ro
+      # EL VOLUMEN IMPORTANTE: aquí viven los certificados. Si se borra, Caddy los vuelve a
+      # pedir — y Let's Encrypt limita a 5 por dominio y semana. Perderlo varias veces deja
+      # el dominio sin certificado durante días.
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

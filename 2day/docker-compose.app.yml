@@ -1,0 +1,72 @@
+# Etapa 2: la aplicación completa. Sustituye al `docker-compose.yml` de la etapa 1 cuando ya
+# esté todo listo (ver LEEME-APP.md).
+#
+# El `docker-compose.yml` del proyecto original levanta Evolution API y Redis: eso era el bot
+# de WhatsApp, que está RETIRADO — la captura pasa por la app. Aquí no están, y eso ahorra
+# memoria y una superficie de ataque que no se usa.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD en el .env}
+      POSTGRES_DB: combustible
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    # SIN `ports:` A PROPÓSITO. La base NO sale a internet: sólo la ve la app, por la red
+    # interna de Docker. Si algún día hace falta conectarse desde fuera, se hace por un túnel
+    # SSH, no abriendo el 5432.
+    healthcheck:
+      # -h fuerza TCP: sin él el chequeo pasa durante el arranque temporal de inicialización
+      # (que sólo escucha en socket) y la app arranca antes de tiempo.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U evolution -d combustible"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      # RUTAS ABSOLUTAS DEL VPS, a propósito. En la computadora de desarrollo el reparto es
+      # `proyecto/despliegue/` + `proyecto/backend/`, pero al subirlo quedó
+      # `/opt/2day/` + `/opt/backend/`. Con rutas relativas, compose buscaría el Dockerfile
+      # en `/opt/despliegue/`, que no existe. Absolutas no dejan lugar a dudas.
+      context: /opt
+      dockerfile: /opt/2day/Dockerfile
+    container_name: app
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # LAS FOTOS NO ESTÁN EN LA BASE DE DATOS. Viven aquí. Un respaldo que sólo copie
+      # Postgres deja registros apuntando a evidencia que ya no existe.
+      - media:/app/data/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Tampoco publica puerto: sólo Caddy habla con ella.
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"      # Let's Encrypt lo necesita para validar. No se puede cerrar.
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./sitio:/srv:ro
+      # Aquí viven los certificados. Si se borra, Caddy los vuelve a pedir — y Let's Encrypt
+      # limita a 5 por dominio y semana.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  pg_data:
+  media:
+  caddy_data:
+  caddy_config:

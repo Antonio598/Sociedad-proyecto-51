@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TRAYECTO — Acceso</title>
+<script>(function(){try{var t=localStorage.getItem('tr-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){document.documentElement.dataset.theme='light';}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1ede2;--panel:#f8f5ec;--card:#fcfaf4;--ink:#22201a;--muted:#736a59;--line:#ddd6c5;--line2:#c9c1ac;--accent:#F2620F;--accent2:#c94e0a;--green:#1e7a46;--red:#bd3c20;--shadow:rgba(40,33,20,.16)}
+html[data-theme="dark"]{--bg:#141109;--panel:#1a1610;--card:#201b13;--ink:#ede5d4;--muted:#9b9078;--line:#332d20;--line2:#4a4230;--accent:#FF6E1A;--accent2:#F2620F;--green:#54c17e;--red:#f0704f;--shadow:rgba(0,0,0,.45)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100vh;min-height:100dvh;background:var(--bg);color:var(--ink);font:14px/1.5 "IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;align-items:center;justify-content:center;padding:24px}
+.bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:.7}
+.bgfx .glow{position:absolute;inset:-15%;background:radial-gradient(640px 420px at 18% 8%, color-mix(in oklab,var(--accent) 10%,transparent), transparent 70%), radial-gradient(720px 520px at 86% 92%, color-mix(in oklab,var(--accent) 6%,transparent), transparent 70%);animation:drift 28s ease-in-out infinite}
+.bgfx canvas{position:absolute;inset:0;width:100%;height:100%}
+@keyframes drift{0%,100%{transform:translate3d(-2%,-1.5%,0)}50%{transform:translate3d(2%,1.5%,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes lane{to{stroke-dashoffset:-360}}
+@keyframes pulse{50%{opacity:.4}}
+.shell{position:relative;z-index:1;display:grid;grid-template-columns:1.05fr .95fr;width:860px;max-width:96vw;min-height:520px;background:var(--card);border:1px solid var(--line2);border-radius:6px;box-shadow:14px 14px 0 var(--shadow);overflow:hidden;animation:rise .5s ease both}
+.brand{position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:38px 36px;background:linear-gradient(150deg, color-mix(in oklab,var(--accent) 20%,var(--panel)), var(--panel) 62%);border-right:1px solid var(--line2);overflow:hidden}
+.brand svg.lanes{position:absolute;inset:0;width:100%;height:100%;opacity:.5;pointer-events:none}
+.logo-row{position:relative;display:flex;align-items:center;gap:13px}
+.logo{width:50px;height:50px;flex:0 0 auto}
+.brand h1{font:700 30px/1 'Barlow Condensed';letter-spacing:.1em;margin:0}
+.brand .tag{font:600 8.5px 'IBM Plex Mono';letter-spacing:.32em;color:var(--muted);margin-top:3px}
+.brand .lead{position:relative}
+.brand .lead b{display:block;font:700 26px/1.15 'Barlow Condensed';letter-spacing:.02em;text-transform:uppercase;max-width:260px}
+.brand .lead p{font-size:12.5px;color:var(--muted);margin:12px 0 0;max-width:250px;line-height:1.55}
+.feats{position:relative;display:flex;flex-direction:column;gap:10px;margin-top:22px}
+.feat{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink)}
+.feat i{width:7px;height:7px;border-radius:2px;background:var(--accent);flex:0 0 auto}
+.foot{position:relative;font:500 9.5px 'IBM Plex Mono';letter-spacing:.14em;color:var(--muted)}
+.form{display:flex;flex-direction:column;justify-content:center;padding:40px 38px}
+.kicker{font:700 12px 'Barlow Condensed';letter-spacing:.3em;color:var(--accent);margin-bottom:4px}
+.form h2{font:700 24px 'Barlow Condensed';letter-spacing:.04em;margin:0 0 22px}
+label{display:block;font:600 10px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 5px}
+input{width:100%;padding:12px 13px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:3px;font-size:16px;margin-bottom:14px;transition:border-color .15s}
+input:focus{outline:none;border-color:var(--accent)}
+button{width:100%;padding:12px;border:1px solid var(--accent);background:var(--accent);color:#fff;font:700 13px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border-radius:3px;box-shadow:4px 4px 0 var(--shadow);transition:transform .12s,box-shadow .12s}
+button:hover{transform:translate(-1px,-1px);box-shadow:6px 6px 0 var(--shadow)}
+button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
+.err{display:none;align-items:center;gap:8px;background:color-mix(in oklab,var(--red) 12%,transparent);border:1px solid color-mix(in oklab,var(--red) 40%,transparent);color:var(--red);border-radius:3px;padding:8px 11px;margin-bottom:14px;font-size:12px}
+.err.show{display:flex;animation:rise .25s ease both}
+.hint{margin-top:16px;font-size:11.5px;color:var(--muted);text-align:center}
+.mbrand{display:none;align-items:center;gap:12px;margin-bottom:26px}
+.mbrand .logo{width:44px;height:44px;flex:0 0 auto}
+.mbrand h1{font:700 26px/1 'Barlow Condensed';letter-spacing:.09em;margin:0}
+.mbrand .tag{font:600 8px 'IBM Plex Mono';letter-spacing:.28em;color:var(--muted);margin-top:3px}
+@media (max-width:720px){
+  body{padding:0;align-items:stretch}
+  .shell{grid-template-columns:1fr;width:100%;max-width:none;min-height:100vh;min-height:100dvh;border:0;border-radius:0;box-shadow:none}
+  .brand{display:none}
+  .mbrand{display:flex}
+  .form{justify-content:flex-start;padding:calc(30px + env(safe-area-inset-top)) 22px calc(26px + env(safe-area-inset-bottom))}
+  .form h2{font-size:22px;margin-bottom:20px}
+}
+@media (max-width:720px) and (min-height:640px){
+  .form{justify-content:center}
+}
+</style>
+</head>
+<body>
+<div class="bgfx"><div class="glow"></div><canvas id="parts"></canvas></div>
+<div class="shell">
+  <div class="brand">
+    <svg class="lanes" aria-hidden="true" viewBox="0 0 400 520" preserveAspectRatio="xMidYMid slice">
+      <path d="M-20 430 C 120 360, 220 470, 360 400 S 520 320, 620 360" style="fill:none;stroke:var(--ink);opacity:.10;stroke-width:2;stroke-dasharray:12 20;animation:lane 26s linear infinite"></path>
+      <path d="M-20 150 C 100 210, 260 90, 400 160 S 560 240, 660 180" style="fill:none;stroke:var(--accent);opacity:.22;stroke-width:2.5;stroke-dasharray:2 26;stroke-linecap:round;animation:lane 20s linear infinite"></path>
+    </svg>
+    <div class="logo-row">
+      <svg class="logo" aria-hidden="true" viewBox="0 0 48 48"><path d="M2 2h44v33L35 46H2z" style="fill:var(--accent)"></path><path d="M11 34l9-10 7 6 11-14" style="fill:none;stroke:#fff;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:3 6.5"></path><circle cx="38" cy="16" r="3.2" style="fill:#fff"></circle><rect x="8.6" y="31.6" width="5" height="5" style="fill:#fff"></rect></svg>
+      <div><h1>TRAYECTO</h1><div class="tag">LOGÍSTICA · COMBUSTIBLE</div></div>
+    </div>
+    <div class="lead">
+      <b>Control de combustible de tu flota, de punta a punta</b>
+      <p>De la solicitud del operador a la conciliación de la factura — con evidencia fotográfica y validación por IA.</p>
+      <div class="feats">
+        <div class="feat"><i></i> Solicitud, autorización y despacho con folio único</div>
+        <div class="feat"><i></i> Evidencia con foto e IA: odómetro, tanque y ticket</div>
+        <div class="feat"><i></i> Conciliación con la factura y detección de anomalías</div>
+      </div>
+    </div>
+    <div class="foot">ACCESO RESTRINGIDO · TRAYECTO © 2026</div>
+  </div>
+
+  <form class="form" method="post" action="/login">
+    <div class="mbrand">
+      <svg class="logo" aria-hidden="true" viewBox="0 0 48 48"><path d="M2 2h44v33L35 46H2z" style="fill:var(--accent)"></path><path d="M11 34l9-10 7 6 11-14" style="fill:none;stroke:#fff;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:3 6.5"></path><circle cx="38" cy="16" r="3.2" style="fill:#fff"></circle><rect x="8.6" y="31.6" width="5" height="5" style="fill:#fff"></rect></svg>
+      <div><h1>TRAYECTO</h1><div class="tag">LOGÍSTICA · COMBUSTIBLE</div></div>
+    </div>
+    <div class="kicker">ACCESO</div>
+    <h2>PANEL DE FLOTA</h2>
+    <div class="err" id="err" role="alert" aria-live="assertive" tabindex="-1">
+      <svg aria-hidden="true" viewBox="0 0 24 24" style="width:15px;height:15px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"><path d="M12 8v5M12 16v.01M10.3 3.9L2.8 17a1.5 1.5 0 0 0 1.3 2.3h15.8a1.5 1.5 0 0 0 1.3-2.3L13.7 3.9a1.5 1.5 0 0 0-2.6 0z"></path></svg>
+      Usuario o contraseña incorrectos.
+    </div>
+    <label for="u">Usuario</label>
+    <input id="u" name="username" autocomplete="username" autofocus required placeholder="admin">
+    <label for="p">Contraseña</label>
+    <input id="p" name="password" type="password" autocomplete="current-password" required placeholder="••••••••">
+    <button type="submit">Ingresar →</button>
+    <div class="hint">Sistema privado de gestión de flota</div>
+  </form>
+</div>
+<script>
+  if (new URLSearchParams(location.search).get('error')) {
+    const e = document.getElementById('err'); e.classList.add('show');
+    setTimeout(() => e.focus(), 60); // asegura el anuncio del lector de pantalla
+  }
+
+  (function initParts(){
+    const cv=document.getElementById('parts'); if(!cv) return; const ctx=cv.getContext('2d');
+    let W,H; const rz=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight;}; rz(); addEventListener('resize',rz);
+    const mouse={x:innerWidth/2,y:innerHeight/2}; addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;});
+    const N=32,pts=[]; for(let i=0;i<N;i++){const x=Math.random()*innerWidth,y=Math.random()*innerHeight;pts.push({x,y,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,hx:x,hy:y});}
+    const cssVar=v=>{let c=getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#888888';if(c[0]==='#'&&c.length===4)c='#'+c[1]+c[1]+c[2]+c[2]+c[3]+c[3];return c;};
+    const rgba=(hex,a)=>{if(hex[0]!=='#')return hex;const n=parseInt(hex.slice(1),16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';};
+    const tick=()=>{ ctx.clearRect(0,0,W,H); const ink=cssVar('--ink'),acc=cssVar('--accent');
+      for(let i=0;i<N;i++){const p=pts[i];const dx=mouse.x-p.x,dy=mouse.y-p.y,d=Math.hypot(dx,dy)||1;
+        if(d<230&&d>90){p.vx+=dx/d*.006;p.vy+=dy/d*.006;}
+        if(d<110){const f=(110-d)/110*.06;p.vx-=dx/d*f;p.vy-=dy/d*f;}
+        p.vx+=(p.hx-p.x)*.0006;p.vy+=(p.hy-p.y)*.0006;p.vx*=.96;p.vy*=.96;
+        const sp=Math.hypot(p.vx,p.vy);if(sp>.55){p.vx*=.55/sp;p.vy*=.55/sp;}
+        p.x+=p.vx;p.y+=p.vy;
+        if(p.x<-20)p.x=W+20;if(p.x>W+20)p.x=-20;if(p.y<-20)p.y=H+20;if(p.y>H+20)p.y=-20;}
+      for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const a=pts[i],b=pts[j],d=Math.hypot(a.x-b.x,a.y-b.y);
+        if(d<130){ctx.strokeStyle=rgba(ink,.14*(1-d/130));ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
+      for(const p of pts){const dm=Math.hypot(mouse.x-p.x,mouse.y-p.y);
+        ctx.fillStyle=dm<160?rgba(acc,.55):rgba(ink,.28);ctx.beginPath();ctx.arc(p.x,p.y,dm<160?2.2:1.7,0,7);ctx.fill();}
+      requestAnimationFrame(tick); }; tick();
+  })();
+</script>
+</body>
+</html>

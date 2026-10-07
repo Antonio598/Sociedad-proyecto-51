@@ -1,0 +1,1007 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TRAYECTO · Operador</title>
+<meta name="theme-color" content="#F2620F">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TRAYECTO">
+<script>(function(){try{var t=localStorage.getItem('tr-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){document.documentElement.dataset.theme='light';}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1ede2;--panel:#f8f5ec;--card:#fcfaf4;--card2:#f3efe4;--ink:#22201a;--muted:#736a59;--line:#ddd6c5;--line2:#c9c1ac;--accent:#F2620F;--accent2:#c94e0a;--green:#1e7a46;--red:#bd3c20;--amber:#b7791f;--shadow:rgba(40,33,20,.16)}
+html[data-theme="dark"]{--bg:#141109;--panel:#1a1610;--card:#201b13;--card2:#17130c;--ink:#ede5d4;--muted:#9b9078;--line:#332d20;--line2:#4a4230;--accent:#FF6E1A;--accent2:#F2620F;--green:#54c17e;--red:#f0704f;--amber:#e5a337;--shadow:rgba(0,0,0,.45)}
+*{box-sizing:border-box}
+.ic{width:1em;height:1em;display:inline-block;vertical-align:-.14em;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+html,body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:14px/1.5 "IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.app{display:flex;min-height:100vh}
+aside{flex:0 0 234px;background:var(--panel);border-right:1px solid var(--line);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:16px 12px}
+.brand{display:flex;align-items:center;gap:11px;padding:6px 8px 16px}
+.brand .lg{width:38px;height:38px;flex:0 0 auto}
+.brand b{display:block;font:700 18px 'Barlow Condensed';letter-spacing:.11em}
+.brand span{font:600 7.5px 'IBM Plex Mono';letter-spacing:.26em;color:var(--muted)}
+nav{flex:1;display:flex;flex-direction:column;gap:2px}
+.navbtn{position:relative;display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;cursor:pointer;padding:10px 11px;color:var(--muted);border-radius:3px;font:500 13.5px 'IBM Plex Sans';text-align:left;transition:color .12s,background .12s}
+.navbtn:hover{background:var(--card);color:var(--ink)}
+.navbtn.on{background:var(--card);color:var(--accent)}
+.navbtn.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;background:var(--accent);border-radius:0 2px 2px 0}
+.navbtn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+.navbtn .bdg{margin-left:auto;background:var(--red);color:#fff;border-radius:2px;font:600 10px 'IBM Plex Mono';padding:1px 6px}
+.uwrap{display:flex;align-items:center;gap:10px;padding:12px 8px 4px;border-top:1px solid var(--line);margin-top:8px}
+.av{width:34px;height:34px;border-radius:3px;border:1px solid var(--line2);background:var(--accent);color:#fff;font:700 13px 'Barlow Condensed';cursor:pointer;flex:0 0 auto}
+.uwrap .nm{font:600 12.5px 'IBM Plex Sans';white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.uwrap .rl{font:600 8.5px 'IBM Plex Mono';letter-spacing:.16em;color:var(--accent);text-transform:uppercase}
+main{flex:1;min-width:0}
+.topbar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:13px 26px;display:flex;align-items:center;gap:14px}
+.crumb{font:600 9px 'IBM Plex Mono';letter-spacing:.16em;color:var(--muted)}
+.title{font:700 21px 'Barlow Condensed';letter-spacing:.03em;margin:1px 0 0}
+.iconbtn{border:1px solid var(--line2);background:var(--card);border-radius:3px;cursor:pointer;display:grid;place-items:center;color:var(--ink);box-shadow:2px 2px 0 var(--shadow);transition:transform .12s;width:36px;height:36px}
+.iconbtn:hover{transform:translate(-1px,-1px)}
+.iconbtn svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;width:17px;height:17px}
+.burger{display:none}
+.content{padding:22px 26px;max-width:900px}
+.section{display:none;animation:rise .35s ease both}
+.section.on{display:block}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:5px;padding:18px 19px;margin-bottom:16px;box-shadow:4px 4px 0 var(--shadow)}
+.card.hero::before{content:"";position:absolute;top:0;left:0;width:34px;height:3px;background:var(--accent);border-radius:0 0 3px 0}
+.kick{font:700 10px 'Barlow Condensed';letter-spacing:.22em;color:var(--accent);margin-bottom:3px}
+h2{font:700 17px 'Barlow Condensed';letter-spacing:.03em;margin:0 0 14px}
+label{display:block;font:600 10px 'IBM Plex Sans';letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:14px 0 5px}
+input,select{width:100%;padding:11px 12px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:4px;font-size:15px;transition:border-color .15s}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+.unidad-box{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line2);border-radius:4px;background:var(--bg)}
+.unidad-box .clave{font:700 22px 'IBM Plex Mono'}
+.unidad-box .cx{font-size:11px;color:var(--muted)}
+.foto{border:1.5px dashed var(--line2);border-radius:6px;padding:15px;text-align:center;margin-top:11px;transition:.2s}
+.bloqueo{display:flex;gap:12px;align-items:flex-start;background:color-mix(in oklab,var(--amber) 11%,transparent);border:1px solid color-mix(in oklab,var(--amber) 40%,transparent);border-radius:10px;padding:14px;margin-top:14px;color:var(--ink)}
+.bloqueo .ic{color:var(--amber);width:26px;height:26px;flex:0 0 auto}
+.bloqueo b{font-size:14.5px}
+.bloqueo p{font-size:12.5px;color:var(--muted);margin:5px 0 0;line-height:1.5}
+.foto .lbl{font:700 11px 'Barlow Condensed';letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.foto .val{font:600 27px 'IBM Plex Mono';margin-top:5px;line-height:1.1}
+.foto .st{font-size:11.5px;color:var(--muted);margin-top:3px}
+.foto.ok{border-color:color-mix(in oklab,var(--green) 55%,var(--line2));background:color-mix(in oklab,var(--green) 5%,transparent)}
+.foto.ok .val{color:var(--green)}
+.foto.warn{border-color:color-mix(in oklab,var(--amber) 60%,var(--line2));background:color-mix(in oklab,var(--amber) 6%,transparent)}
+.foto.load{border-color:var(--accent)}
+.hidden-file{display:none}
+.btn{padding:13px 16px;border:1px solid var(--accent);background:var(--accent);color:#fff;font:700 13px 'IBM Plex Sans';letter-spacing:.06em;text-transform:uppercase;border-radius:4px;box-shadow:4px 4px 0 var(--shadow);cursor:pointer;transition:transform .12s,box-shadow .12s}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
+.btn.block{width:100%}
+.btn.gray{background:var(--card);color:var(--ink);border-color:var(--line2);box-shadow:3px 3px 0 var(--shadow)}
+.btn.sm{padding:8px 13px;font-size:11px}
+.btn:disabled{opacity:.5}
+.pill{display:inline-block;padding:3px 9px;border-radius:3px;font:600 10px 'IBM Plex Mono';letter-spacing:.03em;white-space:nowrap}
+.pill.borrador{background:var(--card2);color:var(--muted);border:1px solid var(--line2)}
+.pill.enviada,.pill.en_validacion{background:color-mix(in oklab,var(--amber) 18%,transparent);color:var(--amber)}
+.pill.devuelta{background:color-mix(in oklab,var(--red) 15%,transparent);color:var(--red)}
+.pill.autorizada,.pill.conciliada{background:color-mix(in oklab,var(--green) 16%,transparent);color:var(--green)}
+.pill.despachada,.pill.facturada{background:color-mix(in oklab,var(--accent) 16%,transparent);color:var(--accent)}
+.pill.rechazada,.pill.anulada{background:var(--card2);color:var(--muted);border:1px solid var(--line2)}
+.sol{padding:13px 0;border-bottom:1px solid var(--line)}
+.sol:last-child{border-bottom:0}
+.sol .row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sol .u{font:600 15px 'IBM Plex Mono'}
+.sol .m{font-size:11.5px;color:var(--muted);margin-top:1px}
+.expl{font-size:12.5px;margin-top:7px;padding:8px 11px;border-radius:4px;line-height:1.5}
+.expl.info{background:var(--card2);color:var(--muted)}
+.expl.warn{background:color-mix(in oklab,var(--red) 10%,transparent);border:1px solid color-mix(in oklab,var(--red) 32%,var(--line));color:var(--ink)}
+.expl.ok{background:color-mix(in oklab,var(--green) 10%,transparent);border:1px solid color-mix(in oklab,var(--green) 32%,var(--line));color:var(--ink)}
+.stat{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:12px 14px}
+.stat .l{font:600 9.5px 'IBM Plex Sans';letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font:600 22px 'IBM Plex Mono';margin-top:2px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.kv:last-child{border-bottom:0}
+.kv .k{color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:22px 8px;font-size:13.5px}
+.home-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.action{position:relative;display:flex;align-items:center;gap:14px;text-align:left;width:100%;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px 18px;box-shadow:4px 4px 0 var(--shadow);cursor:pointer;color:var(--ink);transition:transform .12s,box-shadow .12s}
+.action:hover{transform:translate(-1px,-1px);box-shadow:6px 6px 0 var(--shadow)}
+.action:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--shadow)}
+.action .ai{width:46px;height:46px;flex:0 0 auto;border-radius:5px;display:grid;place-items:center;background:color-mix(in oklab,var(--accent) 14%,transparent);color:var(--accent)}
+.action .ai svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.action b{display:block;font:700 15px 'Barlow Condensed';letter-spacing:.04em;text-transform:uppercase}
+.action small{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.action.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.action.primary .ai{background:rgba(255,255,255,.2);color:#fff}
+.action.primary small{color:rgba(255,255,255,.85)}
+.action .bdg{position:absolute;top:10px;right:12px;background:var(--red);color:#fff;border-radius:2px;font:600 10px 'IBM Plex Mono';padding:1px 6px}
+.action.primary .bdg{background:#fff;color:var(--accent)}
+.btn.danger{color:var(--red);border-color:color-mix(in oklab,var(--red) 40%,var(--line2));display:flex;align-items:center;justify-content:center;gap:8px}
+.vrow{display:flex;align-items:center;gap:12px}
+.vrow .ai{width:42px;height:42px;flex:0 0 auto;border-radius:5px;display:grid;place-items:center;background:color-mix(in oklab,var(--accent) 14%,transparent);color:var(--accent)}
+.vrow .ai svg{width:22px;height:22px}
+.vlbl{font:600 9.5px 'IBM Plex Sans';letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.vdest{font:700 19px 'Barlow Condensed';letter-spacing:.02em;margin-top:1px;line-height:1.15}
+.vsub{font-size:12px;color:var(--muted);margin-top:2px}
+.vitem{padding:12px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.vitem:last-child{border-bottom:0}
+.vitem .u{font:600 14px 'IBM Plex Mono'}
+.vitem .m{font-size:11.5px;color:var(--muted);margin-top:1px}
+.vitem .r{text-align:right;font:600 13px 'IBM Plex Mono'}
+.tip{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line)}
+.tip:last-child{border-bottom:0}
+.tip .ti{width:30px;height:30px;flex:0 0 auto;border-radius:5px;display:grid;place-items:center;background:color-mix(in oklab,var(--accent) 12%,transparent);color:var(--accent)}
+.tip .ti svg{width:17px;height:17px}
+.tip b{font:600 13.5px 'IBM Plex Sans'}
+.tip p{margin:2px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5}
+.hihd{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.verlink{font-size:11.5px;color:var(--accent);font-weight:600;cursor:pointer}
+.offbar{display:none;align-items:center;gap:9px;background:color-mix(in oklab,var(--amber) 15%,transparent);border:1px solid color-mix(in oklab,var(--amber) 45%,var(--line2));color:var(--ink);border-radius:5px;padding:10px 13px;margin-bottom:14px;font-size:12.5px;line-height:1.4}
+.offbar.show{display:flex}
+.offbar svg{width:18px;height:18px;flex:0 0 auto;color:var(--amber);fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.manual{width:100%;margin-top:8px}
+.foto .exp{font-size:12px;color:var(--muted);margin-top:3px}
+.remhd{font:700 10px 'Barlow Condensed';letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px;display:flex;align-items:center;gap:8px}
+.remcount{background:var(--accent);color:#fff;border-radius:9px;font:600 10px 'IBM Plex Mono';padding:1px 7px}
+.carousel{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:6px}
+.carousel .foto{scroll-snap-align:start;flex:0 0 84%;margin-top:0}
+.chart{width:100%;margin-top:8px}
+.cbar{width:100%;height:auto;display:block;overflow:visible}
+.hleyenda{display:flex;gap:14px;align-items:center;font-size:11px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+.hleyenda span{display:inline-flex;align-items:center;gap:5px}
+.hleyenda i{width:11px;height:11px;border-radius:2px;flex:0 0 auto}
+.rmrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.rmrow:last-child{border-bottom:0}
+.rmmes{font:600 14px 'Barlow Condensed';letter-spacing:.03em;text-transform:uppercase}
+.rmsub{font-size:11.5px;color:var(--muted);margin-top:1px}
+.rmright{text-align:right}
+.rmrto{font:700 16px 'IBM Plex Mono'}
+.sol.pend .pill{background:color-mix(in oklab,var(--amber) 18%,transparent);color:var(--amber)}
+.notifwrap{position:relative}
+.nbadge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:var(--red);color:#fff;font:600 10px 'IBM Plex Mono';display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 2px var(--bg)}
+.npanel{display:none;position:absolute;top:46px;right:0;width:300px;max-width:86vw;max-height:70vh;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:6px;box-shadow:0 12px 34px var(--shadow);z-index:50}
+.npanel.open{display:block}
+.nhd{font:700 11px 'Barlow Condensed';letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:12px 14px;border-bottom:1px solid var(--line)}
+.nitem{padding:11px 14px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+.nitem:last-child{border-bottom:0}
+.nitem.unseen{background:color-mix(in oklab,var(--accent) 6%,transparent)}
+.nitem .nic{width:26px;height:26px;flex:0 0 auto;border-radius:5px;display:grid;place-items:center}
+.nitem b{font:600 13px 'IBM Plex Sans'}
+.nitem .nm{font-size:11.5px;color:var(--muted);margin-top:1px}
+.nitem .nt{font-size:10px;color:var(--muted);margin-top:2px}
+@media (max-width:560px){.home-actions{grid-template-columns:1fr}}
+.scrim{display:none}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:6px;font-size:13.5px;font-weight:500;opacity:0;transition:.25s;z-index:80;max-width:90vw;text-align:center;box-shadow:0 6px 20px var(--shadow)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* Cámara en vivo */
+.cam{display:none;position:fixed;inset:0;z-index:90;background:#000;flex-direction:column}
+.cam.show{display:flex}
+.cam video{flex:1;width:100%;object-fit:cover;background:#000}
+.cam .bar{padding:16px calc(16px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));display:flex;align-items:center;justify-content:space-between;background:#000}
+.cam .cancel{background:none;border:0;color:#fff;font-size:15px;cursor:pointer}
+.cam .shutter{width:68px;height:68px;border-radius:99px;border:4px solid #fff;background:rgba(255,255,255,.25);cursor:pointer}
+.cam .shutter:active{background:rgba(255,255,255,.5)}
+.cam .hint{position:absolute;top:calc(18px + env(safe-area-inset-top));left:0;right:0;text-align:center;color:#fff;font-size:13px;text-shadow:0 1px 3px #000}
+@media (max-width:820px){
+  aside{position:fixed;left:0;top:0;z-index:60;transform:translateX(-100%);transition:transform .22s}
+  aside.open{transform:none;box-shadow:8px 0 24px var(--shadow)}
+  .burger{display:grid}
+  .scrim.open{display:block;position:fixed;inset:0;z-index:55;background:color-mix(in oklab,var(--ink) 34%,transparent)}
+  .content{padding:16px 14px}
+  .topbar{padding:12px 14px}
+  .grid3{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="aside">
+    <div class="brand">
+      <svg class="lg" viewBox="0 0 48 48"><path d="M2 2h44v33L35 46H2z" style="fill:var(--accent)"></path><path d="M11 34l9-10 7 6 11-14" style="fill:none;stroke:#fff;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:3 6.5"></path><circle cx="38" cy="16" r="3.2" style="fill:#fff"></circle><rect x="8.6" y="31.6" width="5" height="5" style="fill:#fff"></rect></svg>
+      <div><b>TRAYECTO</b><span>OPERADOR</span></div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="uwrap">
+      <button class="av" id="uav" onclick="show('perfil')">–</button>
+      <div style="flex:1;min-width:0"><div class="nm" id="unm">…</div><div class="rl">Operador</div></div>
+      <button class="iconbtn" title="Cerrar sesión" style="width:30px;height:30px;box-shadow:none;border:0;background:none;color:var(--muted)" onclick="location.href='/logout'"><svg viewBox="0 0 24 24"><path d="M14 4h-9v16h9M9 12h12m0 0l-3.5-3.5M21 12l-3.5 3.5"></path></svg></button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim" onclick="closeNav()"></div>
+
+  <main>
+    <div class="topbar">
+      <button class="iconbtn burger" onclick="toggleNav()" title="Menú"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+      <div style="flex:1;min-width:0"><div class="crumb">OPERADOR / <span id="crumb">INICIO</span></div><h1 class="title" id="title">Inicio</h1></div>
+      <div class="notifwrap">
+        <button class="iconbtn" onclick="abrirNotis()" title="Avisos"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 4.5 2 5.5 2 5.5H4S6 13.5 6 9M9.5 20a2.5 2.5 0 0 0 5 0"></path></svg><span class="nbadge" id="nbadge" style="display:none"></span></button>
+        <div class="npanel" id="npanel">
+          <div class="nhd">Avisos</div>
+          <div id="nlist"><div class="empty" style="padding:16px">Sin avisos por ahora.</div></div>
+        </div>
+      </div>
+      <button class="iconbtn" onclick="cycleTheme()" title="Tema"><svg viewBox="0 0 24 24"><path d="M20 13.5A8 8 0 1 1 10.5 4a6.3 6.3 0 0 0 9.5 9.5z"></path></svg></button>
+      <button class="iconbtn" onclick="location.href='/logout'" title="Cerrar sesión"><svg viewBox="0 0 24 24"><path d="M14 4h-9v16h9M9 12h12m0 0l-3.5-3.5M21 12l-3.5 3.5"></path></svg></button>
+    </div>
+
+    <div class="content">
+      <div class="offbar" id="offbar">
+        <svg viewBox="0 0 24 24"><path d="M2 2l20 20M8.5 16.4a5 5 0 0 1 6-.9M5 12.5a10 10 0 0 1 3.5-2.2M12 20h.01M16.8 11.3A6 6 0 0 0 12 9"></path></svg>
+        <span>Sin conexión. Lo que envíes se guarda en el teléfono y sale solo al reconectar. <b id="offcount"></b></span>
+      </div>
+      <!-- INICIO (home) -->
+      <section class="section on" id="s-inicio">
+        <div class="card hero">
+          <div class="hihd">
+            <div style="flex:1;min-width:0">
+              <div class="kick">HOLA</div>
+              <h2 id="hi-nombre" style="margin:2px 0 0">…</h2>
+            </div>
+            <button class="btn" onclick="show('recarga')" style="flex:0 0 auto;white-space:nowrap">Nueva recarga</button>
+          </div>
+          <div class="grid3" style="margin-top:16px">
+            <div class="stat"><div class="l">Tu unidad</div><div class="v" id="hi-unidad" style="font-size:18px">—</div></div>
+            <div class="stat"><div class="l">Enviadas</div><div class="v" id="hi-env">0</div></div>
+            <div class="stat"><div class="l">Por corregir</div><div class="v" id="hi-dev">0</div></div>
+          </div>
+        </div>
+        <div class="card" id="hv-card">
+          <div class="vrow">
+            <span class="ai"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6-5.7 6-10.5A6 6 0 1 0 6 10.5C6 15.3 12 21 12 21z"></path><circle cx="12" cy="10.5" r="2.3"></circle></svg></span>
+            <div style="flex:1;min-width:0">
+              <div class="vlbl">Viaje actual</div>
+              <div class="vdest" id="hv-destino">—</div>
+              <div class="vsub" id="hv-sub">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="card" onclick="show('rendimiento')" style="cursor:pointer">
+          <div class="hihd" style="align-items:baseline">
+            <div class="vlbl">Tu rendimiento por mes</div>
+            <span class="verlink">ver detalle →</span>
+          </div>
+          <div id="hi-heat" style="margin-top:10px"><div class="empty" style="padding:8px">…</div></div>
+        </div>
+        <div class="card">
+          <div class="hihd" style="align-items:baseline">
+            <div class="vlbl">Últimas recargas</div>
+            <span class="verlink" onclick="show('solicitudes')">ver todas →</span>
+          </div>
+          <div id="hi-hist" style="margin-top:6px"><div class="empty" style="padding:10px">—</div></div>
+        </div>
+      </section>
+
+      <!-- NUEVA RECARGA -->
+      <section class="section" id="s-recarga">
+        <div class="card hero">
+          <div class="kick">RECARGA</div>
+          <h2>Solicitar recarga</h2>
+          <label>Tu unidad (la asigna tu coordinador)</label>
+          <div class="unidad-box" id="unidad-box">
+            <div><div class="clave" id="u-clave">—</div><div class="cx" id="u-cx">tu viaje actual</div></div>
+          </div>
+
+          <p style="font-size:12.5px;color:var(--muted);margin:14px 0 0;line-height:1.5">Toma las fotos del odómetro y la aguja del tanque, y envía tu solicitud. <b>Los litros los define tu coordinador</b> al autorizar.</p>
+
+          <div id="fotos"></div>
+
+          <button class="btn block" id="btn-enviar" style="margin-top:18px">Solicitar recarga</button>
+        </div>
+      </section>
+
+      <!-- MIS SOLICITUDES -->
+      <section class="section" id="s-solicitudes">
+        <div class="card"><div id="mis-sol"><div class="empty">Cargando…</div></div></div>
+      </section>
+
+      <!-- MIS VIAJES -->
+      <section class="section" id="s-viajes">
+        <div class="card hero">
+          <div class="kick">VIAJE ACTUAL</div>
+          <div id="mv-activo"><div class="empty" style="padding:8px">Cargando…</div></div>
+        </div>
+        <div class="card">
+          <h2>Viajes anteriores</h2>
+          <div id="mv-hist"><div class="empty">Cargando…</div></div>
+        </div>
+      </section>
+
+      <!-- MI RENDIMIENTO -->
+      <section class="section" id="s-rendimiento">
+        <div class="card hero">
+          <div class="kick">RENDIMIENTO</div>
+          <h2>Tu desempeño por mes</h2>
+          <p style="font-size:12.5px;color:var(--muted);margin:0 0 8px;line-height:1.5">Rendimiento real (km/l) contra el esperado de tu configuración, y tus recargas del mes.</p>
+          <div id="rm-heat"></div>
+        </div>
+        <div class="card">
+          <h2>Detalle por mes</h2>
+          <div id="rm-tabla"><div class="empty">Cargando…</div></div>
+        </div>
+      </section>
+
+      <!-- RECOMENDACIONES / AYUDA -->
+      <section class="section" id="s-ayuda">
+        <div class="card hero">
+          <div class="kick">RECOMENDACIONES</div>
+          <h2>Antes y durante tu carga</h2>
+          <div id="tips"></div>
+        </div>
+        <div class="card">
+          <h2>¿Algún problema?</h2>
+          <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Si algo no cuadra —tu unidad, el destino, una recarga rechazada o una falla— avisa a tu coordinador.</p>
+          <button class="btn block" onclick="contactarCoordinador()" style="display:flex;align-items:center;justify-content:center;gap:8px"><svg class="ic" viewBox="0 0 24 24" style="stroke-width:1.9"><path d="M4 5h16v10H9l-4 3.5V5z"></path><path d="M8 9.7h.01M12 9.7h.01M16 9.7h.01"></path></svg> Contactar al coordinador</button>
+        </div>
+      </section>
+
+      <!-- PERFIL -->
+      <section class="section" id="s-perfil">
+        <div class="card hero">
+          <div class="kick">MI CUENTA</div>
+          <h2 id="p-nombre">…</h2>
+          <div class="grid3" style="margin:6px 0 4px">
+            <div class="stat"><div class="l">Enviadas</div><div class="v" id="p-env">0</div></div>
+            <div class="stat"><div class="l">Autorizadas</div><div class="v" id="p-aut">0</div></div>
+            <div class="stat"><div class="l">Por corregir</div><div class="v" id="p-dev">0</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Datos</h2>
+          <div class="kv"><span class="k">Número de operador</span><span id="p-num">—</span></div>
+          <div class="kv"><span class="k">Usuario</span><span id="p-user">—</span></div>
+          <div class="kv"><span class="k">Unidad habitual</span><span id="p-uni">—</span></div>
+        </div>
+        <button class="btn gray danger block" onclick="location.href='/logout'"><svg class="ic" viewBox="0 0 24 24"><path d="M14 4h-9v16h9M9 12h12m0 0l-3.5-3.5M21 12l-3.5 3.5"></path></svg> Cerrar sesión</button>
+      </section>
+
+      <!-- CONFIGURACIÓN -->
+      <section class="section" id="s-config">
+        <div class="card hero">
+          <div class="kick">PREFERENCIAS</div>
+          <h2>Avisos</h2>
+          <div class="kv"><span class="k">Avisos del sistema</span><button class="btn gray sm" onclick="pedirPermisoNotif()" id="cfg-notif">Activar</button></div>
+        </div>
+        <div class="card">
+          <h2>Personalización</h2>
+          <div id="tr-perfil-mount"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- Cámara en vivo -->
+<div class="cam" id="cam">
+  <div class="hint" id="cam-hint">Encuadra el instrumento</div>
+  <video id="cam-video" playsinline autoplay muted></video>
+  <div class="bar">
+    <button class="cancel" onclick="cerrarCamara()">Cancelar</button>
+    <button class="shutter" id="cam-shot" aria-label="Tomar foto"></button>
+    <div style="width:60px"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/static/perfil.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let YO={}, SOL_ID=null, UNIDADES=[], UNIDAD_ID=null, SEC='recarga', VIAJE=null, OFFLINE=false, DRAFT={fotos:{}};
+let CAPTURADAS=new Set();   // llaves de los slots de foto ya cubiertos (#1: todo cubierto para enviar)
+let DRAFT_VIAJE=undefined;  // viaje/unidad para el que se armó el borrador actual (reset si cambia)
+let camStream=null, camTipo=null;
+const PILL={borrador:'Borrador',enviada:'Enviada',en_validacion:'En validación',devuelta:'Devuelta',
+  rechazada:'Rechazada',autorizada:'Autorizada',despachada:'Despachada',facturada:'Facturada',
+  conciliada:'Conciliada',en_discrepancia:'En revisión',anulada:'Anulada'};
+// Qué significa cada estado para el operador y qué debe hacer.
+const EXPL={
+  enviada:['info','Ya la recibió el coordinador. Espera su revisión.'],
+  en_validacion:['info','El coordinador la está revisando ahora.'],
+  devuelta:['warn','Te la regresaron para corregir. Revisa el motivo y vuelve a enviar.'],
+  rechazada:['warn','No procedió. Revisa el motivo.'],
+  autorizada:['ok','¡Autorizada! Ya puedes cargar el diésel.'],
+  despachada:['ok','El diésel ya se cargó.'],
+  facturada:['ok','Carga facturada.'],
+  conciliada:['ok','Ciclo cerrado, todo cuadró.'],
+  en_discrepancia:['warn','Hay algo que no cuadra; lo está revisando el coordinador.']
+};
+let FOTOS=[];
+// Los slots de evidencia se DERIVAN del viaje asignado. BASE para cualquier unidad: 2 fotos
+// (odómetro + kilometraje). Un TRACTO suma UN económico por cada remolque que enganchó el
+// coordinador (0 a 2). Un CAMIÓN no lleva remolques → solo las 2 fotos base.
+function construirFotos(){
+  const F=[
+    {key:'odometro',   tipo:'odometro',   lbl:'Odómetro (acumulado)'},
+    {key:'kilometraje',tipo:'kilometraje',lbl:'Kilometraje del viaje'},
+  ];
+  const rems=(VIAJE&&VIAJE.unidad_tipo==='TRACTO'&&Array.isArray(VIAJE.remolques))?VIAJE.remolques.slice(0,2):[];
+  rems.forEach((r,i)=>F.push({key:'eco-rem-'+r.id,tipo:'eco',eco:true,remolque:true,
+    lbl:'Económico Remolque '+(i+1),esperado:r.eco,etiqueta:'ECO Remolque '+(i+1)}));
+  FOTOS=F;
+}
+const NAV=[['inicio','Inicio','M4 11.5 12 4l8 7.5M6 10v9h12v-9'],
+  ['recarga','Nueva recarga','M5 3h14v18l-7-3-7 3zM9 8h6M9 12h6'],
+  ['solicitudes','Mis solicitudes','M4 6h16M4 12h16M4 18h10'],
+  ['viajes','Mis viajes','M9 4 4 6v14l5-2 6 2 5-2V4l-5 2-6-2zM9 4v14M15 6v14'],
+  ['rendimiento','Rendimiento','M4 20V4M4 20h16M8 16l3-4 3 2 4-6'],
+  ['ayuda','Recomendaciones','M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M9.7 9.5a2.4 2.4 0 0 1 4.5 1.2c0 1.6-2.2 2-2.2 3.3M12 17h.01'],
+  ['perfil','Perfil','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M4.5 20a7.5 7.5 0 0 1 15 0'],
+  ['config','Configuración','M9.6 12a2.4 2.4 0 1 0 4.8 0a2.4 2.4 0 1 0-4.8 0M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2']];
+const TIT={inicio:['Inicio','INICIO'],recarga:['Nueva recarga','RECARGA'],solicitudes:['Mis solicitudes','SOLICITUDES'],viajes:['Mis viajes','VIAJES'],rendimiento:['Mi rendimiento','RENDIMIENTO'],ayuda:['Recomendaciones','AYUDA'],perfil:['Perfil','PERFIL'],config:['Configuración','CONFIG']};
+
+async function api(p,o){const r=await fetch(p,o);if(r.status===401){location.href='/login';throw 0;}
+  const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.detail||('Error '+r.status));return d;}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);}
+const ICONS={
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  alert:'<path d="M12 3.2 2 20.5h20z"/><path d="M12 9.5v4.5M12 17.6v.4"/>',
+  camera:'<path d="M4 7h3l1.5-2h7L18 7h2v12H4z"/><circle cx="12" cy="13" r="3.2"/>',
+  pin:'<path d="M12 21s6-5.7 6-10.5A6 6 0 1 0 6 10.5C6 15.3 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.3"/>',
+  chat:'<path d="M4 5h16v10H9l-4 3.5V5z"/><path d="M8 9.7h.01M12 9.7h.01M16 9.7h.01"/>',
+  bulb:'<path d="M9.5 17.5h5M10.3 20.5h3.4"/><path d="M12 3a6.2 6.2 0 0 0-3.7 11.2c.6.5 1 1.1 1.1 1.8h5.2c.1-.7.5-1.3 1.1-1.8A6.2 6.2 0 0 0 12 3z"/>',
+  map:'<path d="M9 4 4 6v14l5-2 6 2 5-2V4l-5 2-6-2z"/><path d="M9 4v14M15 6v14"/>'
+};
+function ic(n,extra){return '<svg class="ic'+(extra?' '+extra:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+(ICONS[n]||'')+'</svg>';}
+function applyTheme(){const t=localStorage.getItem('tr-theme')||'system';const eff=t==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=eff;const c=$('#cfg-tema');if(c)c.textContent={light:'Claro',dark:'Oscuro',system:'Sistema'}[t];}
+function cycleTheme(){const cur=localStorage.getItem('tr-theme')||'system';const nx={light:'dark',dark:'system',system:'light'}[cur];localStorage.setItem('tr-theme',nx);applyTheme();toast('Tema: '+({light:'claro',dark:'oscuro',system:'sistema'}[nx]));}
+try{matchMedia('(prefers-color-scheme:dark)').addEventListener('change',function(){if((localStorage.getItem('tr-theme')||'system')==='system')applyTheme();});}catch(e){}
+function toggleNav(){$('#aside').classList.toggle('open');$('#scrim').classList.toggle('open');}
+function closeNav(){$('#aside').classList.remove('open');$('#scrim').classList.remove('open');}
+
+function buildNav(){
+  $('#nav').innerHTML=NAV.map(([id,lbl,d])=>`<button class="navbtn" data-sec="${id}"><svg viewBox="0 0 24 24"><path d="${d}"></path></svg><span style="flex:1">${lbl}</span>${id==='solicitudes'?'<span class="bdg" id="bdg-sol" style="display:none"></span>':''}</button>`).join('');
+}
+function show(sec){
+  SEC=sec;
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('on',b.dataset.sec===sec));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
+  $('#s-'+sec).classList.add('on');
+  $('#title').textContent=TIT[sec][0];$('#crumb').textContent=TIT[sec][1];
+  closeNav();
+  if(sec==='solicitudes'||sec==='perfil'||sec==='inicio')cargarMisSolicitudes();
+  if(sec==='inicio') loadInicioResumen();
+  if(sec==='recarga') loadMiViaje();   // revalida el viaje activo antes de capturar (#2)
+  if(sec==='viajes'){ loadMiViaje(); loadMisViajes(); }
+  if(sec==='rendimiento') loadRendimiento();
+  if(sec==='ayuda') pintarRecomendaciones();
+  if(sec==='config'&&window.TR_montarPerfil)TR_montarPerfil(document.getElementById('tr-perfil-mount'),YO);
+}
+
+async function init(){
+  applyTheme(); buildNav();
+  try{ YO=await api('/api/me'); try{localStorage.setItem('tr-yo',JSON.stringify(YO));}catch(_){} }
+  catch(e){
+    // Sin señal: usa la identidad guardada de la última vez para que la app abra igual.
+    try{ const c=localStorage.getItem('tr-yo'); if(c){ YO=JSON.parse(c); OFFLINE=true; } else { return; } }catch(_){ return; }
+  }
+  if(window.TR_aplicarPrefs)TR_aplicarPrefs(YO.prefs);
+  const nom=YO.operador_nombre||YO.nombre||YO.username;
+  $('#unm').textContent=nom; $('#p-nombre').textContent=nom;
+  $('#hi-nombre').textContent='Hola, '+((nom||'').split(' ')[0]||nom||'');
+  $('#uav').textContent=(nom||'?').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
+  $('#p-num').textContent=YO.operador_numero||'—';
+  $('#p-user').textContent=YO.username;
+  $('#p-uni').textContent=YO.unidad_sugerida_clave||'—';
+  $('#hi-unidad').textContent=YO.unidad_sugerida_clave||'—';
+  const hc=$('#hi-coord'); if(hc)hc.textContent=YO.coordinador_whatsapp?'por WhatsApp':'a tu coordinador';
+  // La unidad, el botón y las fotos SIEMPRE dependen del viaje ACTIVO (#2): lo resuelve
+  // loadMiViaje y lo pinta pintarFotos (bloquea si no hay viaje). No se fija nada con la
+  // unidad "sugerida" aquí para no contradecir la regla.
+  await loadMiViaje();
+  pintarFotos();
+  pintarRecomendaciones();
+  document.querySelectorAll('.navbtn').forEach(b=>b.addEventListener('click',()=>show(b.dataset.sec)));
+  await actualizarOffline();
+  if(!esOffline()) sincronizar();   // manda lo que quedó en la cola de una sesión previa
+  iniciarAvisos();                  // campana + sondeo de cambios de estado
+  show('inicio');
+}
+
+// La unidad la ESTABLECE el coordinador (viaje asignado): el operador no la elige ni cambia.
+function unidadElegida(){ return UNIDAD_ID||''; }
+
+function pintarFotos(){
+  const btn=$('#btn-enviar');
+  // La unidad y las fotos SIEMPRE dependen del viaje que levanta el coordinador.
+  const uc=$('#u-clave'), ucx=$('#u-cx');
+  // #2: sin viaje LEVANTADO no se puede solicitar. Se bloquea la captura y el envío.
+  if(!VIAJE){
+    if(uc)uc.textContent='Sin viaje';
+    if(ucx)ucx.textContent='tu coordinador aún no lo levanta';
+    $('#fotos').innerHTML='<div class="bloqueo">'+ic('alert')+'<div><b>Aún no tienes un viaje asignado.</b>'
+      +'<p>Tu coordinador debe levantar tu viaje (unidad y destino) antes de que puedas solicitar combustible. En cuanto lo haga, aquí aparecerán las fotos que debes tomar.</p></div></div>';
+    if(btn){ btn.disabled=true; btn.textContent='Espera tu viaje asignado'; }
+    return;
+  }
+  if(uc)uc.textContent=VIAJE.unidad_clave||'—';
+  if(ucx)ucx.textContent='asignada por tu coordinador';
+  if(btn){ btn.disabled=false; btn.textContent='Solicitar recarga'; }
+  const done=k=>CAPTURADAS.has(k);
+  const slot=f=>`
+    <div class="foto${done(f.key)?' ok':''}" id="foto-${f.key}" data-key="${f.key}">
+      <div class="lbl">${esc(f.lbl)}</div>
+      <div class="val" id="val-${f.key}">—</div>
+      <div class="st" id="st-${f.key}">${done(f.key)?'Listo':'Sin foto'}</div>
+      ${f.eco?`<div class="exp">Esperado: <b>${esc(f.esperado||'—')}</b></div>`:''}
+      <button class="btn gray sm" style="margin-top:10px" data-cam="${f.key}">${ic('camera')} ${done(f.key)?'Volver a tomar':'Tomar foto'}</button>
+      <input class="hidden-file" type="file" accept="image/*" capture="environment" id="file-${f.key}">
+      ${f.key==='odometro'?`<input class="manual" id="manual-${f.key}" type="number" inputmode="decimal" placeholder="Odómetro (km) a mano" style="display:none">`:''}
+    </div>`;
+  const base=FOTOS.filter(f=>!f.remolque), rems=FOTOS.filter(f=>f.remolque);
+  let html=base.map(slot).join('');
+  if(rems.length){
+    // Varios remolques: se capturan en un carrusel por secciones.
+    html+=`<div class="remhd">Remolques <span class="remcount">${rems.length}</span></div>
+      <div class="carousel">${rems.map(slot).join('')}</div>`;
+  }
+  $('#fotos').innerHTML=html;
+  // Sin conexión no hay lectura por IA: revela la casilla del odómetro para capturarlo a mano.
+  if(esOffline()){ const mo=$('#manual-odometro'); if(mo)mo.style.display='block'; }
+}
+
+// ── Cámara en vivo (directo, sin selector de archivos) ──
+async function abrirCamara(tipo){
+  camTipo=tipo;
+  const f=FOTOS.find(x=>x.key===tipo)||{};
+  $('#cam-hint').textContent = f.eco?('Encuadra el ECONÓMICO '+(f.esperado||'')):('Encuadra: '+(f.lbl||'la lectura'));
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    $('#cam-video').srcObject=camStream;
+    $('#cam').classList.add('show');
+  }catch(e){
+    // Sin cámara disponible (o permiso denegado): cae al selector del teléfono.
+    $('#file-'+tipo).click();
+  }
+}
+function cerrarCamara(){
+  $('#cam').classList.remove('show');
+  if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
+}
+function capturar(){
+  const v=$('#cam-video'); if(!v.videoWidth)return;
+  const cv=document.createElement('canvas'); cv.width=v.videoWidth; cv.height=v.videoHeight;
+  cv.getContext('2d').drawImage(v,0,0);
+  cv.toBlob(b=>{ const tipo=camTipo; cerrarCamara(); if(b)subirFoto(tipo,new File([b],'foto.jpg',{type:'image/jpeg'})); },'image/jpeg',0.9);
+}
+
+async function asegurarSolicitud(){
+  if(SOL_ID)return SOL_ID;
+  const uid=unidadElegida();
+  const fd=new FormData(); if(uid)fd.append('unidad_id',uid);
+  // Sin litros: los define el coordinador al autorizar (el operador no los fija).
+  const d=await api('/api/solicitudes',{method:'POST',body:fd}); SOL_ID=d.id; return SOL_ID;
+}
+// Comprime la foto en el teléfono ANTES de subir: la reescala (lado máx 1600px) y la
+// re-codifica JPEG. Así una foto de cámara de 8-12 MB baja a ~300-500 KB — no choca con el
+// tope del servidor y no infla la base (las fotos se guardan en base64 en la fila). La IA de
+// todos modos lee a 1024px, así que no se pierde calidad útil. Si algo falla, sube la original.
+async function comprimirImagen(file, maxLado, calidad){
+  maxLado=maxLado||1600; calidad=calidad||0.82;
+  try{
+    if(!file || !/^image\//.test(file.type||'')) return file;
+    let w=0,h=0,src=null,bmp=null;
+    try{ bmp=await createImageBitmap(file); w=bmp.width; h=bmp.height; src=bmp; }catch(_){ bmp=null; }
+    if(!src){
+      const url=URL.createObjectURL(file);
+      const img=await new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=url;});
+      URL.revokeObjectURL(url);
+      if(!img||!img.naturalWidth) return file;
+      w=img.naturalWidth; h=img.naturalHeight; src=img;
+    }
+    if(!w||!h) return file;
+    const escala=Math.min(1, maxLado/Math.max(w,h));
+    const nw=Math.max(1,Math.round(w*escala)), nh=Math.max(1,Math.round(h*escala));
+    const cv=document.createElement('canvas'); cv.width=nw; cv.height=nh;
+    cv.getContext('2d').drawImage(src,0,0,nw,nh);
+    if(bmp&&bmp.close)bmp.close();
+    const blob=await new Promise(res=>cv.toBlob(res,'image/jpeg',calidad));
+    if(!blob) return file;
+    if(blob.size>=file.size && file.size<5*1024*1024) return file;   // ya era chica: no la agrandes
+    return new File([blob],(file.name||'foto').replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'});
+  }catch(e){ return file; }
+}
+async function subirFoto(key,file){
+  const f=FOTOS.find(x=>x.key===key)||{key,tipo:key};
+  const box=$('#foto-'+key), st=$('#st-'+key), val=$('#val-'+key);
+  if(st){st.textContent='Preparando la foto…';} if(box){box.className='foto load';}
+  file=await comprimirImagen(file);   // aligera antes de subir (evita el tope de 5 MB)
+  if(esOffline()){ guardarFotoOffline(f,file); return; }
+  if(st)st.textContent='Leyendo la foto…'; if(box)box.className='foto load';
+  try{
+    const sid=await asegurarSolicitud();
+    const fd=new FormData(); fd.append('tipo',f.tipo); fd.append('file',file);
+    if(f.eco){ fd.append('esperado',f.esperado||''); fd.append('etiqueta',f.etiqueta||''); }
+    const d=await api('/api/solicitudes/'+sid+'/evidencia',{method:'POST',body:fd});
+    CAPTURADAS.add(key);   // #1: este slot ya quedó cubierto
+    if(f.eco){
+      if(val)val.textContent=d.texto_ia||'—';
+      if(d.coincide){ if(st)st.innerHTML=ic('check')+' Coincide'; if(box)box.className='foto ok'; }
+      else{ if(st)st.innerHTML=ic('alert')+' No coincide con '+esc(f.esperado||''); if(box)box.className='foto warn'; }
+    }else{
+      if(val)val.textContent=d.valor_ia!=null?d.valor_ia:'—';
+      if(d.aviso){ if(st)st.innerHTML=ic('alert')+' '+esc(d.aviso); if(box)box.className='foto warn'; }
+      else{ if(st)st.textContent='Leído'+(d.confianza?' · confianza '+d.confianza:''); if(box)box.className='foto ok'; }
+    }
+  }catch(e){ if(errDeRed(e)){ guardarFotoOffline(f,file); } else { if(st)st.textContent='No se pudo: '+(e.message||''); if(box)box.className='foto warn'; } }
+}
+async function enviar(){
+  const btn=$('#btn-enviar');
+  // #2: no se puede solicitar sin un viaje LEVANTADO por el coordinador.
+  if(!VIAJE){ toast('Aún no tienes un viaje asignado por tu coordinador'); return; }
+  const uid=unidadElegida()||(VIAJE&&VIAJE.unidad_id)||'';
+  // #1: todos los datos cubiertos — toda foto del viaje debe estar tomada antes de enviar.
+  const faltan=FOTOS.filter(f=>!CAPTURADAS.has(f.key));
+  if(faltan.length){ toast('Faltan por tomar: '+faltan.map(f=>f.lbl).join(', ')); return; }
+  // Sin señal, o con fotos ya guardadas offline: a la cola (se envía al reconectar).
+  if(esOffline() || Object.keys(DRAFT.fotos).length){ await encolarOffline(uid); return; }
+  btn.disabled=true;
+  try{
+    const sid=await asegurarSolicitud();
+    const fd=new FormData(); fd.append('destino','enviada');
+    await api('/api/solicitudes/'+sid+'/transicion',{method:'POST',body:fd});
+    toast('Solicitud enviada al coordinador');
+    SOL_ID=null; DRAFT={fotos:{}}; CAPTURADAS.clear(); pintarFotos();
+    cargarMisSolicitudes(); show('solicitudes');
+  }catch(e){ if(errDeRed(e)){ await encolarOffline(uid); } else { toast('No se pudo enviar: '+(e.message||'')); btn.disabled=false; } }
+  btn.disabled=false;
+}
+
+async function cargarMisSolicitudes(){
+  // Pendientes locales (cola offline): se muestran siempre, aunque no haya señal.
+  const PEND=await IDB.all();
+  const pendHTML=PEND.map(p=>`<div class="sol pend">
+      <div class="row"><div><div class="u">${p.litros?esc(String(p.litros))+' L':'Recarga'}</div>
+        <div class="m">${(p.fotos&&p.fotos.length)?(p.fotos.length+' foto — '):''}guardada en el teléfono</div></div>
+        <span class="pill">Pendiente</span></div>
+      <div class="expl info">Sin conexión: se enviará al coordinador en cuanto haya señal.</div>
+    </div>`).join('');
+  let ss=[];
+  try{ const d=await api('/api/solicitudes?limite=30'); ss=(d.solicitudes||[]).filter(x=>x.estado!=='borrador'); }
+  catch(e){ $('#mis-sol').innerHTML = pendHTML || '<div class="empty">Sin conexión. No se pudo cargar el historial.</div>'; return; }
+  detectarCambios(ss);   // avisa si alguna solicitud cambió de estado desde la última vez
+  // avisos: cuántas necesitan acción (devueltas)
+  const dev=ss.filter(x=>x.estado==='devuelta').length;
+  // badge de "por corregir" en el menú lateral y en la tarjeta del home
+  ['#bdg-sol','#bdg-home'].forEach(sel=>{const b=$(sel);if(b){if(dev){b.style.display='inline-block';b.textContent=dev;}else b.style.display='none';}});
+  // stats del perfil y del inicio
+  $('#p-env').textContent=ss.length;
+  $('#p-aut').textContent=ss.filter(x=>['autorizada','despachada','facturada','conciliada'].includes(x.estado)).length;
+  $('#p-dev').textContent=dev;
+  $('#hi-env').textContent=ss.length;
+  $('#hi-dev').textContent=dev;
+  // Resumen del inicio: las últimas 3 recargas.
+  const hh=$('#hi-hist');
+  if(hh){ hh.innerHTML = ss.length ? ss.slice(0,3).map(s=>`<div class="vitem">
+      <div><div class="u">${esc(s.unidad)||'—'}${(s.litros_reales!=null||s.litros_autorizados!=null)?' · '+esc(s.litros_reales!=null?s.litros_reales:s.litros_autorizados)+' L':''}</div>
+        <div class="m">${esc((s.creada_en||'').replace('T',' ').slice(0,16))}</div></div>
+      <span class="pill ${esc(s.estado)}">${PILL[s.estado]||esc(s.estado)}</span></div>`).join('')
+    : '<div class="empty" style="padding:10px">Aún no has enviado recargas.</div>'; }
+  const serverHTML=ss.map(s=>{
+    const ex=EXPL[s.estado];
+    const motivo=(s.estado==='devuelta'||s.estado==='rechazada')&&s.motivo;
+    return `<div class="sol">
+      <div class="row">
+        <div><div class="u">${esc(s.unidad)||'—'}${(s.litros_reales!=null||s.litros_autorizados!=null)?' · '+esc(s.litros_reales!=null?s.litros_reales:s.litros_autorizados)+' L':''}</div>
+          <div class="m">${esc((s.creada_en||'').replace('T',' ').slice(0,16))}${s.folio?' · '+esc(s.folio):''}</div></div>
+        <span class="pill ${esc(s.estado)}">${PILL[s.estado]||esc(s.estado)}</span>
+      </div>
+      ${ex?`<div class="expl ${ex[0]}">${ex[1]}${motivo?' <b>Motivo:</b> '+esc(motivo):''}</div>`:''}
+    </div>`;
+  }).join('');
+  $('#mis-sol').innerHTML = (pendHTML+serverHTML) || '<div class="empty">Aún no has enviado ninguna solicitud.</div>';
+}
+
+// ── Viaje asignado (unidad + destino que levanta el coordinador) ──
+async function loadMiViaje(){
+  try{ const d=await api('/api/mi-viaje'); VIAJE=d.activo||null; try{localStorage.setItem('tr-viaje',JSON.stringify(VIAJE));}catch(_){} }
+  catch(e){ try{ const c=localStorage.getItem('tr-viaje'); if(c)VIAJE=JSON.parse(c); }catch(_){} }
+  const dest=$('#hv-destino'), sub=$('#hv-sub');
+  if(VIAJE){
+    if(dest)dest.textContent=VIAJE.destino;
+    if(sub)sub.textContent='Unidad '+(VIAJE.unidad_clave||'—')+(VIAJE.origen?(' · desde '+VIAJE.origen):'');
+  }else{
+    if(dest)dest.textContent='Sin viaje asignado';
+    if(sub)sub.textContent=YO.unidad_sugerida_clave?('Unidad habitual '+YO.unidad_sugerida_clave):'Tu coordinador aún no te asigna un viaje';
+  }
+  // Si cambió el viaje/unidad respecto al borrador en curso, EMPIEZA captura fresca: si no,
+  // fotos de la unidad anterior podrían quedar marcadas "Listo" y enviarse por la solicitud
+  // vieja (evidencia de la unidad equivocada). Solo resetea cuando de verdad cambia el viaje.
+  const vidActual = VIAJE ? (VIAJE.id || ('u'+VIAJE.unidad_id)) : null;
+  if(vidActual !== DRAFT_VIAJE){
+    CAPTURADAS.clear(); SOL_ID=null; DRAFT={fotos:{}}; DRAFT_VIAJE=vidActual;
+  }
+  UNIDAD_ID = VIAJE ? VIAJE.unidad_id : null;   // la unidad SIEMPRE sale del viaje activo
+  pintarViajeActivo();
+  construirFotos();   // los slots de evidencia dependen del viaje (unidad + remolques)
+  pintarFotos();      // refresca captura/bloqueo (#2) según haya viaje o no
+}
+function pintarViajeActivo(){
+  const box=$('#mv-activo'); if(!box) return;
+  if(!VIAJE){ box.innerHTML='<div class="empty" style="padding:8px">No tienes un viaje asignado ahora. Tu coordinador lo asigna.</div>'; return; }
+  box.innerHTML=`<div class="vrow" style="margin-bottom:12px">
+      <span class="ai">${ic('pin')}</span>
+      <div style="flex:1;min-width:0"><div class="vlbl">Destino</div><div class="vdest">${esc(VIAJE.destino)}</div></div>
+    </div>
+    <div class="kv"><span class="k">Unidad</span><span>${esc(VIAJE.unidad_clave||'—')}</span></div>
+    ${VIAJE.origen?`<div class="kv"><span class="k">Origen</span><span>${esc(VIAJE.origen)}</span></div>`:''}
+    ${VIAJE.nota?`<div class="kv"><span class="k">Nota</span><span>${esc(VIAJE.nota)}</span></div>`:''}
+    <div class="kv"><span class="k">Asignado</span><span>${esc((VIAJE.creada_en||'').replace('T',' ').slice(0,16))}</span></div>`;
+}
+async function loadMisViajes(){
+  const box=$('#mv-hist'); if(!box) return;
+  try{
+    const d=await api('/api/mis-viajes'); const vs=d.viajes||[];
+    if(!vs.length){ box.innerHTML='<div class="empty">Aún no tienes viajes registrados.</div>'; return; }
+    box.innerHTML=vs.map(v=>`<div class="vitem">
+      <div><div class="u">${esc(v.unidad||'—')}</div><div class="m">${esc((v.fecha||'').slice(0,10))}${v.tipo?' · '+esc(String(v.tipo).toLowerCase()):''}</div></div>
+      <div class="r">${v.kilometros!=null?Math.round(v.kilometros)+' km':'—'}${v.rto_real!=null?'<div class="m" style="text-align:right">'+Number(v.rto_real).toFixed(2)+' km/l</div>':''}</div>
+    </div>`).join('');
+  }catch(e){ box.innerHTML='<div class="empty">No se pudo cargar.</div>'; }
+}
+function mesLargo(ym){ const p=ym.split('-'); const n=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']; return (n[+p[1]]||p[1])+' '+p[0]; }
+async function loadRendimiento(){
+  const heat=$('#rm-heat'), tabla=$('#rm-tabla'); if(!tabla)return;
+  try{
+    const d=await api('/api/mi-rendimiento'); const ms=d.meses||[];
+    if(!ms.length){ if(heat)heat.innerHTML=''; tabla.innerHTML='<div class="empty">Aún no hay viajes registrados para calcular tu rendimiento.</div>'; return; }
+    const col=p=>p==null?'var(--muted)':(p>=1?'var(--green)':(p>=0.85?'var(--amber)':'var(--red)'));
+    if(heat)heat.innerHTML=svgRendimiento(ms, false);
+    tabla.innerHTML=ms.slice().reverse().map(m=>{
+      const pct=m.pct!=null?Math.round(m.pct*100)+'%':'—';
+      return `<div class="rmrow">
+        <div><div class="rmmes">${esc(mesLargo(m.mes))}</div><div class="rmsub">${m.viajes} viaje(s) · ${m.recargas} recarga(s)${m.km?' · '+m.km+' km':''}</div></div>
+        <div class="rmright"><div class="rmrto" style="color:${col(m.pct)}">${m.rto_real!=null?m.rto_real+' km/l':'—'}</div><div class="rmsub">meta ${m.rto_ideal!=null?m.rto_ideal:'—'} · ${pct}</div></div>
+      </div>`;
+    }).join('');
+  }catch(e){ if(heat)heat.innerHTML=''; tabla.innerHTML='<div class="empty">No se pudo cargar.</div>'; }
+}
+// Gráfica combinada: barras = tu rendimiento real (km/l, coloreadas por % de la meta),
+// línea con puntos = la meta esperada. SVG puro (sin librerías, funciona offline y con tema).
+function svgRendimiento(ms, mini){
+  if(!ms || !ms.length) return '<div class="empty" style="padding:'+(mini?'8px':'12px')+'">Aún no hay datos de rendimiento.</div>';
+  const W=360, H=mini?118:184;
+  const padL=mini?16:24, padR=mini?10:14, padT=mini?14:18, padB=mini?18:24;
+  const plotW=W-padL-padR, plotH=H-padT-padB, base=padT+plotH;
+  const N=ms.length, slot=plotW/N;
+  const vals=[]; ms.forEach(m=>{ if(m.rto_real!=null)vals.push(m.rto_real); if(m.rto_ideal!=null)vals.push(m.rto_ideal); });
+  const maxV=vals.length?Math.max.apply(null,vals):1;
+  const maxY=maxV>0?maxV*1.18:1;
+  const y=v=>base-(v/maxY)*plotH;
+  const cx=i=>padL+slot*(i+0.5);
+  const col=p=>p==null?'var(--muted)':(p>=1?'var(--green)':(p>=0.85?'var(--amber)':'var(--red)'));
+  const barW=Math.min(slot*0.52, mini?18:24);
+  const showVal=N<=7;
+  let bars='', dots='', labels='';
+  const segs=[]; let cur=[];
+  ms.forEach((m,i)=>{
+    const x=cx(i);
+    if(m.rto_real!=null){
+      const bh=Math.max(1.5, base-y(m.rto_real)), by=base-bh;   // ancla la barra al eje aun con valor ~0
+      bars+=`<g><title>${esc(mesLargo(m.mes))}: ${m.rto_real} km/l${m.rto_ideal!=null?' · meta '+m.rto_ideal:''}</title>`
+        +`<rect x="${(x-barW/2).toFixed(1)}" y="${by.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" rx="2.5" fill="${col(m.pct)}" opacity="0.92"></rect></g>`;
+      if(showVal) labels+=`<text x="${x.toFixed(1)}" y="${(by-4).toFixed(1)}" text-anchor="middle" font-size="${mini?8:9}" font-weight="700" fill="var(--ink)">${m.rto_real}</text>`;
+    }
+    if(m.rto_ideal!=null){ const yi=y(m.rto_ideal); cur.push(x.toFixed(1)+','+yi.toFixed(1)); dots+=`<circle cx="${x.toFixed(1)}" cy="${yi.toFixed(1)}" r="${mini?2.2:2.8}" fill="var(--ink)"></circle>`; }
+    else if(cur.length){ segs.push(cur); cur=[]; }
+    labels+=`<text x="${x.toFixed(1)}" y="${(base+(mini?11:13)).toFixed(1)}" text-anchor="middle" font-size="${mini?7.5:8}" fill="var(--muted)" font-family="'IBM Plex Mono',monospace">${esc(m.mes.slice(5)+'·'+m.mes.slice(2,4))}</text>`;
+  });
+  if(cur.length) segs.push(cur);
+  const line=segs.map(s=>`<polyline points="${s.join(' ')}" fill="none" stroke="var(--ink)" stroke-width="${mini?1.6:2}" stroke-linejoin="round" stroke-linecap="round"></polyline>`).join('');
+  const baseline=`<line x1="${padL}" y1="${base}" x2="${W-padR}" y2="${base}" stroke="var(--line2)" stroke-width="1"></line>`;
+  const svg=`<svg class="cbar" viewBox="0 0 ${W} ${H}" role="img" aria-label="Rendimiento por mes: las barras son tu rendimiento real, la línea es la meta.">${baseline}${bars}${line}${dots}${labels}</svg>`;
+  const leg=`<div class="hleyenda" style="margin-top:${mini?6:8}px">`
+    +`<span><svg width="16" height="8" style="flex:0 0 auto" aria-hidden="true"><line x1="0" y1="4" x2="16" y2="4" stroke="var(--ink)" stroke-width="2"></line><circle cx="8" cy="4" r="2.2" fill="var(--ink)"></circle></svg>meta</span>`
+    +`<span><i style="background:var(--green)"></i>a la meta</span>`
+    +`<span><i style="background:var(--amber)"></i>cerca</span>`
+    +`<span><i style="background:var(--red)"></i>bajo</span></div>`;
+  return '<div class="chart">'+svg+'</div>'+leg;
+}
+async function loadInicioResumen(){
+  const heat=$('#hi-heat'); if(!heat)return;
+  try{
+    const d=await api('/api/mi-rendimiento'); const ms=(d.meses||[]).slice(-6);
+    heat.innerHTML=svgRendimiento(ms, true);
+  }catch(e){ heat.innerHTML='<div class="empty" style="padding:8px">No se pudo cargar.</div>'; }
+}
+function contactarCoordinador(){
+  const tel=String(YO.coordinador_whatsapp||'').replace(/\D/g,'');
+  if(!tel){ toast('El contacto del coordinador aún no está configurado'); return; }
+  const nom=YO.operador_nombre||YO.nombre||'';
+  const num=YO.operador_numero?(' (op #'+YO.operador_numero+')'):'';
+  const uni=(VIAJE&&VIAJE.unidad_clave)||YO.unidad_sugerida_clave||'';
+  const msg='Hola, soy '+nom+num+(uni?(' — unidad '+uni):'')+'. Tengo un problema: ';
+  window.open('https://wa.me/'+tel+'?text='+encodeURIComponent(msg),'_blank');
+}
+const TIPS=[
+  ['camera','Fotos claras','Toma el odómetro y la aguja del tanque con buena luz y de frente. Si la IA no lee bien, tu recarga se retrasa.'],
+  ['pin','Confirma tu viaje','Antes de solicitar, revisa que la unidad y el destino sean los correctos. Si no coinciden, avisa a tu coordinador.'],
+  ['alert','Reporta a tiempo','Si notas una fuga, un consumo raro o una falla, repórtalo de inmediato con el botón de contacto.'],
+  ['check','Revisa antes de enviar','Verifica los litros y las lecturas antes de enviar. Corregir después toma más tiempo.']
+];
+function pintarRecomendaciones(){
+  const box=$('#tips'); if(!box) return;
+  box.innerHTML=TIPS.map(t=>`<div class="tip"><span class="ti">${ic(t[0])}</span><div><b>${esc(t[1])}</b><p>${esc(t[2])}</p></div></div>`).join('');
+}
+
+// ── Cola de envío offline (modo espera hasta reconectar) ─────────────────────
+// Guarda en el teléfono (IndexedDB) lo que se captura sin señal y lo manda solo al
+// reconectar. La creación es idempotente por 'client_uuid', así un reintento no duplica.
+const IDB={
+  _db:null,
+  open(){return new Promise((res,rej)=>{ if(IDB._db)return res(IDB._db);
+    const r=indexedDB.open('trayecto',1);
+    r.onupgradeneeded=()=>{ const d=r.result; if(!d.objectStoreNames.contains('cola'))d.createObjectStore('cola',{keyPath:'uuid'}); };
+    r.onsuccess=()=>{IDB._db=r.result;res(IDB._db);}; r.onerror=()=>rej(r.error); });},
+  async _os(mode){ const d=await IDB.open(); return d.transaction('cola',mode).objectStore('cola'); },
+  async put(it){ const s=await IDB._os('readwrite'); return new Promise((res,rej)=>{const r=s.put(it);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);}); },
+  async all(){ try{ const s=await IDB._os('readonly'); return await new Promise((res,rej)=>{const r=s.getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error);}); }catch(_){ return []; } },
+  async del(u){ const s=await IDB._os('readwrite'); return new Promise((res,rej)=>{const r=s.delete(u);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);}); }
+};
+function nuevoUUID(){ return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():('id-'+Date.now()+'-'+Math.random().toString(36).slice(2)); }
+function esOffline(){ return !navigator.onLine; }
+function errDeRed(e){ return esOffline() || /fetch|network|failed|load/i.test((e&&e.message)||''); }
+
+function guardarFotoOffline(f,file){
+  DRAFT.fotos[f.key]={blob:file,tipo:f.tipo,esperado:f.esperado,etiqueta:f.etiqueta,eco:f.eco};
+  CAPTURADAS.add(f.key);   // #1: cubierto (aunque sea offline, cuenta como tomado)
+  const box=$('#foto-'+f.key), st=$('#st-'+f.key);
+  if(box)box.className='foto warn';
+  if(st)st.innerHTML=ic('alert')+' Foto guardada sin conexión';
+  if(f.key==='odometro'){ const mi=$('#manual-'+f.key); if(mi)mi.style.display='block'; }
+}
+
+async function encolarOffline(uid){
+  const manual=t=>{ const el=$('#manual-'+t); const v=el?el.value:''; return (v!==''&&v!=null)?Number(v):null; };
+  const fotos=Object.entries(DRAFT.fotos).map(([key,o])=>({tipo:o.tipo,esperado:o.esperado,etiqueta:o.etiqueta,blob:o.blob}));
+  // Si ya se había creado la solicitud con señal (SOL_ID), se conserva para solo enviarla al
+  // sincronizar (sus fotos ya se subieron), en vez de crear una nueva y abandonarla.
+  const item={ uuid:nuevoUUID(), sid:SOL_ID||undefined, unidad_id:uid,
+    odometro:manual('odometro'), fotos, createdAt:Date.now() };
+  try{ await IDB.put(item); }catch(e){ toast('No se pudo guardar en el teléfono'); return; }
+  toast('Guardado. Se enviará al reconectar.');
+  SOL_ID=null; DRAFT={fotos:{}}; CAPTURADAS.clear(); pintarFotos();
+  await actualizarOffline(); cargarMisSolicitudes(); show('solicitudes');
+}
+
+let SYNCING=false;
+async function sincronizar(){
+  if(SYNCING || esOffline()) return;
+  SYNCING=true;
+  try{
+    for(const it of await IDB.all()){
+      try{
+        // 1) crear la solicitud (idempotente por uuid); se guarda el id para no re-crearla.
+        //    Si el item ya trae sid (se capturó con señal y solo faltó enviar), se respeta.
+        if(!it.sid){
+          const fd=new FormData(); fd.append('client_uuid',it.uuid);
+          if(it.unidad_id)fd.append('unidad_id',it.unidad_id);
+          if(it.litros!==''&&it.litros!=null)fd.append('litros_solicitados',it.litros);
+          if(it.odometro!=null)fd.append('odometro',it.odometro);
+          const cre=await api('/api/solicitudes',{method:'POST',body:fd});
+          it.sid=cre.id; it.estado=cre.estado||'borrador'; await IDB.put(it);
+        }
+        // 2) subir fotos UNA por una; cada foto lograda se quita del item y se persiste, así
+        //    un reintento no las vuelve a subir ni las pierde.
+        while(it.fotos && it.fotos.length){
+          const foto=it.fotos[0];
+          const ff=new FormData(); ff.append('tipo',foto.tipo); ff.append('file',foto.blob,'foto.jpg');
+          if(foto.esperado)ff.append('esperado',foto.esperado); if(foto.etiqueta)ff.append('etiqueta',foto.etiqueta);
+          await api('/api/solicitudes/'+it.sid+'/evidencia',{method:'POST',body:ff});
+          it.fotos.shift(); await IDB.put(it);
+        }
+        // 3) enviar al coordinador. Si un intento previo ya la envió, el 409 (no es de red) se
+        //    da por hecho; un error de red aborta para reintentar luego.
+        if(it.estado==='borrador' || it.estado===undefined){
+          try{ const tf=new FormData(); tf.append('destino','enviada');
+            await api('/api/solicitudes/'+it.sid+'/transicion',{method:'POST',body:tf}); }
+          catch(e){ if(errDeRed(e)) throw e; }
+        }
+        // 4) todo completo: recién ahora sale de la cola.
+        await IDB.del(it.uuid);
+      }catch(e){ if(errDeRed(e)) break; /* error no-de-red: se DEJA pendiente, no se borra */ }
+    }
+  }finally{ SYNCING=false; await actualizarOffline(); cargarMisSolicitudes(); }
+}
+
+async function actualizarOffline(){
+  const n=(await IDB.all()).length;
+  const bar=$('#offbar'); if(bar) bar.classList.toggle('show', esOffline()||n>0);
+  const c=$('#offcount'); if(c) c.textContent = n?('· '+n+' en espera'):'';
+}
+
+// ── Avisos dentro de la app (sondeo de cambios de estado) ────────────────────
+// Sin push real (requiere HTTPS/SW); mientras la app está abierta, cada tanto revisa si
+// alguna solicitud cambió de estado y avisa (toast + campana + aviso del sistema si se
+// activó). El "visto" se guarda para no repetir el mismo aviso.
+let NOTIS=[];
+const NOTIF_ESTADOS={
+  autorizada:['ok','Autorizada','Ya puedes cargar el diésel.'],
+  devuelta:['warn','Devuelta','Revisa el motivo y vuelve a enviar.'],
+  rechazada:['warn','Rechazada','No procedió. Revisa el motivo.'],
+  despachada:['ok','Despachada','El diésel ya se cargó.'],
+  conciliada:['ok','Conciliada','Ciclo cerrado, todo cuadró.'],
+  en_discrepancia:['warn','En revisión','Algo no cuadra; lo revisa el coordinador.']
+};
+function _seenMap(){ try{ return JSON.parse(localStorage.getItem('tr-notif-seen')||'{}'); }catch(_){ return {}; } }
+function _saveSeen(m){ try{ localStorage.setItem('tr-notif-seen',JSON.stringify(m)); }catch(_){} }
+function _loadNotis(){ try{ NOTIS=JSON.parse(localStorage.getItem('tr-notis')||'[]'); }catch(_){ NOTIS=[]; } }
+function _saveNotis(){ try{ localStorage.setItem('tr-notis',JSON.stringify(NOTIS.slice(0,30))); }catch(_){} }
+function _hace(ts){ const s=Math.max(0,Math.floor((Date.now()-ts)/1000)); if(s<60)return 'hace un momento'; const m=Math.floor(s/60); if(m<60)return 'hace '+m+' min'; const h=Math.floor(m/60); if(h<24)return 'hace '+h+' h'; return 'hace '+Math.floor(h/24)+' d'; }
+
+function detectarCambios(ss){
+  const seen=_seenMap(); let nuevos=0;
+  ss.forEach(s=>{
+    const prev=seen[s.id];
+    if(prev!==s.estado){
+      // Solo se avisa de un CAMBIO real (prev definido) a un estado que le importa al operador.
+      if(prev!==undefined && NOTIF_ESTADOS[s.estado]){
+        const meta=NOTIF_ESTADOS[s.estado]; const folio=s.folio||('#'+s.id);
+        NOTIS.unshift({cls:meta[0], titulo:meta[1], msg:meta[2], folio, ts:Date.now(), seen:false});
+        nuevos++; toast(meta[1]+' · '+folio); notifSistema(meta[1]+' · '+folio, meta[2]);
+      }
+      seen[s.id]=s.estado;
+    }
+  });
+  _saveSeen(seen);
+  if(nuevos){ NOTIS=NOTIS.slice(0,30); _saveNotis(); }
+  pintarNotisBadge();
+}
+function notifSistema(titulo,cuerpo){
+  try{ if('Notification' in window && Notification.permission==='granted'){
+    new Notification('TRAYECTO — '+titulo,{body:cuerpo,icon:'/static/icon.svg',tag:'trayecto'});
+  } }catch(_){}
+}
+function pintarNotisBadge(){
+  const n=NOTIS.filter(x=>!x.seen).length; const b=$('#nbadge');
+  if(b){ if(n){ b.style.display='flex'; b.textContent=n>9?'9+':String(n); } else b.style.display='none'; }
+}
+function pintarNotisPanel(){
+  const box=$('#nlist'); if(!box) return;
+  if(!NOTIS.length){ box.innerHTML='<div class="empty" style="padding:16px">Sin avisos por ahora.</div>'; return; }
+  box.innerHTML=NOTIS.map(x=>{
+    const col=x.cls==='warn'?'var(--red)':'var(--green)';
+    return `<div class="nitem ${x.seen?'':'unseen'}">
+      <span class="nic" style="background:color-mix(in oklab,${col} 14%,transparent);color:${col}">${ic(x.cls==='warn'?'alert':'check')}</span>
+      <div style="flex:1;min-width:0"><b>${esc(x.titulo)} · ${esc(x.folio)}</b><div class="nm">${esc(x.msg)}</div><div class="nt">${_hace(x.ts)}</div></div>
+    </div>`;
+  }).join('');
+}
+function abrirNotis(){
+  const p=$('#npanel'); if(!p) return;
+  if(p.classList.toggle('open')){ pintarNotisPanel(); NOTIS.forEach(x=>x.seen=true); _saveNotis(); pintarNotisBadge(); }
+}
+function pedirPermisoNotif(){
+  if(!('Notification' in window)){ toast('Este navegador no soporta avisos del sistema'); return; }
+  try{ Notification.requestPermission().then(()=>{
+    const ok=Notification.permission==='granted';
+    toast(ok?'Avisos del sistema activados':'No se activaron los avisos'); actualizarCfgNotif();
+  }).catch(()=>{}); }catch(_){ toast('Los avisos del sistema requieren HTTPS'); }
+}
+function actualizarCfgNotif(){
+  const b=$('#cfg-notif'); if(!b) return;
+  const sop=('Notification' in window);
+  b.textContent=!sop?'No disponible':(Notification.permission==='granted'?'Activados':'Activar');
+  b.disabled=!sop || Notification.permission==='denied';
+}
+function iniciarAvisos(){
+  _loadNotis(); pintarNotisBadge(); actualizarCfgNotif();
+  setInterval(()=>{ if(document.visibilityState==='visible' && !esOffline()) cargarMisSolicitudes(); }, 45000);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && !esOffline()) cargarMisSolicitudes(); });
+  document.addEventListener('click',e=>{ const p=$('#npanel'); if(p&&p.classList.contains('open')&&!e.target.closest('.notifwrap')) p.classList.remove('open'); });
+}
+
+// Eventos
+document.addEventListener('click',e=>{
+  const cam=e.target.closest('[data-cam]'); if(cam){ abrirCamara(cam.dataset.cam); }
+});
+document.addEventListener('change',e=>{ if(e.target.type==='file'&&e.target.files[0]){ subirFoto(e.target.id.replace('file-',''),e.target.files[0]); } });
+$('#btn-enviar').addEventListener('click',enviar);
+$('#cam-shot').addEventListener('click',capturar);
+// PWA: registra el service worker para que la app abra sin señal.
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
+// Al recuperar señal, vacía la cola; al perderla, avisa y prepara la captura manual.
+addEventListener('online', ()=>{ actualizarOffline(); sincronizar(); });
+addEventListener('offline', ()=>{ actualizarOffline(); if(SEC==='recarga')pintarFotos(); });
+init();
+</script>
+</body>
+</html>

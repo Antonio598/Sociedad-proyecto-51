@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2Day — Acceso</title>
+<script>(function(){try{var t=localStorage.getItem('tr-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){document.documentElement.dataset.theme='light';}})();</script>
+<link rel="stylesheet" href="/static/fuentes.css?v=20260920a">
+<link rel="stylesheet" href="/static/base.css?v=20260920c">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100vh;min-height:100dvh;background:var(--bg);color:var(--ink);font:14px/1.5 "IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{display:flex;align-items:center;justify-content:center;padding:24px}
+@keyframes drift{0%,100%{transform:translate3d(-2%,-1.5%,0)}50%{transform:translate3d(2%,1.5%,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes lane{to{stroke-dashoffset:-360}}
+@keyframes pulse{50%{opacity:.4}}
+.shell{position:relative;z-index:1;display:grid;grid-template-columns:1.05fr .95fr;width:900px;max-width:96vw;min-height:540px;background:var(--card);border:1px solid var(--line-2);border-radius:10px;box-shadow:var(--sh-3);overflow:hidden;animation:rise .5s ease both}
+.brand{position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:38px 36px;background:#0a0c0f;border-right:1px solid #22272e;overflow:hidden}
+.brand svg.lanes{position:absolute;inset:0;width:100%;height:100%;opacity:.55;pointer-events:none}
+.logo-row{position:relative;display:flex;align-items:center;gap:13px}
+.brand img.wordmark{position:relative;width:206px;height:auto;display:block}
+.logo{display:none}
+.brand h1,.brand .tag{display:none}
+.brand .lead{position:relative}
+.brand .lead .bars{display:flex;gap:7px;margin-bottom:16px}
+.brand .lead .bars i{width:16px;height:32px;transform:skewX(-22deg);flex:0 0 auto}
+.brand .lead b{display:block;font:700 29px/1.12 'IBM Plex Sans',sans-serif;letter-spacing:.02em;text-transform:uppercase;max-width:280px;color:#fff}
+.brand .lead p{font-size:12.5px;color:#8a94a1;margin:13px 0 0;max-width:270px;line-height:1.6}
+.feats{position:relative;display:flex;flex-direction:column;gap:11px;margin-top:24px}
+.feat{display:flex;align-items:center;gap:10px;font-size:12.5px;color:#d4d4d4}
+.feat i{width:7px;height:14px;border-radius:0;transform:skewX(-22deg);background:var(--accent);flex:0 0 auto}
+.feat:nth-child(2) i,.feat:nth-child(3) i{background:var(--u-tracto)}
+.foot{position:relative;font:500 9.5px 'IBM Plex Mono';letter-spacing:.16em;color:#69737f}
+.form{display:flex;flex-direction:column;justify-content:center;padding:40px 38px}
+.kicker{font:700 12px 'IBM Plex Sans',sans-serif;letter-spacing:.3em;color:var(--accent);margin-bottom:4px}
+.form h2{font:700 24px 'IBM Plex Sans',sans-serif;letter-spacing:.04em;margin:0 0 22px}
+label{display:block;font:600 10px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 5px}
+input{width:100%;padding:13px 14px;border:1px solid var(--line-2);background:var(--sunken);color:var(--ink);border-radius:6px;font-size:16px;margin-bottom:15px;transition:border-color .15s}
+input:focus{outline:none;border-color:var(--accent)}
+button{width:100%;padding:14px;border:1px solid var(--accent-solid);background:var(--accent-solid);color:var(--accent-ink);font:700 13px 'IBM Plex Sans';letter-spacing:.09em;text-transform:uppercase;cursor:pointer;border-radius:6px;box-shadow:var(--sh-1);transition:transform .12s,box-shadow .12s}
+button:hover{transform:translate(-1px,-1px);box-shadow:var(--sh-1)}
+button:active{transform:translate(2px,2px);box-shadow:var(--sh-1)}
+.err{display:none;align-items:center;gap:8px;background:color-mix(in oklab,var(--danger) 12%,transparent);border:1px solid color-mix(in oklab,var(--danger) 40%,transparent);color:var(--danger);border-radius:3px;padding:8px 11px;margin-bottom:14px;font-size:12px}
+.err.show{display:flex;animation:rise .25s ease both}
+.hint{margin-top:16px;font-size:11.5px;color:var(--muted);text-align:center}
+.mbrand{display:none;align-self:flex-start;align-items:center;gap:12px;margin-bottom:24px;padding:14px 18px;background:#0a0c0f;border:1px solid #22272e;border-radius:10px}
+.mbrand .logo{width:44px;height:44px;flex:0 0 auto}
+.mbrand h1{font:700 26px/1 'IBM Plex Sans',sans-serif;letter-spacing:.09em;margin:0}
+.mbrand .tag{font:600 8px 'IBM Plex Mono';letter-spacing:.28em;color:var(--muted);margin-top:3px}
+@media (max-width:720px){
+  body{padding:0;align-items:stretch}
+  .shell{grid-template-columns:1fr;width:100%;max-width:none;min-height:100vh;min-height:100dvh;border:0;border-radius:0;box-shadow:none;background:color-mix(in oklab,var(--card) 78%,transparent);backdrop-filter:blur(8px) saturate(1.05);-webkit-backdrop-filter:blur(8px) saturate(1.05)}
+  .brand{display:none}
+  .mbrand{display:flex}
+  .form{justify-content:flex-start;padding:calc(30px + env(safe-area-inset-top)) 22px calc(26px + env(safe-area-inset-bottom))}
+  .form h2{font-size:22px;margin-bottom:20px}
+  .bgfx{opacity:.95}
+  .bgfx .glow{inset:-10%;background:radial-gradient(80vw 40vh at 50% 6%, color-mix(in oklab,var(--accent) 15%,transparent), transparent 72%),radial-gradient(88vw 44vh at 50% 94%, color-mix(in oklab,var(--u-tracto) 12%,transparent), transparent 74%)}
+}
+@media (max-width:720px) and (min-height:640px){
+  .form{justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){.bgfx .glow,.brand svg.lanes path{animation:none}}
+.campo{position:relative}
+.campo input{padding-right:48px}
+/* El ojo ocupa EXACTAMENTE el alto del input: `bottom` descuenta su margen inferior, así no
+   hay que adivinar una altura en píxeles que se rompa al cambiar el tamaño de fuente. */
+.ojo{position:absolute;right:0;top:0;bottom:15px;width:46px;padding:0;margin:0;
+  display:flex;align-items:center;justify-content:center;
+  background:none;border:0;border-radius:0 6px 6px 0;box-shadow:none;
+  color:var(--muted);cursor:pointer;transition:color .15s}
+.ojo:hover{color:var(--accent);transform:none;box-shadow:none}
+.ojo:active{transform:none}
+.ojo:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;color:var(--accent)}
+.ojo svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round}
+.ojo .tachado{display:none}
+.ojo[aria-pressed="true"] .abierto{display:none}
+.ojo[aria-pressed="true"] .tachado{display:block}
+@media (prefers-reduced-motion:reduce){.ojo{transition:none}}
+</style>
+</head>
+<body>
+<div class="bgfx"><div class="glow"></div><canvas></canvas></div>
+<div class="shell">
+  <div class="brand">
+    <svg class="lanes" aria-hidden="true" viewBox="0 0 400 520" preserveAspectRatio="xMidYMid slice">
+      <path d="M-20 430 C 120 360, 220 470, 360 400 S 520 320, 620 360" style="fill:none;stroke:#ffffff;opacity:.10;stroke-width:2;stroke-dasharray:12 20;animation:lane 26s linear infinite"></path>
+      <path d="M-20 150 C 100 210, 260 90, 400 160 S 560 240, 660 180" style="fill:none;stroke:#009FE3;opacity:.35;stroke-width:2.5;stroke-dasharray:2 26;stroke-linecap:round;animation:lane 20s linear infinite"></path>
+    </svg>
+    <div class="logo-row">
+      <img class="wordmark" src="/static/logo-2day-word.png" alt="2Day Transport / Logistic">
+    </div>
+    <div class="lead">
+      <div class="bars"><i style="background:#009FE3"></i><i style="background:#009FE3;opacity:.55"></i><i style="background:#EC6D1D"></i></div>
+      <b>Control de combustible de tu flota, de punta a punta</b>
+      <p>De la solicitud del operador a la conciliación de la factura — con evidencia fotográfica y validación por IA.</p>
+      <div class="feats">
+        <div class="feat"><i></i> Solicitud, autorización y despacho con folio único</div>
+        <div class="feat"><i></i> Evidencia con foto e IA: odómetro, tanque y comprobante</div>
+        <div class="feat"><i></i> Conciliación con la factura y detección de anomalías</div>
+      </div>
+    </div>
+    <div class="foot">ACCESO RESTRINGIDO · 2DAY TRANSPORT / LOGISTIC © 2026</div>
+  </div>
+
+  <form class="form" method="post" action="/login">
+    <div class="mbrand">
+      <img src="/static/logo-2day-word.png" alt="2Day Transport / Logistic" style="width:138px;height:auto;display:block">
+    </div>
+    <div class="kicker">ACCESO</div>
+    <h2>PANEL DE FLOTA</h2>
+    <div class="err" id="err" role="alert" aria-live="assertive" tabindex="-1">
+      <svg aria-hidden="true" viewBox="0 0 24 24" style="width:15px;height:15px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"><path d="M12 8v5M12 16v.01M10.3 3.9L2.8 17a1.5 1.5 0 0 0 1.3 2.3h15.8a1.5 1.5 0 0 0 1.3-2.3L13.7 3.9a1.5 1.5 0 0 0-2.6 0z"></path></svg>
+      <span data-msg>Usuario o contraseña incorrectos.</span>
+    </div>
+    <label for="u">Usuario</label>
+    <input id="u" name="username" autocomplete="username" autofocus required placeholder="usuario">
+    <label for="p">Contraseña</label>
+    <div class="campo">
+      <input id="p" name="password" type="password" autocomplete="current-password" required placeholder="••••••••">
+      <button type="button" class="ojo" id="ojo" aria-pressed="false" aria-controls="p"
+              aria-label="Mostrar la contraseña" title="Mostrar la contraseña">
+        <svg class="abierto" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="tachado" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.2A9.9 9.9 0 0 1 12 6c6.4 0 10 6 10 6a17 17 0 0 1-3.4 4M6.5 8.3A17 17 0 0 0 2 12s3.6 6.5 10 6.5c1.4 0 2.6-.2 3.7-.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+      </button>
+    </div>
+    <button type="submit">Ingresar →</button>
+    <div class="hint">Sistema privado de gestión de flota</div>
+  </form>
+</div>
+<script src="/static/cargando.js?v=20260920a"></script>
+<script>
+  // Tres motivos distintos para no entrar, y decir "contraseña incorrecta" en los tres
+  // manda a la persona a probar contraseñas cuando el problema es otro.
+  (function () {
+    const q = new URLSearchParams(location.search), cual = q.get('error');
+    if (!cual) return;
+    const e = document.getElementById('err');
+    const texto = e.querySelector('[data-msg]');
+    if (cual === '2') {
+      const s = parseInt(q.get('espera') || '0', 10);
+      const min = Math.max(1, Math.round(s / 60));
+      if (texto) texto.textContent =
+        'Demasiados intentos fallidos. Vuelve a intentarlo en unos ' + min +
+        (min === 1 ? ' minuto.' : ' minutos.');
+    } else if (cual === '3' && texto) {
+      texto.textContent = 'El servidor está ocupado en este momento. Inténtalo otra vez.';
+    }
+    e.classList.add('show');
+    setTimeout(() => e.focus(), 60); // asegura el anuncio del lector de pantalla
+  })();
+
+  // Ver la contraseña. `type` se cambia en el sitio en vez de duplicar el campo: con dos
+  // inputs el gestor de contraseñas del navegador guarda el equivocado y el autocompletado
+  // deja de funcionar.
+  (function () {
+    var ojo = document.getElementById('ojo'), campo = document.getElementById('p');
+    if (!ojo || !campo) return;
+    ojo.addEventListener('click', function () {
+      var visible = campo.type === 'text';
+      campo.type = visible ? 'password' : 'text';
+      ojo.setAttribute('aria-pressed', String(!visible));
+      var t = visible ? 'Mostrar la contraseña' : 'Ocultar la contraseña';
+      ojo.setAttribute('aria-label', t); ojo.title = t;
+      // El foco vuelve al campo y el cursor al final: quien pulsa el ojo casi siempre es
+      // porque va a seguir escribiendo.
+      campo.focus();
+      try { campo.setSelectionRange(campo.value.length, campo.value.length); } catch (e) {}
+    });
+    // Nunca se queda visible al salir: la contraseña a la vista en una pantalla desatendida
+    // es justo lo que este botón NO debe provocar.
+    window.addEventListener('pagehide', function () {
+      campo.type = 'password'; ojo.setAttribute('aria-pressed', 'false');
+    });
+  })();
+
+  // La carga de marca cubre el salto entre el login y el panel, que con la sesión y el
+  // primer render tarda lo suficiente como para parecer que no pasó nada.
+  if (window.Cargando) Cargando.enlazar(document.querySelector('form.form'), 'Entrando', 2500);
+
+
+</script>
+<script src="/static/bgfx.js?v=20260827d" defer></script>
+</body>
+</html>

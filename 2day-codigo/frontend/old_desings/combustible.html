@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TRAYECTO · Combustible</title>
+<script>(function(){try{var t=localStorage.getItem('tr-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){document.documentElement.dataset.theme='light';}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1ede2;--panel:#f8f5ec;--card:#fcfaf4;--ink:#22201a;--muted:#736a59;--line:#ddd6c5;--line2:#c9c1ac;--accent:#F2620F;--accent2:#c94e0a;--green:#1e7a46;--red:#bd3c20;--amber:#b7791f;--shadow:rgba(40,33,20,.16)}
+html[data-theme="dark"]{--bg:#141109;--panel:#1a1610;--card:#201b13;--ink:#ede5d4;--muted:#9b9078;--line:#332d20;--line2:#4a4230;--accent:#FF6E1A;--accent2:#F2620F;--green:#54c17e;--red:#f0704f;--amber:#e0a83a;--shadow:rgba(0,0,0,.45)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:15px/1.55 "IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:.55}
+.bgfx .glow{position:absolute;inset:-15%;background:radial-gradient(560px 380px at 12% 5%, color-mix(in oklab,var(--accent) 10%,transparent), transparent 70%), radial-gradient(620px 460px at 90% 96%, color-mix(in oklab,var(--accent) 6%,transparent), transparent 70%);animation:drift 30s ease-in-out infinite}
+.bgfx canvas{position:absolute;inset:0;width:100%;height:100%}
+@keyframes drift{0%,100%{transform:translate3d(-2%,-1.5%,0)}50%{transform:translate3d(2%,1.5%,0)}}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:0 16px 40px}
+header{position:sticky;top:0;z-index:10;background:color-mix(in oklab,var(--bg) 88%,transparent);backdrop-filter:blur(8px);padding:15px 0 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px}
+.logo{width:38px;height:38px;flex:0 0 auto}
+.brand{font:700 21px/1 'Barlow Condensed';letter-spacing:.13em;color:var(--accent)}
+.tag{font:600 7.5px 'IBM Plex Mono';letter-spacing:.28em;color:var(--muted);margin-top:2px}
+.who{margin-left:auto;font-size:12.5px;color:var(--muted);text-align:right}
+.card{animation:rise .4s ease both}
+.tabs{display:flex;gap:8px;margin:16px 0 4px}
+.tab{flex:1;padding:11px;border:1px solid var(--line2);background:var(--card);color:var(--muted);border-radius:5px;font:600 12.5px 'Barlow Condensed';letter-spacing:.06em;text-transform:uppercase;cursor:pointer;text-align:center}
+.tab.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tab .n{display:inline-block;min-width:20px;margin-left:4px;font-family:'IBM Plex Mono'}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-top:12px;box-shadow:3px 3px 0 var(--shadow)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.folio{font:600 15px 'IBM Plex Mono';color:var(--accent)}
+.meta{font-size:12.5px;color:var(--muted);margin-top:2px}
+.big{font:700 20px 'IBM Plex Mono'}
+.btn{padding:11px 16px;border:1px solid var(--accent);background:var(--accent);color:#fff;font:700 12.5px 'IBM Plex Sans';letter-spacing:.05em;text-transform:uppercase;border-radius:4px;box-shadow:2px 2px 0 var(--shadow);cursor:pointer}
+.btn:active{transform:translate(1px,1px)}
+.btn.gray{background:var(--card);color:var(--ink);border-color:var(--line2)}
+.btn:disabled{opacity:.5}
+.empty{text-align:center;color:var(--muted);padding:34px 12px;font-size:14px}
+.empty .t{font:600 15px 'Barlow Condensed';letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+input{width:120px;padding:10px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:4px;font:600 16px 'IBM Plex Mono'}
+input:focus{outline:none;border-color:var(--accent)}
+.despacho{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.despacho label{font-size:12.5px;color:var(--muted)}
+.link{background:none;border:0;color:var(--accent);font-size:13px;cursor:pointer;text-decoration:underline}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:6px;font-size:13.5px;opacity:0;transition:.25s;z-index:50;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.dif{font-size:12px;padding:2px 7px;border-radius:3px;font-family:'IBM Plex Mono'}
+.dif.ok{background:color-mix(in oklab,var(--green) 16%,transparent);color:var(--green)}
+.dif.no{background:color-mix(in oklab,var(--amber) 18%,transparent);color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="bgfx"><div class="glow"></div><canvas id="parts"></canvas></div>
+<div class="wrap">
+  <header>
+    <svg class="logo" aria-hidden="true" viewBox="0 0 48 48"><path d="M2 2h44v33L35 46H2z" style="fill:var(--accent)"></path><path d="M11 34l9-10 7 6 11-14" style="fill:none;stroke:#fff;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:3 6.5"></path><circle cx="38" cy="16" r="3.2" style="fill:#fff"></circle><rect x="8.6" y="31.6" width="5" height="5" style="fill:#fff"></rect></svg>
+    <div><div class="brand">TRAYECTO</div><div class="tag">COMBUSTIBLE</div></div>
+    <div class="who"><span id="nombre">…</span><br><button class="link" onclick="togglePersonalizar()">Personalizar</button> · <button class="link" onclick="location.href='/logout'">Cerrar sesión</button></div>
+  </header>
+
+  <div id="tr-panel" style="display:none;margin-bottom:16px"><div id="tr-perfil-mount" style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px"></div></div>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="autorizada">Por despachar<span class="n" id="n-autorizada">0</span></button>
+    <button class="tab" data-tab="despachada">Por facturar<span class="n" id="n-despachada">0</span></button>
+  </div>
+  <div id="fx"></div>
+  <div id="lista"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="/static/perfil.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+let TAB='autorizada', DATA=[], PANEL=null, FACTURAS=[], ME={};
+function togglePersonalizar(){
+  const p=$('#tr-panel'); if(!p)return;
+  const abrir=p.style.display==='none';
+  p.style.display=abrir?'block':'none';
+  if(abrir&&window.TR_montarPerfil)TR_montarPerfil($('#tr-perfil-mount'),ME);
+}
+
+async function api(p,o){const r=await fetch(p,o);if(r.status===401){location.href='/login';throw 0;}
+  const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.detail||('Error '+r.status));return d;}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);}
+const num=v=>v==null?'—':Number(v).toLocaleString('es-MX',{maximumFractionDigits:0});
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function init(){
+  try{ ME=await api('/api/me'); $('#nombre').textContent=ME.nombre||ME.username; }catch(e){ return; }
+  if(window.TR_aplicarPrefs)TR_aplicarPrefs(ME.prefs);
+  cargar();
+}
+
+async function cargar(){
+  try{
+    const d=await api('/api/solicitudes?limite=200');
+    DATA=d.solicitudes||[];
+    const c=d.conteos||{};
+    $('#n-autorizada').textContent=c.autorizada||0;
+    $('#n-despachada').textContent=c.despachada||0;
+    pintar();
+  }catch(e){ $('#lista').innerHTML='<div class="empty">No se pudo cargar.</div>'; }
+}
+
+function pintar(){
+  pintarFx();
+  const ss=DATA.filter(s=>s.estado===TAB);
+  if(!ss.length){
+    const txt=TAB==='autorizada'
+      ? ['Nada por despachar','Cuando el coordinador autorice una orden, aparece aquí.']
+      : ['Nada por facturar','Las órdenes que despaches esperan aquí su comprobante.'];
+    $('#lista').innerHTML=`<div class="empty"><div class="t">${txt[0]}</div>${txt[1]}</div>`;
+    return;
+  }
+  $('#lista').innerHTML=ss.map(s=>{
+    if(TAB==='autorizada'){
+      return `<div class="card" data-sol="${s.id}">
+        <div class="row">
+          <div><div class="folio">${esc(s.folio)||'—'}</div>
+            <div class="meta">Unidad ${esc(s.unidad)||'—'} · ${esc(s.operador)||'—'}</div></div>
+          <div style="text-align:right"><div class="big">${num(s.litros_autorizados)}</div><div class="meta">L autorizados</div></div>
+        </div>
+        <div class="despacho">
+          <label>Litros realmente cargados:</label>
+          <input type="number" inputmode="decimal" id="lr-${s.id}" placeholder="${num(s.litros_autorizados)}" min="0">
+          <button class="btn" data-despachar="${s.id}">Registrar despacho</button>
+        </div></div>`;
+    }
+    return `<div class="card">
+      <div class="row">
+        <div><div class="folio">${esc(s.folio)||'—'}</div>
+          <div class="meta">Unidad ${esc(s.unidad)||'—'} · ${esc(s.operador)||'—'}</div></div>
+        <div style="text-align:right"><div class="big">${num(s.orden?s.orden.litros_reales:null)}</div><div class="meta">L cargados</div></div>
+      </div>
+      <div class="despacho"><span class="meta">Sube el comprobante (CFDI) con el botón de arriba para conciliar esta carga.</span></div>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('[data-tab]');
+  if(t){ TAB=t.dataset.tab; PANEL=null; document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t)); pintar(); if(TAB==='despachada')cargarFacturas(); return; }
+  const sb=e.target.closest('#fx-subir'); if(sb){ $('#fx-file').click(); return; }
+  const cc=e.target.closest('#fx-cancelar'); if(cc){ PANEL=null; pintarFx(); return; }
+  const cn=e.target.closest('#fx-conciliar'); if(cn){ conciliar(); return; }
+  const d=e.target.closest('[data-despachar]');
+  if(d){
+    const id=d.dataset.despachar;
+    const lr=$('#lr-'+id).value;
+    if(!lr||Number(lr)<=0){ toast('Escribe los litros cargados'); return; }
+    d.disabled=true;
+    try{
+      const fd=new FormData(); fd.append('litros_reales',lr);
+      await api('/api/solicitudes/'+id+'/despachar',{method:'POST',body:fd});
+      toast('Despacho registrado');
+      cargar();
+    }catch(e){ d.disabled=false; toast('No se pudo: '+(e.message||'')); }
+  }
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='fx-file'){ const f=e.target.files&&e.target.files[0]; if(f)subirFactura(f); e.target.value=''; return; }
+  if(e.target.classList&&e.target.classList.contains('fx-cand')) recompute();
+});
+
+function pintarFx(){
+  const fx=$('#fx'); if(!fx) return;
+  if(TAB!=='despachada'){ fx.innerHTML=''; return; }
+  let html=`<div class="row" style="margin-top:12px">
+      <div class="meta">Concilia el CFDI del proveedor contra las órdenes despachadas.</div>
+      <button class="btn" id="fx-subir">Subir factura (XML)</button>
+    </div>
+    <input type="file" id="fx-file" accept=".xml,application/xml,text/xml" style="display:none">`;
+  if(PANEL) html+=panelHTML();
+  html+=facturasHTML();
+  fx.innerHTML=html;
+  if(PANEL) recompute();
+}
+
+function panelHTML(){
+  const f=PANEL.factura, cs=PANEL.candidatas||[], co=PANEL.conceptos||[];
+  const uuidCorto=f.uuid_cfdi?esc(String(f.uuid_cfdi).slice(-12)):'—';
+  const conc=co.map(c=>`<div class="meta">${num(c.cantidad)} ${esc(c.unidad||'')} · ${esc(c.descripcion||'')}</div>`).join('');
+  const cands=cs.length? cs.map(c=>`<label class="row" style="justify-content:flex-start;gap:10px;padding:8px 0;border-top:1px solid var(--line)">
+        <input type="checkbox" class="fx-cand" data-litros="${Number(c.litros_reales)||0}" value="${esc(c.solicitud_id)}" checked style="width:auto;flex:0 0 auto">
+        <span style="flex:1"><span class="folio">${esc(c.folio||'—')}</span>
+          <span class="meta">Unidad ${esc(c.unidad||'—')} · ${esc(c.operador||'—')}</span></span>
+        <span class="big" style="font-size:16px">${num(c.litros_reales)}<span class="meta"> L</span></span>
+      </label>`).join('')
+    : `<div class="meta" style="padding:8px 0">No hay órdenes despachadas pendientes que amparar.</div>`;
+  return `<div class="card" style="border-color:var(--accent)">
+    <div class="row">
+      <div><div class="folio">${esc(f.nombre_emisor||'—')}</div>
+        <div class="meta">${esc(f.rfc_emisor||'—')} · CFDI …${uuidCorto}</div></div>
+      <div style="text-align:right"><div class="big">${num(f.litros)}</div><div class="meta">L en factura</div></div>
+    </div>
+    <div class="meta" style="margin-top:6px">Total ${num(f.total)} ${esc(f.moneda||'')}</div>
+    ${conc}
+    <div style="margin-top:8px">${cands}</div>
+    <div class="row" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">
+      <div class="meta">Órdenes marcadas: <b id="fx-sum">0</b> L</div>
+      <span class="dif ok" id="fx-chip">coincide</span>
+    </div>
+    <div class="despacho" style="justify-content:flex-end">
+      <button class="btn gray" id="fx-cancelar">Cancelar</button>
+      <button class="btn" id="fx-conciliar">Conciliar</button>
+    </div>
+  </div>`;
+}
+
+function facturasHTML(){
+  if(!FACTURAS.length) return '';
+  const rows=FACTURAS.map(f=>{
+    const chip=f.conciliada?'<span class="dif ok">conciliada</span>':'<span class="dif no">pendiente</span>';
+    const folios=(f.folios&&f.folios.length)?esc(f.folios.join(', ')):'sin órdenes';
+    return `<div class="row" style="padding:8px 0;border-top:1px solid var(--line)">
+      <div><div style="font-weight:600">${esc(f.nombre_emisor||'—')}</div>
+        <div class="meta">${num(f.litros)} L · ${num(f.n_ordenes)||0} órden(es) · ${folios}</div></div>
+      <div style="text-align:right">${chip}</div>
+    </div>`;
+  }).join('');
+  return `<div class="card"><div class="meta" style="font-weight:600;text-transform:uppercase;letter-spacing:.06em">Facturas subidas</div>${rows}</div>`;
+}
+
+function recompute(){
+  if(!PANEL) return;
+  const boxes=[...document.querySelectorAll('.fx-cand:checked')];
+  let suma=0; boxes.forEach(b=>suma+=Number(b.dataset.litros)||0);
+  const dif=(Number(PANEL.factura.litros)||0)-suma;
+  const ok=Math.abs(dif)<=Math.max(2,suma*0.01);
+  const chip=$('#fx-chip'); if(chip){ chip.className='dif '+(ok?'ok':'no'); chip.textContent=ok?'coincide':('difiere '+num(Math.abs(dif))+' L'); }
+  const sum=$('#fx-sum'); if(sum) sum.textContent=num(suma);
+  const btn=$('#fx-conciliar'); if(btn) btn.disabled=boxes.length===0;
+}
+
+async function subirFactura(file){
+  try{
+    const fd=new FormData(); fd.append('file',file);
+    const d=await api('/api/facturas',{method:'POST',body:fd});
+    if(d.duplicada) toast('Ese CFDI ya se había subido');
+    PANEL={factura:d.factura,candidatas:d.candidatas||[],conceptos:d.conceptos||[]};
+    pintarFx();
+    cargarFacturas();
+  }catch(e){ toast('No se pudo subir: '+(e.message||'')); }
+}
+
+async function cargarFacturas(){
+  try{ const d=await api('/api/facturas'); FACTURAS=Array.isArray(d)?d:(d.facturas||[]); }
+  catch(e){ FACTURAS=[]; }
+  if(TAB==='despachada') pintarFx();
+}
+
+async function conciliar(){
+  if(!PANEL) return;
+  const ids=[...document.querySelectorAll('.fx-cand:checked')].map(b=>b.value);
+  if(!ids.length){ toast('Marca al menos una orden'); return; }
+  const btn=$('#fx-conciliar'); if(btn) btn.disabled=true;
+  try{
+    const fd=new FormData(); fd.append('solicitud_ids',ids.join(','));
+    const d=await api('/api/facturas/'+PANEL.factura.id+'/conciliar',{method:'POST',body:fd});
+    toast(d.estado==='conciliada'?'Conciliado: todo cuadró':'Registrado con discrepancia para revisión');
+    PANEL=null; pintarFx(); cargar(); cargarFacturas();
+  }catch(e){ if(btn) btn.disabled=false; toast('No se pudo conciliar: '+(e.message||'')); }
+}
+
+init();
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',e=>{if((localStorage.getItem('tr-theme')||'system')==='system')document.documentElement.dataset.theme=e.matches?'dark':'light';});
+
+(function initParts(){
+  const cv=document.getElementById('parts'); if(!cv) return; const ctx=cv.getContext('2d');
+  let W,H; const rz=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight;}; rz(); addEventListener('resize',rz);
+  const N=22,pts=[]; for(let i=0;i<N;i++){const x=Math.random()*innerWidth,y=Math.random()*innerHeight;pts.push({x,y,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25});}
+  const cssVar=v=>{let c=getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#888';if(c[0]==='#'&&c.length===4)c='#'+c[1]+c[1]+c[2]+c[2]+c[3]+c[3];return c;};
+  const rgba=(hex,a)=>{if(hex[0]!=='#')return hex;const n=parseInt(hex.slice(1),16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';};
+  const tick=()=>{ ctx.clearRect(0,0,W,H); const ink=cssVar('--ink');
+    for(const p of pts){p.x+=p.vx;p.y+=p.vy;if(p.x<-20)p.x=W+20;if(p.x>W+20)p.x=-20;if(p.y<-20)p.y=H+20;if(p.y>H+20)p.y=-20;}
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const a=pts[i],b=pts[j],d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(d<120){ctx.strokeStyle=rgba(ink,.10*(1-d/120));ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
+    for(const p of pts){ctx.fillStyle=rgba(ink,.22);ctx.beginPath();ctx.arc(p.x,p.y,1.6,0,7);ctx.fill();}
+    requestAnimationFrame(tick); }; tick();
+})();
+</script>
+</body>
+</html>

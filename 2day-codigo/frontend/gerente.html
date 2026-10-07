@@ -1,0 +1,1119 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2Day · Gerencia</title>
+<script>(function(){try{var t=localStorage.getItem('tr-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){document.documentElement.dataset.theme='light';}})();</script>
+<link rel="stylesheet" href="/static/fuentes.css?v=20260920a">
+<link rel="stylesheet" href="/static/base.css?v=20260920c">
+<link rel="stylesheet" href="/static/dialog.css?v=20261005a">
+<!-- dialog.js se carga SIN defer: el codigo de la pagina es inline y debe encontrar Dlg ya definido -->
+<script src="/static/dialog.js?v=20261005a"></script>
+<script src="/static/maps.js?v=20260827d"></script>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+@keyframes drift{0%,100%{transform:translate3d(-2%,-1.5%,0)}50%{transform:translate3d(2%,1.5%,0)}}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+button{font:inherit;cursor:pointer}
+a{color:var(--accent)}
+.app{position:relative;z-index:1;display:flex;min-height:100vh}
+.side{width:236px;flex:0 0 236px;background:var(--nav);border-right:1px solid var(--nav-line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{display:block;padding:16px 14px 10px}
+.brand img{width:130px;height:auto;display:block}
+.brand .tag{display:flex;align-items:center;gap:8px;margin-top:11px}
+.brand .tag i{width:7px;height:15px;background:var(--accent);transform:skewX(-22deg);flex:0 0 auto;border-radius:1px}
+.brand .tag em{font:600 8.5px "IBM Plex Mono";letter-spacing:.24em;color:var(--nav-muted);font-style:normal}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;flex:0 0 auto}
+.nav{padding:6px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;flex:1}
+.navbtn{display:flex;align-items:center;gap:11px;padding:9px 12px;border:0;background:transparent;color:var(--nav-item);border-radius:6px;text-align:left;width:100%;font-weight:600;font-size:13.5px;transition:color .12s,background .12s}
+.navbtn .ic{width:19px;height:19px;color:var(--nav-muted)}
+.navbtn:hover{background:#161a20;color:#fff}
+.navbtn:hover .ic{color:#fff}
+.navbtn.on{background:var(--accent-solid);color:var(--accent-ink)}
+.navbtn.on .ic{color:#fff}
+.navbtn .bdg{margin-left:auto;background:var(--danger);color:#fff;font-size:11px;font-weight:700;min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.navbtn.on .bdg{background:#fff;color:var(--accent)}
+.side .who{padding:12px 16px;border-top:1px solid var(--nav-line);font-size:12px;font-weight:600;color:var(--nav-ink);display:flex;align-items:center;gap:7px}
+.side .who .lock{width:14px;height:14px;color:var(--u-tracto)}
+.side .uwrap{display:flex;align-items:center;gap:10px;padding:12px 12px 4px;border-top:1px solid var(--nav-line)}
+.side .uwrap .av{width:34px;height:34px;border-radius:6px;border:1px solid var(--nav-line);background:var(--u-tracto);color:#fff;font:700 13px 'IBM Plex Sans',sans-serif;display:grid;place-items:center;cursor:pointer;flex:0 0 auto;padding:0;overflow:hidden}
+.side .uwrap .nm{font:600 12.5px 'IBM Plex Sans';color:var(--nav-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side .uwrap .rl{font:600 8.5px 'IBM Plex Mono';letter-spacing:.16em;color:var(--u-tracto);text-transform:uppercase}
+.side .uwrap .logout{width:30px;height:30px;border:0;background:none;color:var(--nav-muted);cursor:pointer;display:grid;place-items:center;flex:0 0 auto;border-radius:6px}
+.side .uwrap .logout:hover{background:#161a20;color:#fff}
+.side .uwrap .logout svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:20;background:color-mix(in oklab,var(--bg) 86%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:12px 20px}
+.top .burger{display:none;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:7px;color:var(--ink)}
+.top h1{font-size:23px;flex:1}
+.top .kick{font-size:10.5px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;display:block;font-family:"IBM Plex Sans";font-weight:600}
+.iconbtn{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px;color:var(--ink);display:flex;transition:background .12s}
+.iconbtn:hover{background:var(--sunken)}
+.notifwrap{position:relative}
+.notif{position:absolute;top:calc(100% + 8px);right:0;width:340px;max-width:82vw;max-height:64vh;display:none;flex-direction:column;background:var(--card);border:1px solid var(--line2,var(--line));border-radius:12px;box-shadow:var(--sh-3);z-index:45;overflow:hidden}
+.notif.show{display:flex}
+.notif .hd{padding:12px 15px;border-bottom:1px solid var(--line);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.notif .row{display:flex;gap:10px;align-items:flex-start;padding:11px 15px;cursor:pointer;text-align:left;width:100%;color:var(--ink);font-family:inherit;background:none;border:0;border-bottom:1px solid var(--line)}
+.notif .row:last-child{border-bottom:0}
+.notif .row:hover{background:color-mix(in oklab,var(--accent) 8%,transparent)}
+.notif .ndot{width:7px;height:7px;border-radius:50%;background:var(--danger);flex:0 0 auto;margin-top:5px}
+#nbadge{position:absolute;top:1px;right:2px;min-width:15px;height:15px;padding:0 3px;border-radius:99px;background:var(--danger);color:#fff;font:600 9px 'IBM Plex Mono',monospace;display:none;place-items:center;border:1.5px solid var(--card)}
+.rochip{font-size:10.5px;font-weight:700;letter-spacing:.4px;color:var(--muted);background:var(--sunken);border:1px solid var(--line);border-radius:20px;padding:4px 10px;display:inline-flex;align-items:center;gap:5px}
+.wrap{padding:20px;max-width:1120px;width:100%;margin:0 auto}
+.section{display:none}
+.section.on{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:0 1px 0 var(--sh-2)}
+.card+.card{margin-top:14px}
+.kick{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:14px 15px}
+.kpi .l{font-size:10.5px;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.kpi .v{font:600 26px/1 'IBM Plex Mono',monospace;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:5px}
+.kpi .h{font-size:11px;color:var(--muted);margin-top:3px}
+.kpi.warn .v{color:var(--warn)}
+.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.chart{width:100%}
+.chart svg{width:100%;height:auto;max-width:380px;display:block;margin:0 auto;overflow:visible}
+#ch-pie svg{max-width:250px}
+.chh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px}
+.chh h3{font-size:17px}
+.chh .sub{font-size:11px;color:var(--muted)}
+.leg{display:flex;gap:13px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--muted)}
+.leg span{display:inline-flex;align-items:center;gap:6px}
+.leg i{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+.axlbl{font:600 9px 'IBM Plex Mono',monospace;fill:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--accent-solid);color:var(--accent-ink);border:0;border-radius:6px;padding:11px 16px;font-weight:700;font-size:14px}
+.btn:hover{background:var(--accent-2)}
+.btn.gray{background:var(--sunken);color:var(--ink);border:1px solid var(--line)}
+.btn.gray:hover{background:var(--line)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line-2)}
+.btn.sm{padding:7px 11px;font-size:12.5px;border-radius:6px}
+.btn.block{width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.spread{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.item{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .who2{flex:1;min-width:0}
+.item .who2 b{font-weight:700}
+.item .who2 .m{font-size:12px;color:var(--muted);margin-top:1px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+input,select,textarea{width:100%;background:var(--sunken);border:1px solid var(--line);border-radius:6px;padding:10px 11px;color:var(--ink);font:inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid color-mix(in oklab,var(--accent) 45%,transparent);border-color:var(--accent)}
+.empty{color:var(--muted);text-align:center;padding:24px 10px;font-size:13px}
+.f{display:block;margin:12px 0 5px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.remgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:7px;margin-top:6px;max-height:190px;overflow:auto}
+.remopt{display:flex;align-items:center;gap:7px;padding:8px 9px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:var(--sunken)}
+.remopt input{width:auto}
+.remopt.pick{border-color:var(--accent);background:color-mix(in oklab,var(--accent) 10%,transparent)}
+.optabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.optab{padding:9px 14px;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:7px;font:600 12.5px 'IBM Plex Sans',sans-serif;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+.optab.on{background:var(--accent-solid);color:var(--accent-ink);border-color:var(--accent-solid)}
+/* barra horizontal para rankings */
+.hb{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}
+.hb:last-child{border-bottom:0}
+.hb .lb{font-weight:700}
+.hb .track{background:var(--sunken);border-radius:6px;height:16px;overflow:hidden}
+.hb .fill{height:100%;border-radius:6px}
+.hb .vl{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto}
+/* consulta IA */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{background:var(--sunken);border:1px solid var(--line);border-radius:20px;padding:8px 12px;font-size:12.5px;color:var(--ink);text-align:left}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.ans{background:var(--sunken);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:14px;line-height:1.6}
+.ans h4{font-size:15px;margin:10px 0 4px}
+.ans p{margin:6px 0}
+.ans ul{margin:6px 0;padding-left:20px}
+.ans strong{color:var(--ink)}
+.ans .q{font-size:12.5px;color:var(--muted);border-left:3px solid var(--accent);padding-left:10px;margin-bottom:10px}
+.think{display:inline-flex;gap:5px;align-items:center;color:var(--muted);font-size:13px}
+.think i{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite alternate}
+.think i:nth-child(2){animation-delay:.2s}.think i:nth-child(3){animation-delay:.4s}
+@keyframes pulse{from{opacity:.3}to{opacity:1}}
+.pill{font-family:"IBM Plex Sans";font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;letter-spacing:.4px;text-transform:uppercase}
+.pill.ghost{background:var(--sunken);color:var(--muted)}
+.catbadge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.catbadge.base{background:color-mix(in oklab,var(--warn) 20%,transparent);color:var(--warn)}
+.catbadge.consistencia{background:color-mix(in oklab,var(--u-camion) 22%,transparent);color:var(--u-camion)}
+.catbadge.fraude{background:color-mix(in oklab,var(--danger) 18%,transparent);color:var(--danger)}
+.catbadge.telemetria{background:color-mix(in oklab,var(--u-remol) 28%,transparent);color:var(--u-remol)}
+.catbadge.roles{background:color-mix(in oklab,var(--accent) 18%,transparent);color:var(--accent)}
+/* Asignar viaje · vista de dos columnas con mapa + ruta (unificada con Coordinador/Admin) */
+.as-2col{display:grid;grid-template-columns:1fr 1.15fr;gap:16px;align-items:start}
+/* Bloques del formulario: cada uno agrupa lo que se contesta de una vez, y su título dice
+   qué pregunta responde. Un formulario de once campos sin jerarquía se lee peor que tres
+   de cuatro, aunque ocupe lo mismo. */
+.as-blq{background:var(--surf,var(--card));border:1px solid var(--line);border-radius:10px;padding:13px 15px;margin-bottom:11px}
+/* El título del bloque tiene que ganarle a las etiquetas de campo, que también van en
+   versalitas: sin contraste entre los dos, "QUIÉN VA" y "OPERADOR" se leen como lo mismo
+   y la agrupación deja de agrupar. Se separa por color, peso y una regla debajo. */
+.as-blq>.t{font:600 11px/1 'IBM Plex Sans';letter-spacing:.09em;text-transform:uppercase;
+  color:var(--accent);margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.as-blq label{margin-top:12px}
+.as-blq label:first-of-type{margin-top:0}
+.as-blq>.t+label{margin-top:0}
+.as-blq label:first-of-type{margin-top:6px}
+/* Búsqueda sobre el mapa: la caja va pegada al mapa, no suelta arriba, para que se lea
+   como un control DEL mapa y no como un campo más del formulario. */
+.as-busca{display:flex;gap:6px;margin-bottom:8px}
+.as-busca input{flex:1;background:var(--sunken);border:1px solid var(--line);border-radius:6px;padding:9px 11px;color:var(--ink);font:inherit;font-size:13px}
+.as-busca input:focus{outline:2px solid color-mix(in oklab,var(--accent) 45%,transparent);border-color:var(--accent)}
+.as-busca button{flex:0 0 auto;padding:0 14px;border:1px solid var(--line);border-radius:6px;background:var(--sunken);color:var(--ink);font:600 12.5px 'IBM Plex Sans';cursor:pointer}
+.as-busca button:hover{border-color:var(--accent);color:var(--accent)}
+.as-mapwrap{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.as-mapwrap .as-seg{margin:0;border:0;border-bottom:1px solid var(--line);border-radius:0}
+@media(max-width:760px){.as-2col{grid-template-columns:1fr}}
+#as-map{height:340px;width:100%;border-radius:10px;border:1px solid var(--line);background:var(--sunken)}
+.as-seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.as-seg button{flex:1;padding:8px;border:0;background:transparent;color:var(--ink);font-weight:700;font-size:12.5px;cursor:pointer}
+.as-seg button.on{background:var(--accent-solid);color:var(--accent-ink)}
+.as-routebar{margin-top:8px;font-size:12.5px;color:var(--muted);min-height:18px}
+.report{background:var(--sunken);border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px}
+.report .rg{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:8px}
+.report .rc .rl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.report .rc .rv{font-weight:700;font-size:15px}
+.alertbar{display:flex;gap:10px;align-items:flex-start;background:color-mix(in oklab,var(--warn) 11%,transparent);border:1px solid color-mix(in oklab,var(--warn) 38%,transparent);color:var(--warn);border-radius:10px;padding:11px 13px;font-size:13px;font-weight:600}
+.sheet .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.x{background:transparent;border:0;color:var(--muted);padding:4px;display:flex}
+#charttip{position:fixed;z-index:90;background:var(--ink);color:var(--bg);padding:7px 10px;border-radius:8px;font-size:12px;font-weight:600;pointer-events:none;opacity:0;transition:opacity .1s;white-space:nowrap;box-shadow:var(--sh-2);transform:translate(-50%,-115%)}
+#charttip.show{opacity:1}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:8px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:var(--z-toast, 150);max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.scrim{display:none}
+@media(max-width:899px){
+  .side{position:fixed;left:0;top:0;z-index:70;transform:translateX(-100%);transition:transform .22s ease;box-shadow:8px 0 40px var(--sh-2)}
+  .app.navopen .side{transform:none}
+  .top .burger{display:flex}
+  .app.navopen .scrim{display:block;position:fixed;inset:0;background:rgba(10,12,15,.45);z-index:65}
+  .charts{grid-template-columns:1fr}
+  .g2{grid-template-columns:1fr}
+  .bgfx{opacity:.92}
+  .bgfx .glow{inset:-10%;background:radial-gradient(80vw 40vh at 50% 6%, color-mix(in oklab,var(--accent) 15%,transparent), transparent 72%),radial-gradient(88vw 44vh at 50% 94%, color-mix(in oklab,var(--u-tracto) 12%,transparent), transparent 74%)}
+}
+@media (prefers-reduced-motion:reduce){.bgfx .glow{animation:none}}
+</style>
+</head>
+<body>
+<div class="bgfx" aria-hidden="true"><div class="glow"></div><canvas></canvas></div>
+<div class="app" id="app">
+  <aside class="side" id="side">
+    <div class="brand">
+      <img src="/static/logo-2day-word.png" alt="2Day Transport / Logistic" style="width:130px;height:auto;display:block">
+      <div class="tag"><i></i><em>GERENCIA</em></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="uwrap">
+      <button class="av" id="u-av" data-tr-avatar onclick="show('perfil')">—</button>
+      <div style="flex:1;min-width:0"><div class="nm" id="u-nm">…</div><div class="rl">Gerente</div></div>
+      <button class="logout" onclick="location.href='/logout'" title="Cerrar sesión"><svg viewBox="0 0 24 24"><path d="M14 4h-9v16h9M9 12h12m0 0l-3.5-3.5M21 12l-3.5 3.5"></path></svg></button>
+    </div>
+  </aside>
+  <div class="scrim" onclick="closeNav()"></div>
+  <main class="main">
+    <header class="top">
+      <button class="burger" onclick="toggleNav()" aria-label="Menú"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <h1><span class="kick" id="t-kick">GERENCIA</span><span id="t-title">Panorama</span></h1>
+      <span class="rochip"><svg class="ic" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v9H5zM12 14.5v2"/></svg>Solo lectura</span>
+      <div class="notifwrap">
+        <button class="iconbtn" onclick="toggleNotif(event)" title="Notificaciones" style="position:relative"><svg class="ic" viewBox="0 0 24 24"><path d="M6.2 9.8a5.8 5.8 0 0 1 11.6 0c0 3.8 1.4 5.2 1.4 5.2H4.8s1.4-1.4 1.4-5.2zM10.2 18.4a1.9 1.9 0 0 0 3.6 0"/></svg><span id="nbadge"></span></button>
+        <div class="notif" id="notif"><div class="hd">Notificaciones</div><div id="notiflist" style="overflow-y:auto"></div></div>
+      </div>
+      <button class="iconbtn" onclick="cycleTheme()" title="Tema"><svg class="ic" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
+    </header>
+    <div class="wrap">
+
+      <!-- PANORAMA -->
+      <section class="section on" id="s-panorama">
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+          <div><div class="kick">Panorama de la flota</div><h2 style="font-size:26px;margin-top:2px" id="hi-nombre">Gerencia</h2>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:2px" id="hi-rango">—</div></div>
+          <button class="btn gray" onclick="show('consulta')"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3.5l1.9 5 5 1.9-5 1.9-1.9 5-1.9-5-5-1.9 5-1.9zM18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg> Preguntar a la IA</button>
+        </div>
+        <div class="kpis" style="margin-top:14px" id="kpis"><div class="empty">Cargando…</div></div>
+        <div class="charts" style="margin-top:14px">
+          <div class="card"><div class="chh"><h3>Composición de la flota</h3><span class="sub">unidades activas</span></div><div class="chart" id="ch-pie"><div class="empty">Cargando…</div></div></div>
+          <div class="card"><div class="chh"><h3>Viajes por mes</h3><span class="sub">Tractos vs Camiones</span></div><div class="chart" id="ch-area"><div class="empty">Cargando…</div></div></div>
+          <div class="card"><div class="chh"><h3>Consumo por unidad</h3><span class="sub">litros · top 8</span></div><div class="chart" id="ch-bar"><div class="empty">Cargando…</div></div></div>
+          <div class="card"><div class="chh"><h3>Km vs rendimiento</h3><span class="sub">por viaje · km/l</span></div><div class="chart" id="ch-scatter"><div class="empty">Cargando…</div></div></div>
+        </div>
+      </section>
+
+      <!-- CONSULTA IA -->
+      <section class="section" id="s-consulta">
+        <div class="card">
+          <div class="kick">Consulta con IA</div>
+          <h2 style="font-size:22px;margin:2px 0 4px">Pregunta sobre la flota</h2>
+          <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px">La IA responde con los datos duros de la operación. Es solo consulta — no genera reportes ni cambia información.</p>
+          <textarea id="cq" rows="3" placeholder="p. ej. ¿Cuáles son las unidades con peor rendimiento y qué las explica?"></textarea>
+          <div class="row" style="margin-top:10px"><button class="btn" onclick="preguntar()"><svg class="ic" viewBox="0 0 24 24" style="width:17px;height:17px"><path d="M5 12h14M13 6l6 6-6 6"/></svg> Consultar</button></div>
+          <div class="chips" id="cq-chips"></div>
+          <div id="cq-ans"></div>
+        </div>
+      </section>
+
+      <!-- RENDIMIENTO -->
+      <section class="section" id="s-rendimiento">
+        <div class="card">
+          <div class="chh"><h3>Rendimiento por unidad</h3><span class="sub">km/l · con ≥5 viajes</span></div>
+          <div id="rm-bars"><div class="empty">Cargando…</div></div>
+        </div>
+        <div class="card">
+          <div class="chh"><h3>Motor vs comprobante</h3><span class="sub">rendimiento medido por el scanner vs litros reales</span></div>
+          <div class="tablewrap"><table id="rm-svr"><tbody><tr><td class="empty">Cargando…</td></tr></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="chh"><h3>Mejores duplas operador · unidad</h3><span class="sub">por rendimiento real</span></div>
+          <div class="tablewrap"><table id="rm-rank"><tbody><tr><td class="empty">Cargando…</td></tr></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ANOMALÍAS -->
+      <section class="section" id="s-anomalias">
+        <div class="card">
+          <h2 style="font-size:22px;margin-bottom:4px">Anomalías de la flota</h2>
+          <p style="font-size:12.5px;color:var(--muted);margin:0 0 12px">Auditoría de solo lectura. Toca una anomalía para ver la causa y el mini-informe del viaje.</p>
+          <div id="an-list"><div class="empty">Cargando…</div></div>
+        </div>
+      </section>
+
+      <!-- OPERADORES -->
+      <section class="section" id="s-operadores">
+        <div class="card">
+          <div class="spread" style="margin-bottom:10px"><h2 style="font-size:22px">Operadores</h2>
+            <input id="op-q" placeholder="Buscar…" style="max-width:220px;background:var(--sunken);border:1px solid var(--line);border-radius:6px;padding:9px 11px;color:var(--ink)" oninput="pintarOperadores()"></div>
+          <div class="tablewrap"><table id="op-tabla"><tbody><tr><td class="empty">Cargando…</td></tr></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- PERFIL -->
+      <!-- COMBUSTIBLE (solo lectura) -->
+      <section class="section" id="s-combustible">
+        <div class="card" style="margin-bottom:14px"><div class="kick">COMBUSTIBLE</div><h2 style="font-size:22px;margin-top:2px">Combustible</h2><p style="font-size:12.5px;color:var(--muted);margin:2px 0 0">Rendimiento real de cada operador contra la referencia de su unidad, con alertas (sólo lectura).</p></div>
+        <div id="gc-alertbar" style="margin-bottom:14px"></div>
+        <div id="gc-lista"><div class="empty">Cargando…</div></div>
+      </section>
+
+      <!-- VIAJES Y RECARGAS -->
+      <section class="section" id="s-viajes">
+        <div class="card" style="margin-bottom:14px">
+          <div class="kick">BITÁCORA</div><h2 style="font-size:22px;margin-top:2px">Viajes y recargas</h2>
+          <div class="optabs" style="margin-top:8px"><button class="optab gvtab on" data-gv="vigentes" onclick="gvTabSet('vigentes')">Vigentes</button><button class="optab gvtab" data-gv="viajes" onclick="gvTabSet('viajes')">Viajes</button><button class="optab gvtab" data-gv="recargas" onclick="gvTabSet('recargas')">Recargas</button></div>
+          <label class="f">Operador</label><select id="gv-op" onchange="gvRender()" style="max-width:420px"><option value="">— Todos los operadores —</option></select>
+        </div>
+        <div id="gv-lista"><div class="empty">Cargando…</div></div>
+      </section>
+
+      <!-- OPERACIONES (gerente operativo) -->
+      <section class="section" id="s-operaciones">
+        <div class="card" style="margin-bottom:14px">
+          <div class="kick">OPERACIÓN</div>
+          <h2 style="font-size:22px;margin-top:2px">Operaciones</h2>
+          <p style="font-size:12.5px;color:var(--muted);margin:2px 0 0">Acciones operativas del gerente. Cada una en su pestaña; todo queda registrado a tu nombre.</p>
+          <div class="optabs">
+            <button class="optab on" data-ot="asignar" onclick="opTab('asignar')">Levantar viaje</button>
+            <button class="optab" data-ot="autorizar" onclick="opTab('autorizar')">Autorizar combustible</button>
+            <button class="optab" data-ot="anomalias" onclick="opTab('anomalias')">Anomalías</button>
+          </div>
+        </div>
+        <div class="oppane" id="op-pane-asignar">
+          <div class="card"><h3 style="font-size:18px;margin-bottom:2px">Levantar viaje</h3>
+            <p style="font-size:12px;color:var(--muted);margin:0 0 4px">Asigna a un operador su unidad, destino y remolques.</p>
+            <div id="op-asignar-form"><div class="empty">Cargando…</div></div></div>
+        </div>
+        <div class="oppane" id="op-pane-autorizar" style="display:none">
+          <div class="card"><div class="spread" style="margin-bottom:6px"><h3 style="font-size:18px">Por autorizar</h3><span style="font-size:12.5px;color:var(--muted)" id="op-aut-n"></span></div>
+            <div id="op-autorizar"><div class="empty">Cargando…</div></div></div>
+        </div>
+        <div class="oppane" id="op-pane-anomalias" style="display:none">
+          <div class="card"><div class="spread" style="margin-bottom:6px"><h3 style="font-size:18px">Anomalías por atender</h3><span style="font-size:12.5px;color:var(--muted)" id="op-anom-n"></span></div>
+            <div id="op-anomalias"><div class="empty">Cargando…</div></div></div>
+        </div>
+      </section>
+
+      <!-- EXPORTAR REPORTES -->
+      <section class="section" id="s-exportar">
+        <div class="card">
+          <div class="kick">REPORTES</div>
+          <h2 style="font-size:22px;margin-top:2px">Exportar reportes</h2>
+          <p style="font-size:12.5px;color:var(--muted);margin:2px 0 12px">Elige qué incluir y el rango de fechas. Descarga en Excel o imprime/guarda como PDF. Puedes combinar varios en un solo archivo (mezcla personalizada).</p>
+          <div style="display:flex;flex-direction:column;gap:9px;max-width:420px">
+            <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" class="exp-t" value="general" checked style="width:auto"> General (resumen)</label>
+            <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" class="exp-t" value="rendimiento" checked style="width:auto"> Rendimiento por operador</label>
+            <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" class="exp-t" value="anomalias" style="width:auto"> Anomalías</label>
+            <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" class="exp-t" value="operadores" style="width:auto"> Operadores</label>
+          </div>
+          <div class="row" style="margin-top:14px;max-width:420px"><div style="flex:1;min-width:140px"><label class="f">Desde (opcional)</label><input type="date" id="exp-desde"></div><div style="flex:1;min-width:140px"><label class="f">Hasta (opcional)</label><input type="date" id="exp-hasta"></div></div>
+          <div class="row" style="margin-top:16px"><button class="btn" onclick="exportar('xlsx')">Descargar Excel</button><button class="btn" style="background:var(--sunken);color:var(--ink);border:1px solid var(--line)" onclick="exportar('pdf')">Imprimir / PDF</button></div>
+        </div>
+      </section>
+
+      <section class="section" id="s-perfil">
+        <div class="card">
+          <h2 style="font-size:22px;margin-bottom:10px">Perfil</h2>
+          <div class="item"><div class="who2"><b>Usuario</b></div><span id="pf-user" class="mono">—</span></div>
+          <div class="item"><div class="who2"><b>Rol</b></div><span>Gerente de Operaciones · solo lectura</span></div>
+        </div>
+        <div class="card">
+          <h3 style="font-size:18px;margin-bottom:8px">Personalización</h3>
+          <div id="tr-perfil-mount"></div>
+        </div>
+        <div class="card"><a class="btn ghost block" href="/logout" style="color:var(--danger);border-color:var(--danger)">Cerrar sesión</a></div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- El diálogo lo crea dialog.js (Dlg). El marcado estático se retiró: el puente
+     openSheet() reutiliza los ids #sheet / #ov sobre la caja y el velo nuevos. -->
+<div id="toast"></div>
+<div id="charttip"></div>
+
+<script src="/static/perfil.js?v=20260920a"></script>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(p,o){const r=await fetch(p,o);if(r.status===401){location.href='/login';throw 0;}const d=await r.json().catch(()=>({}));if(!r.ok){const dt=d.detail;const e=new Error(typeof dt==='string'?dt:((dt&&dt.mensaje)||('Error '+r.status)));e.cuerpo=dt;e.status=r.status;throw e;};return d;}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2800);}
+const nf=n=>Number(n).toLocaleString('es-MX');
+const tLbl=t=>t==='TRACTO'?'Tracto':(t==='CAMION'?'Camión':t);
+function md(t){t=t||'';return t.split('\n').map(l=>{l=esc(l).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');if(/^#{1,4}\s/.test(l))return '<h4>'+l.replace(/^#+\s/,'')+'</h4>';if(/^\s*[-*]\s/.test(l))return '<li>'+l.replace(/^\s*[-*]\s/,'')+'</li>';return l.trim()?'<p>'+l+'</p>':'';}).join('').replace(/(<li>.*?<\/li>)+/gs,m=>'<ul>'+m+'</ul>');}
+function applyTheme(){const t=localStorage.getItem('tr-theme')||'system';const eff=t==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=eff;const c=$('#pf-tema');if(c)c.textContent={light:'Claro',dark:'Oscuro',system:'Sistema'}[t];}
+function cycleTheme(){const cur=localStorage.getItem('tr-theme')||'system';const nx={light:'dark',dark:'system',system:'light'}[cur];localStorage.setItem('tr-theme',nx);applyTheme();toast('Tema: '+({light:'claro',dark:'oscuro',system:'sistema'}[nx]));}
+// ── Notificaciones (campana + sondeo cada 30s) ──
+async function notifFuente(){
+  const out=[];
+  try{const an=await api('/api/anomalias');(an||[]).forEach(a=>out.push({uid:1e9+(a.id||0),titulo:(a.unidad||'—')+' · anomalía',sub:a.fecha||'Pendiente',go:"show('operaciones');opTab('anomalias');closeNotif()"}));}catch(e){}
+  try{const r=await api('/api/solicitudes');(r.solicitudes||[]).filter(s=>s.estado==='enviada'||s.estado==='en_validacion').forEach(s=>out.push({uid:s.id,titulo:(s.unidad||'—')+' · por autorizar',sub:(s.operador||'')+' · #'+s.id,go:"show('operaciones');opTab('autorizar');closeNotif()"}));}catch(e){}
+  return out;
+}
+let NOTIF_MAX=null;
+function renderNotif(items){
+  const n=items.length,b=$('#nbadge');
+  if(b){if(n){b.style.display='grid';b.textContent=n>99?'99+':n;}else b.style.display='none';}
+  const box=$('#notiflist'); if(!box)return;
+  box.innerHTML=n?items.slice(0,10).map(it=>`<button class="row" onclick="${it.go}"><span class="ndot"></span><span style="flex:1;min-width:0"><span style="display:block;font-size:12.5px">${esc(it.titulo)}</span><span style="display:block;font:500 10px 'IBM Plex Mono',monospace;color:var(--muted);margin-top:2px">${esc(it.sub||'')}</span></span></button>`).join(''):`<div class="empty" style="padding:22px;text-align:center;color:var(--muted);font-size:13px">Sin notificaciones</div>`;
+}
+async function refreshNotif(){try{renderNotif(await notifFuente());}catch(e){}}
+async function vigilarNotif(){
+  if(document.hidden)return;
+  let items; try{items=await notifFuente();}catch(e){return;}
+  renderNotif(items);
+  const maxId=items.reduce((m,it)=>Math.max(m,it.uid||0),0);
+  if(NOTIF_MAX===null){NOTIF_MAX=maxId;return;}
+  const nuevas=items.filter(it=>(it.uid||0)>NOTIF_MAX);
+  NOTIF_MAX=Math.max(NOTIF_MAX,maxId);
+  if(nuevas.length)toast(nuevas.length===1?('Nueva notificación · '+nuevas[0].titulo):(nuevas.length+' notificaciones nuevas'));
+}
+function toggleNotif(e){e.stopPropagation();const p=$('#notif');if(!p)return;p.classList.toggle('show');if(p.classList.contains('show'))refreshNotif();}
+function closeNotif(){const p=$('#notif');if(p)p.classList.remove('show');}
+document.addEventListener('click',e=>{if(!e.target.closest('.notifwrap'))closeNotif();});
+setInterval(vigilarNotif,30000);
+vigilarNotif();
+// ── Selector de ubicación en mapa (Leaflet + OpenStreetMap, sin Google) ──
+// El mapa vive en /static/maps.js (un solo modulo para las 3 pantallas).
+// Expone mapBtn, pickMapa, asMapInit, asFijar, asRuta, asDibujarRuta,
+// asSetTipo, asMarcar, _hav y el estado _asEstKm/_asTipo que lee el form.
+function _addCoords(fd,inputId,prefix){const el=document.getElementById(inputId);if(el&&el.dataset.lat&&el.dataset.lng){fd.append(prefix+'_lat',el.dataset.lat);fd.append(prefix+'_lng',el.dataset.lng);}}
+try{matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{if((localStorage.getItem('tr-theme')||'system')==='system')applyTheme();});}catch(e){}
+
+let ME={}, OPERADORES=[];
+
+const NAV=[
+  ['panorama','Panorama','M4 11.5 12 4l8 7.5M6 10v9h12v-9'],
+  ['consulta','Consulta IA','M12 3.5l1.9 5 5 1.9-5 1.9-1.9 5-1.9-5-5-1.9 5-1.9zM18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z'],
+  ['rendimiento','Rendimiento','M4 20V4M4 20h16M8 16l3-4 3 2 4-6'],
+  ['combustible','Combustible','M6 21V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v16M4 21h12M6 9h8M15 8l3 2v7a1.5 1.5 0 0 0 3 0V10l-3-3'],
+  ['viajes','Viajes y recargas','M4 6h16M4 12h16M4 18h10'],
+  ['anomalias','Anomalías','M12 3.6 2.2 20.4h19.6zM12 10v4.4M12 17.6v.4'],
+  ['operaciones','Operaciones','M13 2 4 13h7l-1 9 9-11h-7z'],
+  ['exportar','Exportar reportes','M12 3v11M8 10l4 4 4-4M5 21h14'],
+  ['operadores','Operadores','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0 M4.5 20a7.5 7.5 0 0 1 15 0'],
+  ['perfil','Perfil','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0 M4.5 20a7.5 7.5 0 0 1 15 0'],
+];
+const TIT={panorama:['GERENCIA','Panorama'],consulta:['INTELIGENCIA','Consulta IA'],rendimiento:['ANÁLISIS','Rendimiento'],combustible:['COMBUSTIBLE','Combustible'],viajes:['BITÁCORA','Viajes y recargas'],anomalias:['AUDITORÍA','Anomalías'],operaciones:['OPERACIÓN','Operaciones'],exportar:['REPORTES','Exportar reportes'],operadores:['EQUIPO','Operadores'],perfil:['CUENTA','Perfil']};
+function pintarNav(){$('#nav').innerHTML=NAV.map(([id,lbl,d])=>`<button class="navbtn" data-sec="${id}" onclick="show('${id}')"><svg class="ic" viewBox="0 0 24 24"><path d="${d}"/></svg><span style="flex:1">${lbl}</span>${id==='anomalias'?'<span class="bdg" id="nav-an" style="display:none"></span>':''}</button>`).join('');}
+function toggleNav(){$('#app').classList.toggle('navopen');}
+function closeNav(){$('#app').classList.remove('navopen');}
+function show(sec){
+  $$('.section').forEach(s=>s.classList.remove('on'));
+  const el=$('#s-'+sec); if(el)el.classList.add('on');
+  $$('.navbtn').forEach(b=>b.classList.toggle('on',b.dataset.sec===sec));
+  const t=TIT[sec]||['',sec]; $('#t-kick').textContent=t[0]; $('#t-title').textContent=t[1];
+  closeNav(); window.scrollTo(0,0);
+  // "Solo lectura" aplica a lo analítico; Operaciones es la excepción operativa del gerente.
+  var _ro=$('.rochip'); if(_ro)_ro.style.display=(sec==='operaciones')?'none':'';
+  if(sec==='operaciones')loadOperaciones();
+  if(sec==='panorama')loadPanorama();
+  if(sec==='rendimiento')loadRendimiento();
+  if(sec==='combustible')loadCombustibleG();
+  if(sec==='viajes')loadViajesRecargas();
+  if(sec==='anomalias')loadAnomalias();
+  if(sec==='operadores')loadOperadores();
+  if(sec==='perfil'&&window.TR_montarPerfil)TR_montarPerfil(document.getElementById('tr-perfil-mount'),ME);
+}
+// ══ OPERACIONES (gerente operativo: levantar viaje / autorizar / atender anomalías) ══
+let G_UNI=[], G_OPS=[], G_REM=[], G_SOLIS=[], G_ANOMS=[];
+// Sólo activos: levantar un viaje con un activo dado de baja lo rechaza el servidor, así que
+// ofrecerlo era un callejón sin salida —y de los que no se entienden, porque nada en la lista
+// decía que ese camión ya no estaba.
+const _vivo=x=>x&&x.activo!==false;
+async function opEnsureCat(){ if(!G_UNI.length){try{G_UNI=(await api('/api/unidades')).filter(_vivo);}catch(e){}} if(!G_OPS.length){try{G_OPS=(await api('/api/operadores')).filter(_vivo);}catch(e){}} }
+async function opEnsureRem(){ if(!G_REM.length){try{G_REM=(await api('/api/remolques')).filter(_vivo);}catch(e){}} }
+// Orden NATURAL del número de empleado, el mismo criterio que usa el servidor. Antes esto
+// era una resta: con el número en texto da NaN, y `Array.sort` con un comparador que devuelve
+// NaN deja el orden indefinido —no ordena mal, es que depende del motor—. Son los tres
+// selectores de operador de esta pantalla.
+function _numKey(n){ const s=n==null?'':String(n); return s?[s.length,s]:[99,'\uffff']; }
+function opSort(a,b){
+  const [la,va]=_numKey(a.numero), [lb,vb]=_numKey(b.numero);
+  return la-lb || (va<vb?-1:va>vb?1:0) || String(a.nombre||'').localeCompare(String(b.nombre||''));
+}
+async function loadOperaciones(){ const on=document.querySelector('.optab.on'); opTab(on?on.dataset.ot:'asignar'); }
+function opTab(t){
+  document.querySelectorAll('.optab').forEach(b=>b.classList.toggle('on',b.dataset.ot===t));
+  document.querySelectorAll('.oppane').forEach(p=>p.style.display='none');
+  const pane=$('#op-pane-'+t); if(pane)pane.style.display='';
+  if(t==='asignar')opRenderAsignar();
+  else if(t==='autorizar')opLoadAutorizar();
+  else if(t==='anomalias')opLoadAnomalias();
+}
+async function opRenderAsignar(){
+  const box=$('#op-asignar-form'); if(!box)return;
+  await opEnsureCat(); await opEnsureRem();
+  const uOpts=['<option value="">— Elige unidad —</option>'].concat(G_UNI.map(u=>`<option value="${u.id}" data-tipo="${u.tipo}">${esc(u.clave)} · ${esc(u.tipo)}</option>`)).join('');
+  const oOpts=['<option value="">— Elige operador —</option>'].concat(G_OPS.slice().sort(opSort).map(o=>`<option value="${o.id}">${esc(o.nombre)}${o.numero?' (#'+o.numero+')':''}</option>`)).join('');
+  box.innerHTML=`
+    <div class="as-2col">
+      <div>
+        <div class="as-blq">
+          <div class="t">Quién va</div>
+          <label class="f">Operador</label><select id="as-oper">${oOpts}</select>
+          <label class="f">Unidad</label><select id="as-unidad" onchange="asRemToggle()">${uOpts}</select>
+          <div id="as-remwrap" style="display:none"><label class="f">Remolques a enganchar <span style="color:var(--muted);font-weight:400">(2 sólo si ambos son de 40 pies)</span> <span id="as-remn" style="color:var(--accent);font-weight:700"></span></label><div class="remgrid" id="as-remgrid"></div></div>
+        </div>
+        <div class="as-blq">
+          <div class="t">A dónde</div>
+          <label class="f">Tipo de viaje</label>
+          <div class="as-seg" id="as-tipo"><button type="button" class="on" data-t="ida" onclick="asSetTipo('ida')">Ida</button><button type="button" data-t="retorno" onclick="asSetTipo('retorno')">Retorno (a base)</button></div>
+          <label class="f">Inicio (origen)</label><input id="as-origen" placeholder="Planta / patio — o toca el mapa">
+          <label class="f">Final (destino)</label><input id="as-destino" placeholder="Ciudad / cliente — o toca el mapa">
+          <label class="f">Km totales <span style="color:var(--muted);font-weight:400">(de la ruta, editable)</span></label><input id="as-km" type="number" inputmode="decimal" step="0.1" min="0" placeholder="Traza la ruta en el mapa">
+        </div>
+        <div class="as-blq">
+          <div class="t">Para el operador</div>
+          <label class="f">Nota (opcional)</label><input id="as-nota" placeholder="Instrucción para el operador">
+        </div>
+        <button class="btn primary" style="width:100%" onclick="crearAsignacion()">Asignar viaje</button>
+      </div>
+      <div>
+        <div class="as-busca">
+          <input id="as-buscar" placeholder="Buscar dirección, ciudad o cliente" onkeydown="if(event.key==='Enter'){event.preventDefault();asBuscar();}">
+          <button type="button" onclick="asBuscar()">Buscar</button>
+        </div>
+        <div class="as-mapwrap">
+          <div class="as-seg" id="as-marca"><button type="button" class="on" data-m="inicio" onclick="asMarcar('inicio')">Fijar inicio</button><button type="button" data-m="final" onclick="asMarcar('final')">Fijar final</button></div>
+          <div id="as-map"></div>
+        </div>
+        <div class="as-routebar" id="as-route-info">Busca un lugar o toca el mapa para fijar inicio y final; se traza la ruta y los km.</div>
+      </div>
+    </div>`;
+  asMapInit();
+  if(window.asBuscarInit)asBuscarInit();   // engancha el buscador con sugerencias
+}
+// ── Mapa embebido del formulario de asignar: inicio/final + ruta OSRM + km ──
+// El buscador de lugares vive en /static/maps.js (asBuscar + asBuscarInit), con su
+// desplegable de sugerencias. Estaba copiado en las tres pantallas, y con el mismo error:
+// llamaba a asFijar(lat, lng, texto) cuando su primer argumento es 'inicio'/'final'.
+function asRemToggle(){
+  const sel=$('#as-unidad'), tipo=sel.selectedOptions[0]?sel.selectedOptions[0].dataset.tipo:'';
+  const wrap=$('#as-remwrap');
+  if(tipo==='TRACTO'){
+    const oOpts='<option value="">— Titular del remolque —</option>'+G_OPS.slice().sort(opSort).map(o=>`<option value="${o.id}">${esc(o.nombre)}${o.numero?' (#'+o.numero+')':''}</option>`).join('');
+    wrap.style.display='';
+    $('#as-remgrid').innerHTML=G_REM.length?G_REM.map(r=>`<div class="remopt2" style="display:flex;flex-direction:column;gap:4px"><label class="remopt"><input type="checkbox" value="${r.id}" onchange="asRemPick(this)"> ${esc(r.eco)}${r.operador_titular?' · '+esc(r.operador_titular):''}</label><select class="as-remop" data-rem="${r.id}" style="display:none" onclick="event.stopPropagation()">${oOpts}</select></div>`).join(''):'<div class="empty" style="padding:8px">Sin remolques en catálogo.</div>';
+    asRemN();
+  }
+  else{wrap.style.display='none';}
+}
+// El catálogo de remolques de ESTA vista es G_REM. Antes decía `ASIG_REMS`, que es como se
+// llama en otra pantalla: aquí no existe, y referenciar una variable no declarada lanza
+// ReferenceError aunque lleve `||[]` al lado (el `||` ni se evalúa). O sea que marcar un
+// remolque mataba el manejador y la regla no se aplicaba NUNCA.
+function _remMedida(id){ const r=(G_REM||[]).find(x=>String(x.id)===String(id)); return r?r.medida_pies:null; }
+// REGLA DE ENGANCHE: un tracto lleva UN remolque de la medida que sea, o DOS sólo si los
+// dos son de 40 pies. En cuanto se marca el primero, lo que no puede acompañarlo se
+// deshabilita: es más claro que dejar marcar y rebotar al guardar. El servidor lo valida
+// igual — esto es comodidad, no el permiso.
+//
+// Recibe la rejilla porque esta pantalla tiene DOS formularios que enganchan («Asignar viaje»
+// y «Levantar viaje»), y el segundo no aplicaba la regla en absoluto. Tener la regla escrita
+// dos veces fue justo lo que permitió que a una de las copias se le olvidara.
+function aplicarRegla40(grid){
+  const marcados=$$(grid+' input:checked');
+  const todos=$$(grid+' input[type=checkbox]');
+  if(!marcados.length){
+    todos.forEach(c=>{c.disabled=false; const l=c.closest('.remopt'); if(l){l.style.opacity='';l.title='';}});
+    return;
+  }
+  const soloCuarenta = marcados.every(c=>_remMedida(c.value)===40);
+  todos.forEach(c=>{
+    if(c.checked){ c.disabled=false; const l=c.closest('.remopt'); if(l){l.style.opacity='';l.title='';} return; }
+    const m=_remMedida(c.value);
+    // se puede añadir otro sólo si TODO lo marcado es de 40 y este también lo es
+    const permitido = soloCuarenta && m===40 && marcados.length<2;
+    c.disabled=!permitido;
+    const l=c.closest('.remopt');
+    if(l){
+      l.style.opacity = permitido?'':'0.45';
+      l.title = permitido ? '' :
+        (marcados.length>=2 ? 'Ya van dos remolques'
+         : !soloCuarenta ? 'El remolque ya enganchado no es de 40 pies: sólo puede ir solo'
+         : m===40 ? '' : (m ? ('Es de '+m+' pies: sólo se emparejan dos de 40')
+                            : 'Sin medida registrada: no puede ir en pareja'));
+    }
+  });
+}
+function asRemPick(cb){
+  if(cb.checked && $$('#as-remgrid input:checked').length>2){ cb.checked=false; toast('Máximo 2 remolques por tracto'); return; }
+  if(cb.checked && $$('#as-remgrid input:checked').length===2){
+    const ms=$$('#as-remgrid input:checked').map(c=>_remMedida(c.value));
+    if(!ms.every(m=>m===40)){
+      cb.checked=false;
+      toast('Sólo se enganchan dos remolques si ambos son de 40 pies');
+      asRemAplicarRegla(); return;
+    }
+  }
+  cb.closest('.remopt').classList.toggle('pick',cb.checked);
+  const w=cb.closest('.remopt2'); const s=w?w.querySelector('.as-remop'):null; if(s)s.style.display=cb.checked?'block':'none';
+  asRemN();
+}
+function asRemAplicarRegla(){ aplicarRegla40('#as-remgrid'); }
+function asRemN(){ aplicarRegla40('#as-remgrid'); const n=$$('#as-remgrid input:checked').length; const el=$('#as-remn'); if(el)el.textContent=n?(n+'/2'):''; }
+async function crearAsignacion(){
+  const op=$('#as-oper').value, uid=$('#as-unidad').value, destino=$('#as-destino').value.trim();
+  if(!op){toast('Elige el operador');return;}
+  if(!uid){toast('Elige la unidad');return;}
+  if(!destino){toast('Escribe el destino');return;}
+  const remArr=$$('#as-remgrid input:checked').map(c=>c.value);
+  if(remArr.length>2){toast('Máximo 2 remolques por tracto');return;}
+  const rem=remArr.join(',');
+  const ovr={}; $$('#as-remgrid input:checked').forEach(c=>{const w=c.closest('.remopt2');const s=w?w.querySelector('.as-remop'):null;if(s&&s.value)ovr[c.value]=Number(s.value);});
+  try{const fd=new FormData();fd.append('operador_id',op);fd.append('unidad_id',uid);fd.append('destino',destino);
+    const org=$('#as-origen').value.trim();if(org)fd.append('origen',org);
+    const nota=$('#as-nota').value.trim();if(nota)fd.append('nota',nota);
+    if(rem)fd.append('remolque_ids',rem);
+    if(Object.keys(ovr).length)fd.append('remolque_operadores',JSON.stringify(ovr));
+    const km=$('#as-km')?$('#as-km').value.trim():''; if(km)fd.append('km_destino',km);
+    if(_asEstKm!=null)fd.append('km_estimado',_asEstKm);
+    if(_asTipo==='retorno')fd.append('es_retorno','1');
+    _addCoords(fd,'as-origen','origen');_addCoords(fd,'as-destino','destino');
+    // Por el envío compartido de maps.js: es el que sabe preguntar cuando el camión o un
+    // remolque ya van en otro viaje abierto.
+    const _d=await asignarViajePost(fd);
+    if(!_d)return;                                  // lo canceló
+    toast('Viaje levantado');opRenderAsignar();
+  }catch(e){toast(e.message||'No se pudo asignar');}
+}
+async function opLoadAutorizar(){
+  const box=$('#op-autorizar'); if(!box)return;
+  try{ const s=await api('/api/solicitudes'); G_SOLIS=s.solicitudes||[];
+    const pend=G_SOLIS.filter(x=>x.estado==='enviada'||x.estado==='en_validacion');
+    $('#op-aut-n').textContent=pend.length+' pendiente(s)';
+    box.innerHTML= pend.length? pend.map(x=>`<div class="item">
+      <div style="flex:1;min-width:0"><b>${esc(x.folio)||('Solicitud #'+x.id)}</b><div style="font-size:12px;color:var(--muted)">Unidad ${esc(x.unidad)||'—'} · ${esc(x.operador)||'—'} · ${esc(x.estado)}</div></div>
+      <button class="btn" style="padding:7px 12px;font-size:12.5px" onclick="opAbrirAutorizar(${x.id})">Autorizar</button></div>`).join('')
+      : '<div class="empty">Nada por autorizar.</div>';
+  }catch(e){ box.innerHTML='<div class="empty">No se pudo cargar.</div>'; }
+}
+async function opLoadAnomalias(){
+  const box=$('#op-anomalias'); if(!box)return;
+  try{ G_ANOMS=await api('/api/anomalias'); }catch(e){ G_ANOMS=[]; }
+  $('#op-anom-n').textContent=G_ANOMS.length+' pendiente(s)';
+  box.innerHTML= G_ANOMS.length? G_ANOMS.map(a=>`<div class="item">
+    <div style="flex:1;min-width:0"><b>${esc(a.unidad)||'—'}</b> <span style="font-size:11px;color:var(--muted)">${esc(a.tipo||'')}</span><div style="font-size:12px;color:var(--muted)">${esc(a.descripcion||'')}${a.fecha?' · '+esc(String(a.fecha).slice(0,10)):''}</div></div>
+    <div style="display:flex;gap:6px;flex:0 0 auto"><button class="btn" style="padding:6px 10px;font-size:12px;background:transparent;color:var(--ok);border:1px solid var(--ok)" onclick="opResolverAnom(${a.id},'confirmar')">Confirmar</button><button class="btn" style="padding:6px 10px;font-size:12px;background:transparent;color:var(--muted);border:1px solid var(--line)" onclick="opResolverAnom(${a.id},'rechazar')">Descartar</button></div></div>`).join('')
+    : '<div class="empty">Sin anomalías pendientes.</div>';
+}
+// El panorama que el servidor ya calcula y esta hoja no pedía: la referencia del escáner de
+// la unidad, lo recorrido desde su última lectura, y sobre todo EL TOPE, que es lo único que
+// dice cuántos litros caben. Se autorizaba tecleando un número contra nada.
+let _AUT_TOPE=null;
+function opPanoramaHTML(t){
+  _AUT_TOPE = t && t.tope!=null ? Number(t.tope) : null;
+  if(!t) return '';
+  const n=(v,d)=>v==null?'—':Number(v).toLocaleString('es-MX',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});
+  if(t.rendimiento==null)
+    return `<div class="card" style="padding:10px 12px;margin:0 0 10px"><div style="font-size:12px;color:var(--muted)">Sin panorama: ${esc(t.nota||t.motivo_rendimiento||'falta el rendimiento de la unidad')}</div></div>`;
+  const f=(k,v)=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:3px 0;font-size:12.5px"><span style="color:var(--muted)">${k}</span><span>${v}</span></div>`;
+  return `<div class="card" style="padding:11px 13px;margin:0 0 12px">
+    ${t.tope!=null?`<div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Tope autorizable</div>
+      <div style="font:700 23px/1.15 'IBM Plex Sans'">${n(t.tope,2)} L</div>
+      ${t.tope_motivo?`<div style="font-size:11.5px;color:var(--muted);line-height:1.45;margin:3px 0 7px">${esc(t.tope_motivo)}</div>`:''}`:''}
+    ${f('Referencia de la unidad', n(t.rendimiento,2)+' km/L')}
+    ${t.km_recorridos!=null?f('Desde la última lectura', n(t.km_recorridos)+' km'):''}
+    ${t.consumo_recorrido!=null?f('Debió consumir', n(t.consumo_recorrido,1)+' L'):''}
+    ${t.km_viaje!=null?f('El viaje', n(t.km_viaje)+' km'+(t.consumo_viaje!=null?' · '+n(t.consumo_viaje,1)+' L':'')):''}
+  </div>`;
+}
+function opAvisoTope(){
+  const box=$('#op-aut-aviso'); if(!box)return;
+  const v=Number(($('#op-aut-litros')||{}).value);
+  if(_AUT_TOPE==null||!v||isNaN(v)||v<=_AUT_TOPE){ box.innerHTML=''; return; }
+  const n=x=>Number(x).toLocaleString('es-MX',{maximumFractionDigits:1});
+  box.innerHTML=`<div style="border:1px solid var(--danger);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12.5px;color:var(--danger)">Se pasa <b>${n(v-_AUT_TOPE)} L</b> del tope de <b>${n(_AUT_TOPE)} L</b>. Puedes autorizarlo; queda registrado.</div>`;
+}
+// Billete de la hoja de autorización. El panorama llega por una petición aparte -«Cargando el
+// panorama…»-, y sin esto la respuesta de una solicitud se pintaba dentro de la hoja de la
+// SIGUIENTE: `$('#op-aut-pan')` se resuelve después del await y encuentra el hueco vivo de la
+// otra. Peor que el repintado: `opPanoramaHTML` fija `_AUT_TOPE` de paso, así que el aviso de
+// «te pasas del tope» de la segunda quedaba gobernado por el tope de la primera.
+let _OP_AUT_TIC=0;
+async function opAbrirAutorizar(id){
+  const s=G_SOLIS.find(x=>x.id===id); if(!s)return;
+  _AUT_TOPE=null;
+  const tic=++_OP_AUT_TIC;
+  openSheet(`<div class="sh"><h3>Autorizar combustible</h3><button class="x" onclick="closeSheet()"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <p style="font-size:12.5px;color:var(--muted);margin:0 0 6px">${esc(s.folio)||('Solicitud #'+s.id)} · Unidad ${esc(s.unidad)||'—'} · ${esc(s.operador)||'—'}</p>
+    <div id="op-aut-pan"><div style="font-size:12px;color:var(--muted);margin:0 0 10px">Cargando el panorama…</div></div>
+    <label class="f">Litros a autorizar</label><input id="op-aut-litros" type="number" inputmode="decimal" step="0.01" min="0" placeholder="p. ej. 350" oninput="opAvisoTope()">
+    <div id="op-aut-aviso"></div>
+    <button class="btn block" style="margin-top:14px" onclick="opAutorizar(${id})">Autorizar</button>`);
+  try{
+    const d=await api('/api/solicitudes/'+id);
+    // La comprobación va ANTES de llamar a `opPanoramaHTML`, no sólo antes de pintar: esa
+    // función fija `_AUT_TOPE` como efecto secundario, así que llamarla ya contaminaría.
+    if(tic!==_OP_AUT_TIC)return;
+    const box=$('#op-aut-pan'); if(box)box.innerHTML=opPanoramaHTML(d.tanque);
+  }catch(e){
+    if(tic!==_OP_AUT_TIC)return;
+    const box=$('#op-aut-pan'); if(box)box.innerHTML=''; }
+}
+async function opAutorizar(id){
+  const v=$('#op-aut-litros').value; if(!v||Number(v)<=0){toast('Indica los litros');return;}
+  try{
+    // El salto ENVIADA -> EN_VALIDACION lo hace ahora el SERVIDOR, dentro de la misma
+    // transacción que la autorización. Aquí se decidía mirando la lista cacheada, y con
+    // una devuelta recién reenviada esa caché mentía: no se tomaba y autorizar daba 409.
+    const fd=new FormData();fd.append('litros',v);
+    let r;
+    try{ r=await api('/api/solicitudes/'+id+'/autorizar',{method:'POST',body:fd}); }
+    catch(e){
+      // La segunda autorización del día se detiene UNA vez. No se bloquea: casi la mitad de
+      // los días una unidad carga más de una vez y eso es trabajo normal. Antes ese 409 caía
+      // en un toast y la recarga era imposible de autorizar desde aquí.
+      if(!(e.cuerpo&&e.cuerpo.codigo==='doble_carga_hoy'))throw e;
+      // `ask()` es un envoltorio que existe en el panel del coordinador y en el del admin,
+      // NO aquí. Esta vista usa Dlg directamente, que es lo que ese envoltorio llama.
+      const ok=await Dlg.confirm({title:'Esta unidad ya cargó hoy',text:e.cuerpo.mensaje,
+                                  okLabel:'Autorizar de todos modos',danger:true});
+      if(!ok)return;
+      fd.append('confirmar','1');
+      r=await api('/api/solicitudes/'+id+'/autorizar',{method:'POST',body:fd});
+    }
+    closeSheet();
+    toast('Autorizada · '+(r.folio||'')+(r.excedido?' · por encima del tope, queda registrado':''));
+    opLoadAutorizar();
+  }catch(e){toast(e.message||'No se pudo autorizar');}
+}
+async function opResolverAnom(id,accion){
+  try{await api('/api/anomalias/'+id+'/'+accion,{method:'POST',body:new FormData()});toast(accion==='confirmar'?'Anomalía confirmada':'Anomalía descartada');opLoadAnomalias();}
+  catch(e){toast(e.message||'No se pudo');}
+}
+// ══ COMBUSTIBLE (solo lectura) ══
+async function loadCombustibleG(){
+  const box=$('#gc-lista'), bar=$('#gc-alertbar'); if(!box)return;
+  let d; try{ d=await api('/api/combustible/rendimiento'); }catch(e){ box.innerHTML='<div class="empty">No se pudo cargar.</div>'; if(bar)bar.innerHTML=''; return; }
+  const ops=d.operadores||[], na=d.n_alertas||0;
+  bar.innerHTML= na>0
+    ? `<div style="background:color-mix(in oklab,var(--danger) 10%,transparent);border:1px solid color-mix(in oklab,var(--danger) 35%,transparent);border-radius:10px;padding:11px 13px;font-size:13px"><b>${na}</b> operador(es) por debajo de la referencia de su unidad.</div>`
+    : `<div style="background:color-mix(in oklab,var(--ok) 10%,transparent);border:1px solid color-mix(in oklab,var(--ok) 35%,transparent);border-radius:10px;padding:11px 13px;font-size:13px">Sin alertas entre los que se pueden medir.${d.n_sin_referencia?` ${d.n_sin_referencia} viaje(s) sin lectura de escáner con la que comparar.`:''}</div>`;
+  const col=p=>p==null?'var(--muted)':(p>=1?'var(--ok)':(p>=0.9?'var(--warn)':'var(--danger)'));
+  box.innerHTML= ops.length? '<div class="card">'+ops.map(o=>{
+    const p=o.pct, pct=p==null?'—':Math.round(p*100)+'%';
+    const real=o.rto_real!=null?Number(o.rto_real).toFixed(2):'—';
+    // «ref.» y no «meta»: es lo que rindió esa misma unidad la última vez que se le leyó el
+    // motor, no un objetivo que nadie fijó.
+    const meta=o.objetivo!=null?('ref. '+Number(o.objetivo).toFixed(2)):'sin referencia';
+    const pill=o.alerta?'<span style="font-size:10.5px;font-weight:700;color:var(--danger);background:color-mix(in oklab,var(--danger) 16%,transparent);padding:3px 9px;border-radius:20px">BAJO OBJETIVO</span>':'';
+    return `<div class="item"><div style="flex:1;min-width:0"><b>${esc(o.operador)||'—'}</b><div style="font-size:12px;color:var(--muted)">${o.n_viajes} viaje(s) · ${real} km/l · ${meta}</div></div><div style="display:flex;align-items:center;gap:10px;text-align:right;flex:0 0 auto">${pill}<div><div style="font:700 18px 'IBM Plex Mono';color:${col(p)}">${pct}</div><div style="font-size:11px;color:var(--muted)">${real} km/l</div></div></div></div>`;
+  }).join('')+'</div>' : '<div class="empty">Aún no hay viajes con rendimiento capturado.</div>';
+  try{ const a=await api('/api/analisis-facturas'); if(a&&a.analisis){ box.insertAdjacentHTML('beforeend', `<div class="card" style="margin-top:14px"><div class="kick">Análisis IA · Recargas vs facturas</div><div style="font-size:11px;color:var(--muted);margin:4px 0 8px">${a.creado_en?esc(String(a.creado_en).slice(0,16).replace('T',' ')):''}</div><div style="font-size:13px;line-height:1.6">${mdLightG(a.analisis)}</div></div>`); } }catch(e){}
+}
+function mdLightG(s){ return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>'); }
+
+// ══ VIAJES Y RECARGAS ══
+let GV_VIA=[], GV_REC=[], GV_ACT=[], gvTab='vigentes';
+async function loadViajesRecargas(){
+  if(!G_OPS.length){try{G_OPS=await api('/api/operadores');}catch(e){}}
+  const sel=$('#gv-op'); if(sel&&sel.options.length<=1){ sel.innerHTML='<option value="">— Todos los operadores —</option>'+G_OPS.slice().sort(opSort).map(o=>`<option value="${esc(o.nombre)}">${esc(o.nombre)}</option>`).join(''); }
+  gvRender();
+}
+function gvTabSet(t){ gvTab=t; document.querySelectorAll('.gvtab').forEach(b=>b.classList.toggle('on',b.dataset.gv===t)); gvRender(); }
+async function gvRender(){
+  const box=$('#gv-lista'); if(!box)return; box.innerHTML='<div class="empty">Cargando…</div>';
+  const gvOp=$('#gv-op')?$('#gv-op').value:'';
+  if(gvTab==='vigentes'){
+    try{GV_ACT=await api('/api/asignaciones?estado=activa');}catch(e){box.innerHTML='<div class="empty">No se pudo cargar.</div>';return;}
+    let as=GV_ACT; if(gvOp)as=as.filter(a=>a.operador_nombre===gvOp);
+    box.innerHTML= as.length? '<div class="card">'+as.map(a=>{const rem=(a.remolques||[]).map(r=>r.eco).join(', ');return `<div class="item"><div style="flex:1;min-width:0"><b>${esc(a.unidad_clave)||'—'}</b> <span style="font-size:11px;color:var(--ok)">● activo</span><div style="font-size:12px;color:var(--muted)">→ ${esc(a.destino)||'—'} · ${esc(a.operador_nombre)||'—'}${a.origen?' · desde '+esc(a.origen):''}${rem?' · rem: '+esc(rem):''}</div></div><div style="text-align:right;flex:0 0 auto;font-size:11px;color:var(--muted)">${esc((a.creada_en||'').slice(0,10))}</div></div>`;}).join('')+'</div>' : '<div class="empty">No hay viajes vigentes ahora mismo.</div>';
+  } else if(gvTab==='viajes'){
+    if(!GV_VIA.length){try{GV_VIA=await api('/api/viajes?limit=500');}catch(e){box.innerHTML='<div class="empty">No se pudo cargar.</div>';return;}}
+    let vs=GV_VIA; if(gvOp)vs=vs.filter(v=>v.operador===gvOp);
+    box.innerHTML= vs.length? '<div class="card">'+vs.slice(0,300).map(v=>`<div class="item"><div style="flex:1;min-width:0"><b>${esc(v.unidad)||'—'}</b> <span style="font-size:11px;color:var(--muted)">${esc(v.tipo||'')}</span><div style="font-size:12px;color:var(--muted)">${esc((v.fecha||'').slice(0,10))} · ${esc(v.operador)||'—'}</div></div><div style="text-align:right;flex:0 0 auto"><div style="font:700 15px 'IBM Plex Mono'">${v.kilometros!=null?Math.round(v.kilometros)+' km':'—'}</div><div style="font-size:11px;color:var(--muted)">${v.rto_real!=null?Number(v.rto_real).toFixed(2)+' km/l':'—'}</div></div></div>`).join('')+'</div>' : '<div class="empty">Sin viajes.</div>';
+  } else {
+    if(!GV_REC.length){try{const s=await api('/api/solicitudes');GV_REC=s.solicitudes||[];}catch(e){box.innerHTML='<div class="empty">No se pudo cargar.</div>';return;}}
+    let rs=GV_REC; if(gvOp)rs=rs.filter(x=>x.operador===gvOp);
+    box.innerHTML= rs.length? '<div class="card">'+rs.slice(0,300).map(x=>`<div class="item"><div style="flex:1;min-width:0"><b>${esc(x.folio)||('Solicitud #'+x.id)}</b><div style="font-size:12px;color:var(--muted)">Unidad ${esc(x.unidad)||'—'} · ${esc(x.operador)||'—'}${x.tipo_recarga==='termo'?' · Termo':''}</div></div><div style="text-align:right;flex:0 0 auto"><div style="font:700 15px 'IBM Plex Mono'">${x.litros_reales!=null?Math.round(x.litros_reales)+' L':(x.litros_autorizados!=null?Math.round(x.litros_autorizados)+' L':'—')}</div><div style="font-size:11px;color:var(--muted)">${esc(x.estado)}${x.litros_reales!=null?' · cargados':(x.litros_autorizados!=null?' · autorizados':'')}</div></div></div>`).join('')+'</div>' : '<div class="empty">Sin recargas.</div>';
+  }
+}
+
+// ══ EXPORTAR REPORTES ══
+function expParams(){
+  const tipos=[...document.querySelectorAll('.exp-t:checked')].map(c=>c.value);
+  if(!tipos.length){toast('Elige al menos un reporte');return null;}
+  const p=new URLSearchParams(); p.set('tipos',tipos.join(','));
+  const d=$('#exp-desde').value, h=$('#exp-hasta').value;
+  if(d)p.set('desde',d); if(h)p.set('hasta',h);
+  return p;
+}
+function exportar(fmt){
+  const p=expParams(); if(!p)return;
+  if(fmt==='xlsx'){ window.location='/api/export.xlsx?'+p.toString(); return; }
+  imprimirReporte(p);
+}
+async function imprimirReporte(p){
+  let d; try{ d=await api('/api/export.json?'+p.toString()); }catch(e){ toast('No se pudo generar'); return; }
+  const w=window.open('','_blank'); if(!w){toast('Permite las ventanas emergentes para imprimir');return;}
+  const e2=s=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const rango=(d.desde||d.hasta)?`<p style="color:#666">Rango: ${e2(d.desde||'—')} a ${e2(d.hasta||'—')}</p>`:'';
+  const bloques=(d.bloques||[]).map(b=>`<h2>${e2(b.titulo)}</h2><table><thead><tr>${b.columnas.map(c=>`<th>${e2(c)}</th>`).join('')}</tr></thead><tbody>${(b.filas||[]).map(f=>`<tr>${f.map(v=>`<td>${e2(v==null?'':v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`).join('');
+  w.document.write(`<html><head><title>Reporte 2Day</title><meta charset="utf-8"><style>body{font-family:Arial,Helvetica,sans-serif;margin:28px;color:#111}h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:18px 0 6px;border-bottom:2px solid #EC6D1D;padding-bottom:3px}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}th,td{border:1px solid #ccc;padding:5px 7px;text-align:left}th{background:#f2f2f2}@media print{body{margin:12mm}}</style></head><body><h1>2Day · Reporte de flota</h1>${rango}${bloques||'<p>Sin datos.</p>'}<script>window.onload=function(){setTimeout(function(){window.print();},300);}<\/script>
+</body></html>`);
+  w.document.close();
+}
+// Sube al encabezado REAL del diálogo el título que el cuerpo traía dentro.
+// Trece cuerpos repiten <div class="sh"><h3>…</h3><button class="x">…</button></div>:
+// al promoverlo se gana cabecera FIJA, un solo tamaño de título y UNA sola X.
+// Conservador: si no reconoce el patrón, deja el cuerpo intacto.
+function _promoverCabecera(id,box){
+  try{
+    const bd=box.querySelector('.dlg-bd'); if(!bd)return;
+    const host=bd.firstElementChild; if(!host)return;
+    const esCab=el=>el.classList&&(el.classList.contains('sh')||el.classList.contains('mhead')||el.classList.contains('chart-h'));
+    if(host.tagName!=='H3'&&!esCab(host)){
+      if(!(host.tagName==='DIV'&&host.querySelector(':scope>h3, :scope>.chart-h, :scope>div>h3, :scope>div>.chart-h')))return;
+    }
+    let h3=host.tagName==='H3'?host:host.querySelector('h3');
+    if(!h3)h3=host.classList&&host.classList.contains('chart-h')?host:host.querySelector('.chart-h');
+    if(!h3)return;
+    const t=box.querySelector('.dlg-hd>.t');
+    if(t)t.innerHTML='<h3 id="'+id+'-t">'+h3.innerHTML+'</h3>';
+    const hd=box.querySelector('.dlg-hd'); if(hd)hd.removeAttribute('data-bridge');
+    host.querySelectorAll('button').forEach(b=>{
+      const oc=(b.getAttribute('onclick')||'');
+      if(/close(Modal|Sheet)\s*\(/.test(oc))b.remove();
+    });
+    h3.remove();
+    if(host!==h3&&!host.textContent.trim()&&!host.querySelector('img,svg,input,select,button'))host.remove();
+  }catch(_){}
+}
+
+// ── Puente al diálogo único (dialog.js) ──────────────────────────────────────
+// Las llamadas a openSheet() siguen intactas; cambia solo la envolvente. Se
+// conservan los ids #sheet y #ov por si algún punto del código los consulta.
+// Escape y el clic en el velo ya los gestiona dialog.js (y solo sobre el
+// diálogo de arriba de la pila, no en cascada).
+let _dlgId=null;
+function openSheet(html){
+  if(_dlgId&&Dlg.el(_dlgId)){
+    const box=Dlg.el(_dlgId); box.style.maxWidth='';
+    const hd0=box.querySelector('.dlg-hd'); if(hd0)hd0.setAttribute('data-bridge','');
+    Dlg.setBody(_dlgId,html); _promoverCabecera(_dlgId,box); Dlg.adoptActions(_dlgId); return _dlgId;
+  }
+  _dlgId=Dlg.open({size:'sm',body:html,onClose:()=>{_dlgId=null;}});
+  const box=Dlg.el(_dlgId);
+  if(box){
+    box.id='sheet';
+    const hd=box.querySelector('.dlg-hd');
+    if(hd)hd.setAttribute('data-bridge','');   // el cuerpo ya trae su propio <h3>
+    const scrim=box.parentNode;
+    if(scrim){scrim.id='ov';scrim.classList.add('show');}
+    _promoverCabecera(_dlgId,box);
+    Dlg.adoptActions(_dlgId);
+  }
+  return _dlgId;
+}
+function closeSheet(){ if(_dlgId)Dlg.close(_dlgId); }
+// ¿Sigue abierta la hoja que abrió esta función? Tras un `await`, si la persona la cerró,
+// no hay que volver a abrirla (antes la hoja «resucitaba» al llegar la respuesta).
+function sheetVive(id){ return !!(id&&_dlgId===id&&Dlg.el(id)); }
+
+// ══ tooltip + gráficos (SVG puro, temables) ═══════════════════════════════════
+const CTIP=document.getElementById('charttip');
+document.addEventListener('mousemove',e=>{const m=e.target.closest?e.target.closest('[data-tip]'):null;if(m){CTIP.innerHTML=m.getAttribute('data-tip');CTIP.style.left=e.clientX+'px';CTIP.style.top=e.clientY+'px';CTIP.classList.add('show');}else if(CTIP.classList.contains('show'))CTIP.classList.remove('show');});
+const TIPOCOL={TRACTO:'var(--u-tracto)',CAMION:'var(--u-camion)',Tractos:'var(--u-tracto)',Camiones:'var(--u-camion)',Remolques:'var(--u-remol)'};
+function chartPie(box,data){
+  if(!box)return; const items=Object.entries(data||{}).filter(([,v])=>v>0); const total=items.reduce((a,[,v])=>a+v,0);
+  if(!total){box.innerHTML='<div class="empty" style="padding:14px">Sin datos.</div>';return;}
+  const W=220,H=168,cx=110,cy=82,r=58,sw=26,C=2*Math.PI*r; let acc=0,arcs='';
+  items.forEach(([k,v])=>{const frac=v/total,dash=Math.max(0.5,frac*C-2),col=TIPOCOL[k]||'var(--muted)';
+    arcs+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-dasharray="${dash.toFixed(2)} ${(C-dash).toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}" data-tip="${esc(k+': '+nf(v)+' ('+Math.round(frac*100)+'%)')}"></circle>`;acc+=frac*C;});
+  box.innerHTML='<div class="chart"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Composición de la flota"><g transform="rotate(-90 '+cx+' '+cy+')">'+arcs+`</g><text x="${cx}" y="${cy-1}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="26" font-weight="600" fill="var(--ink)">${nf(total)}</text><text x="${cx}" y="${cy+15}" text-anchor="middle" class="axlbl">unidades</text></svg></div>`
+    +'<div class="leg">'+items.map(([k,v])=>`<span><i style="background:${TIPOCOL[k]}"></i>${esc(k)} · ${nf(v)} (${Math.round(v/total*100)}%)</span>`).join('')+'</div>';
+}
+function chartArea(box,m){
+  if(!box)return; const L=(m&&m.labels)||[]; if(!L.length){box.innerHTML='<div class="empty" style="padding:14px">Sin datos.</div>';return;}
+  const A=m.Tractos||[],B=m.Camiones||[]; const W=340,H=180,padL=28,padR=10,padT=12,padB=26,pw=W-padL-padR,ph=H-padT-padB,base=padT+ph,N=L.length;
+  const maxY=Math.max(1,...L.map((_,i)=>(A[i]||0)+(B[i]||0)))*1.12; const X=i=>padL+(N===1?pw/2:pw*i/(N-1)),Y=v=>base-(v/maxY)*ph;
+  const bottom=L.map((_,i)=>X(i).toFixed(1)+','+Y(A[i]||0).toFixed(1)), cum=L.map((_,i)=>X(i).toFixed(1)+','+Y((A[i]||0)+(B[i]||0)).toFixed(1));
+  const areaA=`${X(0).toFixed(1)},${base} ${bottom.join(' ')} ${X(N-1).toFixed(1)},${base}`, areaB=bottom.concat(cum.slice().reverse()).join(' ');
+  let grid='';[0,.5,1].forEach(f=>{const y=base-f*ph;grid+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--line)"/><text x="${padL-4}" y="${(y+3).toFixed(1)}" text-anchor="end" class="axlbl">${Math.round(f*maxY)}</text>`;});
+  let xl='';L.forEach((lb,i)=>{if(N>7&&i%2)return;xl+=`<text x="${X(i).toFixed(1)}" y="${base+13}" text-anchor="middle" class="axlbl">${esc(lb.slice(5))}</text>`;});
+  let cols='';L.forEach((lb,i)=>{const w=pw/N,x=X(i)-w/2;cols+=`<rect x="${Math.max(padL,x).toFixed(1)}" y="${padT}" width="${w.toFixed(1)}" height="${ph}" fill="transparent" data-tip="${esc(lb+' — Tractos '+(A[i]||0)+' · Camiones '+(B[i]||0))}"></rect>`;});
+  box.innerHTML='<div class="chart"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Viajes por mes por tipo">'+grid+`<polygon points="${areaA}" fill="var(--u-tracto)" fill-opacity="0.85"></polygon><polygon points="${areaB}" fill="var(--u-camion)" fill-opacity="0.8"></polygon><polyline points="${bottom.join(' ')}" fill="none" stroke="var(--card)" stroke-width="1.5"></polyline>`+xl+cols+'</svg></div><div class="leg"><span><i style="background:var(--u-tracto)"></i>Tractos</span><span><i style="background:var(--u-camion)"></i>Camiones</span></div>';
+}
+function chartBar(box,rows){
+  if(!box)return; if(!rows||!rows.length){box.innerHTML='<div class="empty" style="padding:14px">Sin datos.</div>';return;}
+  const W=340,H=180,padL=10,padR=10,padT=16,padB=28,pw=W-padL-padR,ph=H-padT-padB,base=padT+ph,N=rows.length;
+  const maxY=Math.max(1,...rows.map(r=>r.litros))*1.14,slot=pw/N,bw=Math.min(slot*0.6,30); let bars='';
+  rows.forEach((r,i)=>{const x=padL+slot*(i+0.5),h=Math.max(1,(r.litros/maxY)*ph),y=base-h,col=TIPOCOL[r.tipo]||'var(--muted)';
+    bars+=`<rect x="${(x-bw/2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${col}" data-tip="${esc(r.unidad+' · '+tLbl(r.tipo)+' · '+nf(r.litros)+' L')}"></rect>`;
+    bars+=`<text x="${x.toFixed(1)}" y="${(y-4).toFixed(1)}" text-anchor="middle" class="axlbl" fill="var(--muted)">${Math.round(r.litros/1000)}k</text><text x="${x.toFixed(1)}" y="${base+12}" text-anchor="middle" class="axlbl">${esc(r.unidad)}</text>`;});
+  const tipos=[...new Set(rows.map(r=>r.tipo))];
+  box.innerHTML='<div class="chart"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Consumo por unidad"><line x1="'+padL+'" y1="'+base+'" x2="'+(W-padR)+'" y2="'+base+'" stroke="var(--line-2)"></line>'+bars+'</svg></div><div class="leg">'+tipos.map(t=>`<span><i style="background:${TIPOCOL[t]}"></i>${esc(tLbl(t))}s</span>`).join('')+'</div>';
+}
+function chartScatter(box,pts){
+  if(!box)return; if(!pts||!pts.length){box.innerHTML='<div class="empty" style="padding:14px">Sin datos.</div>';return;}
+  const W=340,H=192,padL=28,padR=10,padT=10,padB=30,pw=W-padL-padR,ph=H-padT-padB,base=padT+ph;
+  const xmax=Math.max(...pts.map(p=>p.km))*1.05||1; const ys=pts.map(p=>p.rto),ymin=Math.min(...ys),ymax=Math.max(...ys),yp=(ymax-ymin)*0.1||1,y0=Math.max(0,ymin-yp),y1=ymax+yp;
+  const X=v=>padL+(v/xmax)*pw,Y=v=>base-((v-y0)/(y1-y0))*ph;
+  let grid='';[0,.5,1].forEach(f=>{const y=base-f*ph,val=y0+f*(y1-y0);grid+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--line)"></line><text x="${padL-4}" y="${(y+3).toFixed(1)}" text-anchor="end" class="axlbl">${val.toFixed(1)}</text>`;});
+  let xt='';[0,.5,1].forEach(f=>{const x=padL+f*pw;xt+=`<text x="${x.toFixed(1)}" y="${base+13}" text-anchor="middle" class="axlbl">${Math.round(f*xmax)}</text>`;});
+  const dots=pts.map(p=>`<circle cx="${X(p.km).toFixed(1)}" cy="${Y(p.rto).toFixed(1)}" r="2.6" fill="${TIPOCOL[p.tipo]||'var(--muted)'}" fill-opacity="0.6" data-tip="${esc(tLbl(p.tipo)+' · '+Math.round(p.km)+' km · '+p.rto.toFixed(2)+' km/l')}"></circle>`).join('');
+  box.innerHTML='<div class="chart"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Km contra rendimiento por viaje">'+grid+xt+`<text x="${W-padR}" y="${H-3}" text-anchor="end" class="axlbl">km recorridos →</text>`+dots+'</svg></div><div class="leg"><span><i style="background:var(--u-tracto)"></i>Tractos</span><span><i style="background:var(--u-camion)"></i>Camiones</span></div>';
+}
+
+// ══ PANORAMA ══════════════════════════════════════════════════════════════════
+async function loadPanorama(){
+  loadResumenCharts();
+  try{
+    const k=await api('/api/kpis');
+    const kc=(l,v,h,cls)=>`<div class="kpi ${cls||''}"><div class="l">${l}</div><div class="v">${v}</div><div class="h">${h||''}</div></div>`;
+    $('#kpis').innerHTML=
+      kc('Viajes',nf(k.total_viajes),'registrados en bitácora')+
+      kc('Rendimiento',(k.rendimiento_promedio||0).toFixed(2)+' <span style="font-size:15px">km/l</span>','flota completa')+
+      kc('Litros',nf(k.litros_totales),'combustible total')+
+      kc('Unidades',nf(k.unidades),(k.unidades_por_tipo?((k.unidades_por_tipo.TRACTO||0)+' tractos · '+(k.unidades_por_tipo.CAMION||0)+' camiones'):''))+
+      kc('Operadores',nf(k.operadores),'en el padrón')+
+      kc('Anomalías',nf(k.anomalias_pendientes),'pendientes de revisar',k.anomalias_pendientes>0?'warn':'');
+    setBdg('nav-an',k.anomalias_pendientes);
+  }catch(e){ $('#kpis').innerHTML='<div class="empty">No se pudieron cargar los indicadores.</div>'; }
+}
+function setBdg(id,n){const b=$('#'+id);if(!b)return;if(n>0){b.textContent=n;b.style.display='';}else b.style.display='none';}
+async function loadResumenCharts(){
+  try{const d=await api('/api/coordinador/resumen');
+    chartPie($('#ch-pie'),d.composicion);chartArea($('#ch-area'),d.mensual);chartBar($('#ch-bar'),d.consumo);chartScatter($('#ch-scatter'),d.dispersion);
+    if(d.mensual&&d.mensual.labels&&d.mensual.labels.length){const L=d.mensual.labels;$('#hi-rango').textContent='Datos de '+L[0]+' a '+L[L.length-1];}
+  }catch(e){['ch-pie','ch-area','ch-bar','ch-scatter'].forEach(id=>{const b=$('#'+id);if(b)b.innerHTML='<div class="empty">No se pudo cargar.</div>';});}
+}
+
+// ══ CONSULTA IA ═══════════════════════════════════════════════════════════════
+const SUGERENCIAS=[
+  '¿Cuáles son las 3 unidades con peor rendimiento y qué lo explica?',
+  'Resume el estado de la flota en 3 puntos.',
+  '¿Dónde estamos perdiendo más combustible?',
+  '¿Qué tipos de anomalía son los más frecuentes ahora?'
+];
+function pintarChips(){$('#cq-chips').innerHTML=SUGERENCIAS.map(s=>`<button class="chip" onclick="usarSugerencia(this)">${esc(s)}</button>`).join('');}
+function usarSugerencia(btn){$('#cq').value=btn.textContent;preguntar();}
+let PREGUNTANDO=false;
+async function preguntar(){
+  if(PREGUNTANDO)return;
+  const q=$('#cq').value.trim(); if(!q){toast('Escribe una pregunta');return;}
+  PREGUNTANDO=true;
+  $('#cq-ans').innerHTML='<div class="ans"><div class="q">'+esc(q)+'</div><div class="think"><i></i><i></i><i></i> Consultando los datos de la flota…</div></div>';
+  try{
+    const fd=new FormData();fd.append('pregunta',q);
+    const d=await api('/api/consulta',{method:'POST',body:fd});
+    $('#cq-ans').innerHTML='<div class="ans"><div class="q">'+esc(d.pregunta||q)+'</div>'+md(d.respuesta||'')+'</div>';
+  }catch(e){ $('#cq-ans').innerHTML='<div class="ans" style="color:var(--danger)">No se pudo obtener la respuesta: '+esc(e.message||'')+'</div>'; }
+  PREGUNTANDO=false;
+}
+
+// ══ RENDIMIENTO ═══════════════════════════════════════════════════════════════
+async function loadRendimiento(){
+  // Barras horizontales de rendimiento por unidad
+  try{const d=await api('/api/stats/rendimiento-unidad');const L=d.labels||[],V=d.valores||[];
+    if(!L.length){$('#rm-bars').innerHTML='<div class="empty">Sin datos.</div>';}
+    else{const max=Math.max(...V)*1.05;
+      // La frontera sale de la propia flota, no de un 2.8 escrito a mano: ése era el ideal de
+      // catálogo que el sistema ya retiró (la referencia de verdad es el escáner de cada
+      // unidad, y ninguna tiene por qué llegar al mismo número). «Por debajo del grueso de la
+      // flota» es cierto; «por debajo de 2.8» no lo era.
+      const ord=V.slice().sort((a,b)=>a-b), meta=ord[Math.floor(ord.length/2)];
+      $('#rm-bars').innerHTML=L.map((lb,i)=>{const v=V[i],w=Math.round(v/max*100),col=v>=meta?'var(--ok)':(v>=meta*.85?'var(--warn)':'var(--danger)');
+        return `<div class="hb"><div class="lb">${esc(lb)}</div><div class="track"><div class="fill" style="width:${w}%;background:${col}"></div></div><div class="vl">${v.toFixed(2)} km/l</div></div>`;}).join('')
+        +`<div style="font-size:11.5px;color:var(--muted);margin-top:8px">Verde: por encima de la mediana de la flota (${meta.toFixed(2)} km/l). La referencia de cada unidad la mide su propio escáner.</div>`;}
+  }catch(e){$('#rm-bars').innerHTML='<div class="empty">No se pudo cargar.</div>';}
+  // Scanner vs real
+  try{const s=await api('/api/stats/scanner-vs-real');
+    $('#rm-svr').innerHTML='<thead><tr><th>Unidad</th><th class="num">Motor km/l</th><th class="num">Real km/l</th><th class="num">Brecha</th><th class="num">Viajes</th></tr></thead><tbody>'+
+      s.map(r=>{const gap=(r.rto!=null&&r.rto_real!=null)?(r.rto_real-r.rto):null;const gc=gap==null?'var(--muted)':(gap<-0.15?'var(--danger)':(gap>0.15?'var(--ok)':'var(--ink)'));
+        return `<tr><td><b>${esc(r.unidad)}</b></td><td class="num">${r.rto!=null?r.rto.toFixed(2):'—'}</td><td class="num">${r.rto_real!=null?r.rto_real.toFixed(2):'—'}</td><td class="num" style="color:${gc}">${gap!=null?(gap>0?'+':'')+gap.toFixed(2):'—'}</td><td class="num">${r.viajes}</td></tr>`;}).join('')+'</tbody>';
+  }catch(e){$('#rm-svr').innerHTML='<tbody><tr><td class="empty">No se pudo cargar.</td></tr></tbody>';}
+  // Ranking operador-unidad
+  try{const rk=await api('/api/stats/ranking-operador-unidad');
+    $('#rm-rank').innerHTML='<thead><tr><th>Operador</th><th>Unidad</th><th class="num">km/l</th><th class="num">Viajes</th></tr></thead><tbody>'+
+      rk.map(r=>`<tr><td><b>${esc(r.operador)}</b></td><td>${esc(r.unidad)} <span style="color:var(--muted);font-size:11px">${esc(tLbl(r.tipo))}</span></td><td class="num" style="color:var(--ok)">${r.rto_real!=null?r.rto_real.toFixed(2):'—'}</td><td class="num">${r.viajes}</td></tr>`).join('')+'</tbody>';
+  }catch(e){$('#rm-rank').innerHTML='<tbody><tr><td class="empty">No se pudo cargar.</td></tr></tbody>';}
+}
+
+// ══ ANOMALÍAS (solo lectura) ══════════════════════════════════════════════════
+let ANOMS=[];
+const ANOM_INFO={
+  km_imposible:{l:'Kilómetros imposibles',c:'base',e:'Los kilómetros del viaje son cero o negativos: no puede ser un dato real, casi siempre es un error de captura.'},
+  lts_imposible:{l:'Litros imposibles',c:'base',e:'Los litros cargados son cero o negativos. Revisa el comprobante o la lectura.'},
+  odometro_retrocede:{l:'Odómetro retrocede',c:'base',e:'El odómetro es menor que la última lectura registrada de la unidad: no puede ir hacia atrás.'},
+  consumo_atipico:{l:'Consumo atípico',c:'base',e:'El rendimiento de este viaje se sale del comportamiento histórico de la unidad. Puede indicar fuga, robo o un dato mal capturado.'},
+  desviacion_alta:{l:'Desviación alta',c:'base',e:'La diferencia entre litros reales y del scanner supera la tolerancia de la unidad. Se propone un descuento a confirmar.'},
+  rendimiento_fuera_banda_fisica:{l:'Rendimiento fuera de banda física',c:'consistencia',e:'El rendimiento cae fuera de lo físicamente posible para ese tipo de unidad. Revisa km y litros.'},
+  km_vs_odometro:{l:'Km no cuadran con odómetro',c:'consistencia',e:'Los kilómetros reportados no coinciden con el avance del odómetro entre lecturas contiguas.'},
+  reporte_duplicado:{l:'Reporte duplicado',c:'consistencia',e:'Coincide con otro viaje de la misma unidad y fecha: posible captura doble.'},
+  rendimiento_cv_incoherente:{l:'Rendimiento en vacío incoherente',c:'consistencia',e:'Un tramo vacío (sin carga) rinde igual o menos que uno cargado, lo cual no es coherente.'},
+  correccion_sospechosa:{l:'Corrección sospechosa',c:'consistencia',e:'Se corrigió un dato ya reportado de una forma que llama la atención. Verifica el cambio.'},
+  reporte_retractado:{l:'Reporte retractado',c:'consistencia',e:'El reporte de este viaje fue retractado o reemplazado. Revisa qué se cambió y por qué.'},
+  carga_fantasma:{l:'Carga fantasma',c:'fraude',e:'Mucho combustible cargado con casi nada de recorrido ni consumo de motor: posible carga que no usó la unidad.'},
+  comprobante_inflado:{l:'Comprobante inflado',c:'fraude',e:'Sobreconsumo con rendimiento muy por debajo del histórico y sin manejo agresivo que lo explique: el comprobante pudo inflarse.'},
+  sifoneo_tanque:{l:'Sifoneo de tanque',c:'fraude',e:'Exceso de consumo acumulado y persistente en los últimos viajes de la unidad: patrón compatible con extracción (sifoneo) de combustible.'},
+  exceso_velocidad:{l:'Exceso de velocidad',c:'telemetria',e:'La velocidad máxima del viaje es atípica frente al historial de la unidad o supera el tope permitido.'},
+  ralenti_elevado:{l:'Ralentí elevado',c:'telemetria',e:'El motor estuvo en ralentí más de lo normal para esta unidad: desperdicia combustible.'},
+  paradas_panico_recurrentes:{l:'Paradas de pánico',c:'telemetria',e:'Frenadas de emergencia por encima de lo habitual para la unidad: revisa el estilo de manejo o el estado del equipo.'},
+  operador_no_disponible:{l:'Operador no disponible',c:'roles',e:'El operador reportado está en vacaciones, incapacidad, baja o inactivo. Verifica quién condujo en realidad.'},
+  operador_no_asignado:{l:'Operador no asignado',c:'roles',e:'Condujo alguien distinto al titular de la unidad. Confirma si fue un relevo autorizado.'},
+};
+function anomInfo(t){return ANOM_INFO[t]||{l:(t||'anomalía').replace(/_/g,' '),c:'base',e:'Valor fuera de rango detectado por las reglas de validación. Revisa el mini-informe del viaje.'};}
+async function loadAnomalias(){
+  try{ANOMS=await api('/api/anomalias'); ANOMS=ANOMS||[];
+    $('#an-list').innerHTML=ANOMS.length?ANOMS.map(anomItem).join(''):'<div class="empty">Sin anomalías pendientes. Flota en orden.</div>';
+    setBdg('nav-an',ANOMS.length);
+  }catch(e){$('#an-list').innerHTML='<div class="empty">No se pudo cargar.</div>';}
+}
+// Comparativa PREVIOS vs RECIENTES — HTML idéntico en los 3 paneles (Admin/Coordinador/Gerente).
+function anomComparativaHTML(d){
+  const f=(v,dec)=>v==null?'—':Number(v).toLocaleString('es-MX',{maximumFractionDigits:dec});
+  const c=(d&&d.comparativa)||{}, rec=(d&&d.reciente)||{}; let rows='';
+  const bt='border-top:1px solid var(--line,#e3e7ee)';
+  const row=(l,este,ref)=>`<tr><td style="padding:6px 8px;${bt}">${l}</td><td style="padding:6px 8px;${bt};text-align:right;font-weight:600">${este}</td><td style="padding:6px 8px;${bt};text-align:right;color:var(--muted,#5c6674)">${ref}</td></tr>`;
+  if(c.rendimiento){const r=c.rendimiento,al=r.desv_sigmas!=null&&Math.abs(r.desv_sigmas)>=2?' ⚠':'';rows+=row('Rendimiento (km/L)'+al,f(r.actual,2),`hist. ${f(r.media_hist,2)} ±${f(r.sigma,2)} · ${r.n} viajes${r.desv_sigmas!=null?' · '+f(r.desv_sigmas,1)+'σ':''}`);}
+  if(c.odometro){const o=c.odometro;rows+=row('Odómetro (km)',f(o.actual,0),`anterior ${f(o.ultimo_previo,0)}${o.fecha_previo?' ('+esc(o.fecha_previo)+')':''} · Δ ${f(o.avance,0)}`);}
+  if(c.por_codigo){const pc=c.por_codigo;rows+=row('Rend. código '+esc(pc.codigo),f(pc.actual,2),`media ${f(pc.media_codigo,2)}`);}
+  rows+=row('Litros cargados',f(rec.lts_real,0),rec.lts_scaner!=null?`escáner ${f(rec.lts_scaner,0)} · dif ${f(rec.dif,0)}`:'—');
+  if(rec.pct!=null)rows+=row('Desviación',f(rec.pct*100,1)+'%','vs escáner del motor');
+  const th='text-align:VAL;padding:0 8px 4px;font-size:10.5px;color:var(--muted,#5c6674);text-transform:uppercase;letter-spacing:.05em';
+  const tabla=rows?`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr><th style="${th.replace('VAL','left')}">Dato</th><th style="${th.replace('VAL','right')}">Este viaje</th><th style="${th.replace('VAL','right')}">Previo / histórico</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<div class="sub">Sin comparación disponible para este tipo.</div>';
+  const uv=(d&&d.ultimos_viajes)||[];
+  const hist=uv.length?`<div style="margin-top:12px"><div style="${th.replace('VAL','left').replace('0 8px 4px','0 0 4px')}">Últimos viajes de la unidad</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;padding:2px 6px;color:var(--muted,#5c6674)">Fecha</th><th style="text-align:right;padding:2px 6px;color:var(--muted,#5c6674)">Km</th><th style="text-align:right;padding:2px 6px;color:var(--muted,#5c6674)">Litros</th><th style="text-align:right;padding:2px 6px;color:var(--muted,#5c6674)">km/L</th></tr></thead><tbody>${uv.map(x=>`<tr><td style="padding:2px 6px">${esc(x.fecha||'—')}</td><td style="padding:2px 6px;text-align:right">${f(x.km,0)}</td><td style="padding:2px 6px;text-align:right">${f(x.lts_real,0)}</td><td style="padding:2px 6px;text-align:right">${f(x.rto_real,2)}</td></tr>`).join('')}</tbody></table></div></div>`:'';
+  return tabla+hist;
+}
+function anomItem(a){const inf=anomInfo(a.tipo);
+  return `<div class="item" onclick="verAnomalia(${a.id})" style="cursor:pointer">
+    <div class="who2"><b>${esc(a.unidad||'—')}</b> <span class="catbadge ${inf.c}">${esc(inf.l)}</span>
+      <div class="m">${esc(a.descripcion||'')}${a.fecha?' · '+esc(a.fecha.slice(0,10)):''}</div></div>
+    <svg class="ic" viewBox="0 0 24 24" style="color:var(--muted)"><path d="M9 6l6 6-6 6"></path></svg></div>`;
+}
+async function verAnomalia(id){
+  const a=(ANOMS||[]).find(x=>x.id===id)||{}; const inf=anomInfo(a.tipo);
+  const sid=openSheet('<div class="empty">Cargando…</div>');
+  let v={}; try{ if(a.viaje_id)v=await api('/api/viajes/'+a.viaje_id); }catch(e){}
+  let det={}, falloDet=false; try{ det=await api('/api/anomalias/'+id); }catch(e){ falloDet=true; }
+  if(!sheetVive(sid))return;      // la cerraron mientras cargaba: no se reabre
+  // Antes el error se tragaba y la hoja salía llena de «—», como si no hubiera datos.
+  if(falloDet&&!a.id){ openSheet('<h3>No se pudo abrir la anomalía</h3><div class="empty">El servidor no respondió. Cierra e inténtalo de nuevo.</div>'); return; }
+  const rc=(l,val)=>`<div class="rc"><div class="rl">${l}</div><div class="rv">${val}</div></div>`;
+  openSheet(`
+    <div class="sh"><h3>${esc(inf.l)}</h3><button class="x" onclick="closeSheet()"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div style="margin:2px 0 8px"><span class="catbadge ${inf.c}">${inf.c}</span> <span style="font-size:12px;color:var(--muted)">viaje #${a.viaje_id||'—'}</span></div>
+    <div class="alertbar"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3.6 2.2 20.4h19.6zM12 10v4.4M12 17.6v.4"/></svg><div>${esc(a.descripcion||'Sin detalle')}</div></div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.55;margin:10px 0 0"><b style="color:var(--ink)">¿Por qué salió?</b> ${esc(inf.e)}</p>
+    ${det.creado_en?`<p style="font-size:12px;color:var(--muted);margin:8px 0 0">Detectada: <b style="color:var(--ink)">${new Date(det.creado_en).toLocaleString('es-MX')}</b></p>`:''}
+    <div class="report"><div class="kick">Mini-informe del viaje</div><div class="rg">
+      ${rc('Unidad',esc(v.unidad||a.unidad||'—')+(v.tipo_unidad?' · '+tLbl(v.tipo_unidad):''))}
+      ${rc('Operador',esc(v.operador||'—'))}
+      ${rc('Fecha',esc((v.fecha||a.fecha||'—').slice(0,10)))}
+      ${rc('Odómetro',v.odometro!=null?nf(v.odometro)+' km':'—')}
+      ${rc('Km del viaje',v.kilometros!=null?nf(v.kilometros)+' km':'—')}
+      ${rc('Litros reales',v.lts_real!=null?nf(v.lts_real)+' L':'—')}
+      ${rc('Litros scanner',v.lts_scaner!=null?nf(v.lts_scaner)+' L':'—')}
+      ${rc('Rend. real',v.rto_real!=null?v.rto_real.toFixed(2)+' km/l':'—')}
+      ${rc('Rend. scanner',v.rto!=null?v.rto.toFixed(2)+' km/l':'—')}
+      ${rc('Desviación',v.pct!=null?(v.pct*100).toFixed(1)+'%':'—')}
+    </div></div>
+    <div class="report"><div class="kick">Este viaje vs el historial de la unidad</div>${anomComparativaHTML(det)}</div>
+    <div style="margin-top:12px;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px"><svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v9H5zM12 14.5v2"/></svg> Vista de gerencia: quien resuelve la anomalía es el coordinador.</div>
+  `);
+}
+
+// ══ OPERADORES (solo lectura) ═════════════════════════════════════════════════
+async function loadOperadores(){
+  try{OPERADORES=await api('/api/operadores');pintarOperadores();}
+  catch(e){$('#op-tabla').innerHTML='<tbody><tr><td class="empty">No se pudo cargar.</td></tr></tbody>';}
+}
+function pintarOperadores(){
+  const q=($('#op-q')&&$('#op-q').value||'').toLowerCase().trim();
+  let list=OPERADORES.filter(o=>o.activo!==false);
+  if(q)list=list.filter(o=>(o.nombre||'').toLowerCase().includes(q)||String(o.numero||'').includes(q));
+  list.sort((a,b)=>(b.viajes||0)-(a.viajes||0));
+  $('#op-tabla').innerHTML='<thead><tr><th>Operador</th><th class="num">Viajes</th><th class="num">Rendimiento</th><th>Estatus</th><th></th></tr></thead><tbody>'+
+    (list.length?list.map(o=>`<tr onclick="verOperador(${o.id})" style="cursor:pointer"><td><b>${esc(o.nombre)}</b>${o.numero?' <span style="color:var(--muted);font-size:11px">#'+o.numero+'</span>':''}</td><td class="num">${o.viajes||0}</td><td class="num">${o.rto_real_prom!=null?o.rto_real_prom.toFixed(2)+' km/l':'—'}</td><td>${esc(o.estatus||'—')}</td><td style="text-align:right;color:var(--muted)">›</td></tr>`).join(''):'<tr><td class="empty" colspan="5">Sin operadores.</td></tr>')+'</tbody>';
+}
+async function verOperador(id){
+  const sid=openSheet('<div class="empty">Cargando…</div>');
+  let o; try{o=await api('/api/operadores/'+id);}catch(e){ if(sheetVive(sid))openSheet('<h3>No se pudo abrir el operador</h3><div class="empty">El servidor no respondió. Cierra e inténtalo de nuevo.</div>'); return; }
+  if(!sheetVive(sid))return;      // la cerraron mientras cargaba: no se reabre
+  const rc=(l,v)=>`<div class="rc"><div class="rl">${l}</div><div class="rv">${v}</div></div>`;
+  const rend=o.rend_mensual||{labels:[],valores:[]};
+  const maxR=Math.max(0.1,...(rend.valores||[]));
+  // Mismo motivo que en las barras: el color sale de SUS meses, no de un 2.8 de catálogo.
+  const _o=(rend.valores||[]).slice().sort((a,b)=>a-b), medO=_o.length?_o[Math.floor(_o.length/2)]:0;
+  const spark=(rend.valores||[]).length?('<div style="display:flex;align-items:flex-end;gap:3px;height:44px;margin-top:8px">'+rend.valores.map((v,i)=>{const h=Math.max(4,Math.round(v/maxR*44));const c=v>=medO?'var(--ok)':(v>=medO*.85?'var(--warn)':'var(--danger)');return `<div title="${esc(rend.labels[i])}: ${v.toFixed(2)} km/l" style="flex:1;min-width:6px;height:${h}px;background:${c};border-radius:3px 3px 0 0"></div>`;}).join('')+'</div>'):'';
+  const unids=(o.unidades||[]).slice(0,6).map(u=>`<span class="pill ghost" style="margin:2px 4px 2px 0">${esc(u.clave)} · ${u.viajes}</span>`).join('')||'<span style="color:var(--muted)">—</span>';
+  const anoms=(o.anomalias||[]).slice(0,5).map(a=>{const inf=anomInfo(a.tipo);return `<div class="item" style="padding:8px 0"><div class="who2"><b>${esc(a.unidad||'—')}</b> <span class="catbadge ${inf.c}">${esc(inf.l)}</span><div class="m">${esc((a.fecha||'').slice(0,10))}</div></div></div>`;}).join('')||'<div class="empty" style="padding:8px">Sin anomalías.</div>';
+  const viajes=(o.ultimos_viajes||[]).slice(0,6).map(v=>`<div class="item" style="padding:7px 0"><div class="who2"><b>${esc(v.unidad||'—')}</b><div class="m">${esc((v.fecha||'').slice(0,10))}${v.tipo?' · '+esc(String(v.tipo).toLowerCase()):''}</div></div><div style="text-align:right;font-size:12.5px">${v.kilometros!=null?Math.round(v.kilometros)+' km':'—'}${v.rto_real!=null?'<div class="m">'+v.rto_real.toFixed(2)+' km/l</div>':''}</div></div>`).join('')||'<div class="empty" style="padding:8px">Sin viajes.</div>';
+  openSheet(`
+    <div class="sh" style="gap:10px"><div style="display:flex;align-items:center;gap:11px;min-width:0">${o.tiene_foto?`<img src="/api/operadores/${id}/foto" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid var(--line)">`:`<span style="width:44px;height:44px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;background:var(--sunken);color:var(--muted);font-weight:700;font-size:15px">${esc((o.nombre||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase())}</span>`}<h3 style="min-width:0;overflow:hidden;text-overflow:ellipsis">${esc(o.nombre)}</h3></div><button class="x" onclick="closeSheet()"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div style="margin:2px 0 10px;display:flex;gap:8px;flex-wrap:wrap">${o.numero?'<span class="pill ghost">#'+o.numero+'</span>':''}<span class="pill ghost">${esc(o.estatus||'—')}</span>${o.telefono?'<a class="pill ghost" href="tel:'+esc(o.telefono)+'" style="text-decoration:none">'+esc(o.telefono)+'</a>':''}${o.licencia?'<span class="pill ghost">Lic. '+esc(o.licencia)+'</span>':''}</div>
+    <div class="report"><div class="rg" style="grid-template-columns:1fr 1fr 1fr">
+      ${rc('Viajes',nf(o.viajes||0))}
+      ${rc('Rendimiento',o.rto_real_prom!=null?o.rto_real_prom.toFixed(2)+' km/l':'—')}
+      ${rc('Desviación',o.dif_prom!=null?(o.dif_prom>0?'+':'')+o.dif_prom+' L':'—')}
+    </div>${spark?'<div class="rl" style="margin-top:12px">Rendimiento por mes</div>'+spark:''}</div>
+    <div class="report"><div class="kick">Unidades que maneja</div><div style="margin-top:8px">${unids}</div></div>
+    <div class="report"><div class="kick">Anomalías recientes</div>${anoms}</div>
+    <div class="report"><div class="kick">Últimos viajes</div>${viajes}</div>
+  `);
+}
+
+// ── init ──
+(async function(){
+  pintarNav(); applyTheme(); pintarChips();
+  try{ME=await api('/api/me');}catch(e){ME={};}
+  if(window.TR_aplicarPrefs)TR_aplicarPrefs(ME.prefs);
+  var _nom=ME.nombre||'Gerencia'; $('#u-nm').textContent=_nom; var _a=$('#u-av'); if(ME.tiene_foto){_a.innerHTML='<img src="/api/perfil/foto?t='+Date.now()+'" alt="" style="width:100%;height:100%;object-fit:cover">';}else{_a.textContent=_nom.split(' ').filter(Boolean).map(x=>x[0]).slice(0,2).join('').toUpperCase();}
+  $('#pf-user').textContent=ME.username||'—';
+  $('#hi-nombre').textContent=(ME.nombre||'Gerencia');
+  show('panorama');
+})();
+</script>
+<script src="/static/bgfx.js?v=20260827d" defer></script>
+</body>
+</html>

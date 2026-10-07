@@ -1,0 +1,2087 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2Day · Coordinación</title>
+<script>(function(){try{var t=localStorage.getItem('tr-theme')||'system';var d=t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';}catch(e){document.documentElement.dataset.theme='light';}})();</script>
+<link rel="stylesheet" href="/static/fuentes.css?v=20260920a">
+<link rel="stylesheet" href="/static/base.css?v=20260920c">
+<link rel="stylesheet" href="/static/dialog.css?v=20261005a">
+<!-- dialog.js se carga SIN defer: el codigo de la pagina es inline y debe encontrar Dlg ya definido -->
+<script src="/static/aviso.js?v=20260903a"></script>
+<script src="/static/dialog.js?v=20261005a"></script>
+<script src="/static/maps.js?v=20260827d"></script>
+<style>
+/* Paleta categórica de los gráficos (Tractos/Camiones/Remolques), validada CVD-safe en claro y oscuro */
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+@keyframes drift{0%,100%{transform:translate3d(-2%,-1.5%,0)}50%{transform:translate3d(2%,1.5%,0)}}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+button{font:inherit;cursor:pointer}
+a{color:var(--accent)}
+/* layout */
+.app{position:relative;z-index:1;display:flex;min-height:100vh}
+.side{width:236px;flex:0 0 236px;background:var(--nav);border-right:1px solid var(--nav-line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{display:block;padding:16px 14px 10px}
+.brand img{width:130px;height:auto;display:block}
+.brand .tag{display:flex;align-items:center;gap:8px;margin-top:11px}
+.brand .tag i{width:7px;height:15px;background:var(--accent);transform:skewX(-22deg);flex:0 0 auto;border-radius:1px}
+.brand .tag em{font:600 8.5px "IBM Plex Mono";letter-spacing:.24em;color:var(--nav-muted);font-style:normal}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;flex:0 0 auto}
+.nav{padding:6px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;flex:1}
+.navbtn{display:flex;align-items:center;gap:11px;padding:9px 12px;border:0;background:transparent;color:var(--nav-item);border-radius:6px;text-align:left;width:100%;font-weight:600;font-size:13.5px;transition:color .12s,background .12s}
+.navbtn .ic{width:19px;height:19px;color:var(--nav-muted)}
+.navbtn:hover{background:#161a20;color:#fff}
+.navbtn:hover .ic{color:#fff}
+.navbtn.on{background:var(--accent-solid);color:var(--accent-ink)}
+.navbtn.on .ic{color:#fff}
+.navbtn .bdg{margin-left:auto;background:var(--danger);color:#fff;font-size:11px;font-weight:700;min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.navbtn.on .bdg{background:#fff;color:var(--accent)}
+.side .who{padding:12px 16px;border-top:1px solid var(--nav-line);font:600 11px "IBM Plex Mono";letter-spacing:.12em;text-transform:uppercase;color:var(--nav-muted)}
+.side .uwrap{display:flex;align-items:center;gap:10px;padding:12px 12px 4px;border-top:1px solid var(--nav-line)}
+.side .uwrap .av{width:34px;height:34px;border-radius:6px;border:1px solid var(--nav-line);background:var(--u-tracto);color:#fff;font:700 13px 'IBM Plex Sans',sans-serif;display:grid;place-items:center;cursor:pointer;flex:0 0 auto;padding:0;overflow:hidden}
+.side .uwrap .nm{font:600 12.5px 'IBM Plex Sans';color:var(--nav-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side .uwrap .rl{font:600 8.5px 'IBM Plex Mono';letter-spacing:.16em;color:var(--u-tracto);text-transform:uppercase}
+.side .uwrap .logout{width:30px;height:30px;border:0;background:none;color:var(--nav-muted);cursor:pointer;display:grid;place-items:center;flex:0 0 auto;border-radius:6px}
+.side .uwrap .logout:hover{background:#161a20;color:#fff}
+.side .uwrap .logout svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:20;background:color-mix(in oklab,var(--bg) 86%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:12px 20px}
+.top .burger{display:none;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:7px;color:var(--ink)}
+.top h1{font-size:23px;flex:1}
+.top .kick{font-size:10.5px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;display:block;font-family:"IBM Plex Sans";font-weight:600}
+.iconbtn{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:8px;color:var(--ink);display:flex;transition:background .12s}
+.iconbtn:hover{background:var(--sunken)}
+.notifwrap{position:relative}
+.notif{position:absolute;top:calc(100% + 8px);right:0;width:340px;max-width:82vw;max-height:64vh;display:none;flex-direction:column;background:var(--card);border:1px solid var(--line2,var(--line));border-radius:12px;box-shadow:var(--sh-3);z-index:45;overflow:hidden}
+.notif.show{display:flex}
+.notif .hd{padding:12px 15px;border-bottom:1px solid var(--line);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.notif .row{display:flex;gap:10px;align-items:flex-start;padding:11px 15px;cursor:pointer;text-align:left;width:100%;color:var(--ink);font-family:inherit;background:none;border:0;border-bottom:1px solid var(--line)}
+.notif .row:last-child{border-bottom:0}
+.notif .row:hover{background:color-mix(in oklab,var(--accent) 8%,transparent)}
+.notif .ndot{width:7px;height:7px;border-radius:50%;background:var(--danger);flex:0 0 auto;margin-top:5px}
+#nbadge{position:absolute;top:1px;right:2px;min-width:15px;height:15px;padding:0 3px;border-radius:99px;background:var(--danger);color:#fff;font:600 9px 'IBM Plex Mono',monospace;display:none;place-items:center;border:1.5px solid var(--card)}
+.wrap{padding:20px;max-width:1120px;width:100%;margin:0 auto}
+.section{display:none}
+.section.on{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:0 1px 0 var(--sh-2)}
+.card+.card{margin-top:14px}
+.kick{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:15px 16px}
+.kpi .l{font-size:11px;letter-spacing:1.4px;color:var(--muted);text-transform:uppercase;font-weight:600}
+.kpi .v{font:600 26px/1 'IBM Plex Mono',monospace;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:6px}
+.kpi.alert .v{color:var(--danger)}
+.kpi.warn .v{color:var(--warn)}
+.kpi.ok .v{color:var(--ok)}
+.kpi .h{font-size:11.5px;color:var(--muted);margin-top:4px}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--accent-solid);color:var(--accent-ink);border:0;border-radius:6px;padding:11px 16px;font-weight:700;font-size:14px}
+.btn:hover{background:var(--accent-2)}
+.btn.gray{background:var(--sunken);color:var(--ink);border:1px solid var(--line)}
+.btn.gray:hover{background:var(--line)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line-2)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+.btn.danger:hover{background:var(--danger);color:#fff}
+.btn.sm{padding:7px 11px;font-size:12.5px;border-radius:6px}
+.btn.block{width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.spread{display:flex;align-items:center;justify-content:space-between;gap:12px}
+/* list items */
+.item{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .who2{flex:1;min-width:0}
+.item .who2 b{font-weight:700}
+.item .who2 .m{font-size:12px;color:var(--muted);margin-top:1px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.pill{font-family:"IBM Plex Sans";font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;letter-spacing:.4px;text-transform:uppercase}
+.pill.enviada{background:color-mix(in oklab,var(--warn) 20%,transparent);color:var(--warn)}
+.pill.en_validacion{background:color-mix(in oklab,var(--accent) 18%,transparent);color:var(--accent)}
+.pill.autorizada{background:color-mix(in oklab,var(--ok) 18%,transparent);color:var(--ok)}
+.pill.despachada,.pill.facturada,.pill.conciliada{background:color-mix(in oklab,var(--ok) 16%,transparent);color:var(--ok)}
+.pill.devuelta{background:color-mix(in oklab,var(--danger) 16%,transparent);color:var(--danger)}
+.pill.borrador{background:var(--sunken);color:var(--muted)}
+.pill.activa{background:color-mix(in oklab,var(--ok) 18%,transparent);color:var(--ok)}
+.pill.finalizada,.pill.cancelada{background:var(--sunken);color:var(--muted)}
+.pill.ghost{background:var(--sunken);color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--danger);flex:0 0 auto}
+.empty{color:var(--muted);text-align:center;padding:26px 10px;font-size:13px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.tab{padding:7px 12px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-weight:600;font-size:12.5px}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.alertbar{display:flex;gap:10px;align-items:flex-start;background:color-mix(in oklab,var(--danger) 12%,transparent);border:1px solid color-mix(in oklab,var(--danger) 40%,transparent);color:var(--danger);border-radius:10px;padding:11px 13px;font-size:13px;font-weight:600}
+/* charts */
+.charts{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media(max-width:899px){.charts{grid-template-columns:1fr}}
+.chart{width:100%}
+.chart svg{width:100%;height:auto;max-width:380px;display:block;margin:0 auto;overflow:visible}
+#ch-pie svg{max-width:250px}
+.chh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px}
+.chh h3{font-size:17px}
+.chh .sub{font-size:11px;color:var(--muted)}
+.leg{display:flex;gap:13px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--muted)}
+.leg span{display:inline-flex;align-items:center;gap:6px}
+.leg i{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+.axlbl{font:600 9px 'IBM Plex Mono',monospace;fill:var(--muted)}
+#charttip{position:fixed;z-index:90;background:var(--ink);color:var(--bg);padding:7px 10px;border-radius:8px;font-size:12px;font-weight:600;pointer-events:none;opacity:0;transition:opacity .1s;white-space:nowrap;box-shadow:var(--sh-2);transform:translate(-50%,-115%)}
+#charttip.show{opacity:1}
+#charttip .t2{font-weight:400;opacity:.8}
+.item.sel{background:color-mix(in oklab,var(--accent) 12%,transparent);border-radius:10px;box-shadow:inset 3px 0 0 var(--accent);padding-left:11px}
+.catbadge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.catbadge.base{background:color-mix(in oklab,var(--warn) 20%,transparent);color:var(--warn)}
+.catbadge.consistencia{background:color-mix(in oklab,var(--u-camion) 22%,transparent);color:var(--u-camion)}
+.catbadge.fraude{background:color-mix(in oklab,var(--danger) 18%,transparent);color:var(--danger)}
+.catbadge.telemetria{background:color-mix(in oklab,var(--u-remol) 28%,transparent);color:var(--u-remol)}
+.catbadge.roles{background:color-mix(in oklab,var(--accent) 18%,transparent);color:var(--accent)}
+.report{background:var(--sunken);border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px}
+.report .rg{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:8px}
+.report .rc .rl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.report .rc .rv{font-weight:700;font-size:15px}
+/* forms */
+label.f{display:block;margin:12px 0 5px;font-size:12.5px;font-weight:600;color:var(--muted)}
+input,select,textarea{width:100%;background:var(--sunken);border:1px solid var(--line);border-radius:6px;padding:10px 11px;color:var(--ink);font:inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid color-mix(in oklab,var(--accent) 45%,transparent);border-color:var(--accent)}
+.remgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:7px;margin-top:6px;max-height:190px;overflow:auto}
+/* modal */
+/* Bloques del formulario: cada uno agrupa lo que se contesta de una vez, y su título dice
+   qué pregunta responde. Un formulario de once campos sin jerarquía se lee peor que tres
+   de cuatro, aunque ocupe lo mismo. */
+/* El título del bloque tiene que ganarle a las etiquetas de campo, que también van en
+   versalitas: sin contraste entre los dos, "QUIÉN VA" y "OPERADOR" se leen como lo mismo
+   y la agrupación deja de agrupar. Se separa por color, peso y una regla debajo. */
+  color:var(--accent);margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+/* Búsqueda sobre el mapa: la caja va pegada al mapa, no suelta arriba, para que se lea
+   como un control DEL mapa y no como un campo más del formulario. */
+.as-busca{display:flex;gap:6px;margin-bottom:8px}
+.as-busca input{flex:1;background:var(--sunken);border:1px solid var(--line);border-radius:6px;padding:9px 11px;color:var(--ink);font:inherit;font-size:13px}
+.as-busca input:focus{outline:2px solid color-mix(in oklab,var(--accent) 45%,transparent);border-color:var(--accent)}
+.as-busca button{flex:0 0 auto;padding:0 14px;border:1px solid var(--line);border-radius:6px;background:var(--sunken);color:var(--ink);font:600 12.5px 'IBM Plex Sans';cursor:pointer}
+.as-busca button:hover{border-color:var(--accent);color:var(--accent)}
+#as-map{height:340px;width:100%;border-radius:10px;border:1px solid var(--line);background:var(--sunken)}
+.sheet .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+/* Modal de solicitud a dos columnas: la información a la izquierda y la evidencia a la
+   derecha, que es como se mira —se lee un dato y se comprueba en la foto—. */
+.sol2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,340px);gap:24px;align-items:start}
+.sol2 .solinfo{min-width:0}
+.sol2 .solfotos{min-width:0}
+/* Los datos en rejilla de dos por fila. En una sola columna la lista se estiraba y empujaba
+   el botón de autorizar fuera de la pantalla: el scroll no venía de tener mucho contenido
+   sino de desperdiciar el ancho. */
+.solgrid{display:grid;grid-template-columns:1fr 1fr;gap:2px 18px;margin-bottom:2px}
+/* Mientras se rehacen los números que dependen del odómetro. Apagarlos es más honesto que
+   dejarlos nítidos: los de la pantalla ya no corresponden a la lectura que se acaba de
+   corregir, y el de al lado es el campo donde se teclean los litros. */
+#sol-combustible[data-recalculando]{opacity:.45;pointer-events:none;transition:opacity .12s}
+.solgrid .c{display:flex;flex-direction:column;gap:1px;padding:7px 0;border-bottom:1px solid var(--line)}
+.solgrid .c.ancho{grid-column:1 / -1}
+.solgrid .c .k{font-size:11px;color:var(--muted);letter-spacing:.02em}
+.solgrid .c .v{font:600 14px/1.3 'IBM Plex Sans';color:var(--ink);display:flex;align-items:center;gap:7px}
+.solgrid .c .v .org{font:400 11px 'IBM Plex Sans';color:var(--muted)}
+.solgrid .c .v.ok{color:var(--ok)} .solgrid .c .v.bad{color:var(--danger)}
+/* Odómetro editable en el sitio: se toca el número y se escribe. */
+.odoedit{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.odoedit input{width:112px;background:var(--sunken);border:1px solid var(--line-2,var(--line));border-radius:6px;padding:4px 8px;color:var(--ink);font:600 14px 'IBM Plex Mono'}
+.odoedit .mini{border:1px solid var(--line-2,var(--line));background:var(--card);color:var(--ink);border-radius:6px;padding:4px 10px;font:600 11.5px 'IBM Plex Sans';cursor:pointer}
+.odoedit .mini:hover{border-color:var(--accent);color:var(--accent)}
+.odoedit .mini.pri{border-color:var(--accent-solid);background:var(--accent-solid);color:var(--accent-ink)}
+/* El lápiz: sólo un icono, sin caja, hasta que se pasa el ratón. Modificar un odómetro no
+   es una acción de todos los días y no debe competir con el número. */
+.odolap{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+  border:1px solid transparent;background:none;color:var(--muted);border-radius:6px;cursor:pointer;flex:0 0 auto}
+.odolap:hover{border-color:var(--line-2,var(--line));color:var(--accent);background:var(--sunken)}
+.odolap svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+/* El rastro del cambio, al lado. Se deduce de los datos, así que sigue ahí al reabrir. */
+.odocambio{display:inline-flex;align-items:center;gap:6px;background:var(--ok-bg);
+  border:1px solid color-mix(in oklab,var(--ok) 34%,transparent);color:var(--ok);
+  border-radius:999px;padding:3px 10px;font:600 11.5px/1.4 'IBM Plex Sans'}
+.odocambio b{font-family:'IBM Plex Mono';font-weight:600}
+/* El despacho: autorizado contra cargado, y lo que quedó sin surtir. Es lo primero que se
+   busca al abrir una solicitud ya despachada, así que va en bloque propio y no en la rejilla. */
+.desp{border:1px solid var(--line);border-radius:10px;background:var(--sunken);
+  padding:11px 13px;margin:12px 0 2px}
+.desphead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
+.desphead .folio{font:600 12.5px 'IBM Plex Mono';color:var(--ink)}
+.despnum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.despnum>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.despnum .k{font-size:10.5px;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
+.despnum b{font:600 17px/1.2 'IBM Plex Mono';color:var(--ink);font-variant-numeric:tabular-nums}
+.despnum .sub{font:400 11px/1.35 'IBM Plex Sans';color:var(--muted)}
+.despnum .ok b{color:var(--ok)} .despnum .warn b{color:var(--warn)} .despnum .bad b{color:var(--danger)}
+.despq{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);
+  font:400 11.5px/1.7 'IBM Plex Sans';color:var(--muted)}
+.despq b{font-weight:600;color:var(--ink)}
+/* La propuesta de la IA. Deliberadamente NO parece un campo relleno: es una tarjeta con un
+   botón, para que aceptarla sea un acto y no una omisión. */
+.sug{border:1px solid var(--line);border-left:3px solid var(--info);border-radius:9px;
+  background:var(--sunken);padding:10px 12px;margin:8px 0 2px}
+.sugtop{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.sugn{font:600 20px/1 'IBM Plex Mono';color:var(--ink);font-variant-numeric:tabular-nums}
+.sugtop .kick{color:var(--info)}
+.sugconf{font:600 10.5px 'IBM Plex Sans';letter-spacing:.04em;text-transform:uppercase;
+  border-radius:999px;padding:2px 8px}
+.sugconf.alta{background:var(--ok-bg);color:var(--ok)}
+.sugconf.media{background:var(--warn-bg);color:var(--warn)}
+.sugconf.baja{background:var(--danger-bg);color:var(--danger)}
+.sugjust{font:400 12px/1.55 'IBM Plex Sans';color:var(--muted);margin-top:5px}
+/* El aviso de que los litros tecleados se pasan del tope. Va PEGADO al campo —no arriba, con
+   el resto del panorama— porque es donde están los ojos al teclear. */
+.topeaviso{display:flex;gap:8px;align-items:flex-start;margin-top:6px;padding:8px 10px;
+  border-radius:8px;font:500 12.5px/1.5 'IBM Plex Sans';
+  background:color-mix(in oklab,var(--warn) 14%,transparent);
+  border:1px solid color-mix(in oklab,var(--warn) 40%,transparent);color:var(--ink)}
+.topeaviso b{font-variant-numeric:tabular-nums}
+.sugcifras{font:400 11px/1.5 'IBM Plex Mono';color:var(--muted);margin-top:5px}
+.sugusar{margin-top:8px;border:1px solid var(--accent-solid);background:var(--accent-solid);color:var(--accent-ink);
+  border-radius:7px;padding:5px 12px;font:600 12px 'IBM Plex Sans';cursor:pointer}
+.sugusar:hover{background:var(--accent-2)}
+.sugusar[disabled]{opacity:.55;cursor:default}
+/* El historial: qué le ha pasado a la solicitud y por mano de quién. */
+.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+.hist li{display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+  padding:4px 0;border-bottom:1px solid var(--line)}
+.hist li:last-child{border-bottom:0}
+.hist .hf{font:400 10.5px 'IBM Plex Mono';color:var(--muted);white-space:nowrap;
+  margin-left:auto;flex:0 0 auto}
+/* El nombre comparte renglón con el estado y se recorta si hace falta: el completo está en
+   el title. Meterlo en su propia línea duplicaba el alto del bloque y tapaba la última. */
+.hist .hu{flex:1 1 60px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font:400 11.5px 'IBM Plex Sans';color:var(--muted)}
+.hist .hn{flex:0 0 100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font:400 11.5px 'IBM Plex Sans';color:var(--ink);padding-left:2px}
+/* Donde estaría el lápiz cuando la lectura ya está congelada: se dice, no se deja el hueco. */
+.odofijo{display:inline-flex;align-items:center;gap:5px;color:var(--muted);
+  font:600 11.5px 'IBM Plex Sans'}
+.odofijo svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round}
+/* Una sola foto ocupa el ancho; dos o más van en cuadrícula. */
+.evgrid{display:grid;gap:10px}
+.evgrid[data-n="1"]{grid-template-columns:1fr}
+.evgrid{grid-template-columns:1fr 1fr}
+.evgrid[data-n="1"] .evzoom{aspect-ratio:4/3}
+.evzoom{aspect-ratio:1/1}
+/* La acción se queda abajo, fuera de lo que scrollea. */
+.solacc{position:sticky;bottom:0;background:linear-gradient(to top,var(--panel,var(--card)) 74%,transparent);padding-top:12px;margin-top:6px}
+.evsosp{display:flex;gap:7px;align-items:flex-start;background:var(--danger-bg,#fce9e4);border:1px solid var(--danger);color:var(--danger);border-radius:8px;padding:8px 10px;font:600 11.5px/1.4 'IBM Plex Sans';margin-bottom:8px}
+.evfig{margin:0;min-width:0}
+.evzoom{width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:9px;border:1px solid var(--line);background:var(--sunken);cursor:zoom-in}
+.evzoom img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .18s ease}
+.evfig figcaption{display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-top:5px;font-size:12px}
+.evcap-t{color:var(--muted)}
+.evcap-o{opacity:.75}
+.evcap-v{font:600 13px 'IBM Plex Mono';color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.evzoom img{transition:none}}
+@media (max-width:820px){.sol2{grid-template-columns:1fr}}
+.x{background:transparent;border:0;color:var(--muted);padding:4px;display:flex}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.kv:last-of-type{border-bottom:0}
+.kv .k{color:var(--muted)}
+.kv .v{font-weight:600;text-align:right}
+/* toast */
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:8px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:var(--z-toast, 150);max-width:90vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.scrim{display:none}
+@media(max-width:899px){
+  .side{position:fixed;left:0;top:0;z-index:70;transform:translateX(-100%);transition:transform .22s ease;box-shadow:8px 0 40px var(--sh-2)}
+  .app.navopen .side{transform:none}
+  .top .burger{display:flex}
+  .app.navopen .scrim{display:block;position:fixed;inset:0;background:rgba(10,12,15,.45);z-index:65}
+  .g4{grid-template-columns:repeat(2,1fr)}
+  .g2{grid-template-columns:1fr}
+  .bgfx{opacity:.92}
+  .bgfx .glow{inset:-10%;background:radial-gradient(80vw 40vh at 50% 6%, color-mix(in oklab,var(--accent) 15%,transparent), transparent 72%),radial-gradient(88vw 44vh at 50% 94%, color-mix(in oklab,var(--u-tracto) 12%,transparent), transparent 74%)}
+}
+@media (prefers-reduced-motion:reduce){.bgfx .glow{animation:none}}
+</style>
+</head>
+<body>
+<div class="bgfx" aria-hidden="true"><div class="glow"></div><canvas></canvas></div>
+<div class="app" id="app">
+  <aside class="side" id="side">
+    <div class="brand">
+      <img src="/static/logo-2day-word.png" alt="2Day Transport / Logistic" style="width:130px;height:auto;display:block">
+      <div class="tag"><i></i><em>COORDINACIÓN</em></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="uwrap">
+      <button class="av" id="u-av" data-tr-avatar onclick="show('perfil')">—</button>
+      <div style="flex:1;min-width:0"><div class="nm" id="u-nm">…</div><div class="rl">Coordinador</div></div>
+      <button class="logout" onclick="location.href='/logout'" title="Cerrar sesión"><svg viewBox="0 0 24 24"><path d="M14 4h-9v16h9M9 12h12m0 0l-3.5-3.5M21 12l-3.5 3.5"></path></svg></button>
+    </div>
+  </aside>
+  <div class="scrim" onclick="closeNav()"></div>
+  <main class="main">
+    <header class="top">
+      <button class="burger" onclick="toggleNav()" aria-label="Menú"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <h1><span class="kick" id="t-kick">COORDINACIÓN</span><span id="t-title">Resumen</span></h1>
+      <div class="notifwrap">
+        <button class="iconbtn" onclick="toggleNotif(event)" title="Notificaciones" style="position:relative"><svg class="ic" viewBox="0 0 24 24"><path d="M6.2 9.8a5.8 5.8 0 0 1 11.6 0c0 3.8 1.4 5.2 1.4 5.2H4.8s1.4-1.4 1.4-5.2zM10.2 18.4a1.9 1.9 0 0 0 3.6 0"/></svg><span id="nbadge"></span></button>
+        <div class="notif" id="notif"><div class="hd">Notificaciones</div><div id="notiflist" style="overflow-y:auto"></div></div>
+      </div>
+      <button class="iconbtn" onclick="cycleTheme()" title="Tema"><svg class="ic" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
+    </header>
+    <div class="wrap">
+
+      <!-- INICIO -->
+      <section class="section on" id="s-inicio">
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+          <div><div class="kick">Hola</div><h2 id="hi-nombre" style="font-size:26px;margin-top:2px">Coordinación</h2>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:2px">Tu centro de operación de la flota.</div></div>
+          <div class="row">
+            <button class="btn" onclick="modalSolicitar()"><svg class="ic" viewBox="0 0 24 24"><path d="M6 21V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v16M4 21h12M6 9h8M15 8l3 2v7a1.5 1.5 0 0 0 3 0V10l-3-3"/></svg> Solicitar combustible</button>
+            <button class="btn gray" onclick="modalAsignar()"><svg class="ic" viewBox="0 0 24 24"><path d="M4 19c4 0 3-6 7-6s3-6 7-6 M2.4 19a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0 M16.4 7a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0"/></svg> Asignar viaje</button>
+          </div>
+        </div>
+        <div class="grid g4" style="margin-top:14px">
+          <div class="kpi warn" onclick="show('solicitudes')" style="cursor:pointer"><div class="l">Por autorizar</div><div class="v" id="k-aut">—</div><div class="h">solicitudes esperando</div></div>
+          <div class="kpi ok" onclick="show('viajes')" style="cursor:pointer"><div class="l">Viajes activos</div><div class="v" id="k-via">—</div><div class="h">en curso ahora</div></div>
+          <div class="kpi alert" onclick="show('problemas')" style="cursor:pointer"><div class="l">Problemas</div><div class="v" id="k-pro">—</div><div class="h">requieren tu atención</div></div>
+          <div class="kpi" onclick="show('operadores')" style="cursor:pointer"><div class="l">Operadores</div><div class="v" id="k-ope">—</div><div class="h">a tu cargo</div></div>
+        </div>
+        <div class="charts" style="margin-top:14px">
+          <div class="card"><div class="chh"><h3>Composición de la flota</h3><span class="sub">unidades activas</span></div><div class="chart" id="ch-pie"><div class="empty">Cargando…</div></div></div>
+          <div class="card"><div class="chh"><h3>Viajes por mes</h3><span class="sub">Tractos vs Camiones</span></div><div class="chart" id="ch-area"><div class="empty">Cargando…</div></div></div>
+          <div class="card"><div class="chh"><h3>Consumo por unidad</h3><span class="sub">litros · top 8</span></div><div class="chart" id="ch-bar"><div class="empty">Cargando…</div></div></div>
+          <div class="card"><div class="chh"><h3>Km vs rendimiento</h3><span class="sub">por viaje · km/l</span></div><div class="chart" id="ch-scatter"><div class="empty">Cargando…</div></div></div>
+        </div>
+        <div class="grid g2" style="margin-top:14px">
+          <div class="card"><div class="spread" style="margin-bottom:6px"><h3 style="font-size:18px">Por autorizar</h3><span class="btn ghost sm" onclick="show('solicitudes')">Ver bandeja →</span></div><div id="hi-solis"><div class="empty">Cargando…</div></div></div>
+          <div class="card"><div class="spread" style="margin-bottom:6px"><h3 style="font-size:18px">Historial reciente</h3></div><div id="hi-hist"><div class="empty">Cargando…</div></div></div>
+        </div>
+      </section>
+
+      <!-- SOLICITUDES -->
+      <section class="section" id="s-solicitudes">
+        <div class="card">
+          <div class="spread" style="margin-bottom:12px"><h2 style="font-size:22px">Bandeja de solicitudes</h2>
+            <button class="btn sm" onclick="modalSolicitar()"><svg class="ic" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg> Levantar</button></div>
+          <div class="tabs" id="sol-tabs"></div>
+          <div id="sol-list"><div class="empty">Cargando…</div></div>
+        </div>
+      </section>
+
+      <!-- VIAJES -->
+      <section class="section" id="s-viajes">
+        <div class="card">
+          <div class="spread" style="margin-bottom:12px"><h2 style="font-size:22px">Viajes asignados</h2>
+            <button class="btn sm" onclick="modalAsignar()"><svg class="ic" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg> Asignar viaje</button></div>
+          <div class="tabs" id="via-tabs"></div>
+          <div id="via-list"><div class="empty">Cargando…</div></div>
+        </div>
+      </section>
+
+      <!-- PROBLEMAS -->
+      <section class="section" id="s-problemas">
+        <div class="card">
+          <h2 style="font-size:22px;margin-bottom:4px">Problemas de operadores</h2>
+          <p style="font-size:12.5px;color:var(--muted);margin:0 0 12px">Solicitudes devueltas o con el económico que no coincide, y anomalías de bitácora por resolver.</p>
+          <div id="pro-list"><div class="empty">Cargando…</div></div>
+        </div>
+      </section>
+
+      <!-- OPERADORES -->
+      <section class="section" id="s-operadores">
+        <div class="card">
+          <div class="spread" style="margin-bottom:10px"><h2 style="font-size:22px">Operadores</h2>
+            <input id="ope-q" placeholder="Buscar…" style="max-width:220px" oninput="pintarOperadores()"></div>
+          <div id="ope-grid"><div class="empty">Cargando…</div></div>
+        </div>
+      </section>
+
+      <!-- FLOTA -->
+      <section class="section" id="s-flota">
+        <div class="card">
+          <div class="tabs"><button class="tab on" data-flo="unidades" onclick="floTab('unidades')">Unidades</button><button class="tab" data-flo="remolques" onclick="floTab('remolques')">Remolques</button></div>
+          <div id="flo-unidades"><div class="empty">Cargando…</div></div>
+          <div id="flo-remolques" style="display:none"><div class="empty">Cargando…</div></div>
+        </div>
+      </section>
+
+      <!-- PERFIL -->
+      <section class="section" id="s-perfil">
+        <div class="card">
+          <h2 style="font-size:22px;margin-bottom:10px">Perfil</h2>
+          <div class="kv"><span class="k">Usuario</span><span class="v" id="pf-user">—</span></div>
+          <div class="kv"><span class="k">Rol</span><span class="v">Coordinador de flota</span></div>
+        </div>
+        <div class="card">
+          <h3 style="font-size:18px;margin-bottom:8px">Personalización</h3>
+          <div id="tr-perfil-mount"></div>
+        </div>
+        <div class="card">
+          <a class="btn danger block" href="/logout">Cerrar sesión</a>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- El diálogo lo crea dialog.js (Dlg). El marcado estático se retiró: el puente
+     openSheet() reutiliza los ids #sheet / #ov sobre la caja y el velo nuevos. -->
+<div id="toast"></div>
+<div id="charttip"></div>
+
+<script src="/static/perfil.js?v=20260920a"></script>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// El cuerpo del error viaja con la excepción: un `detail` estructurado se perdía al pasar por
+// `new Error(objeto)`, que da «[object Object]». Quien necesite los datos los tiene en .cuerpo.
+async function api(p,o){const r=await fetch(p,o);if(r.status===401){location.href='/login';throw 0;}
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){const dt=d.detail;
+    const e=new Error(typeof dt==='string'?dt:((dt&&dt.mensaje)||('Error '+r.status)));
+    e.cuerpo=dt; e.status=r.status; throw e;}
+  return d;}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2800);}
+function applyTheme(){const t=localStorage.getItem('tr-theme')||'system';const eff=t==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=eff;const c=$('#pf-tema');if(c)c.textContent={light:'Claro',dark:'Oscuro',system:'Sistema'}[t];}
+function cycleTheme(){const cur=localStorage.getItem('tr-theme')||'system';const nx={light:'dark',dark:'system',system:'light'}[cur];localStorage.setItem('tr-theme',nx);applyTheme();toast('Tema: '+({light:'claro',dark:'oscuro',system:'sistema'}[nx]));}
+// ── Notificaciones (campana + sondeo cada 30s) ──
+async function notifFuente(){
+  const r=await api('/api/solicitudes');
+  return (r.solicitudes||[]).filter(s=>s.estado==='enviada'||s.estado==='en_validacion')
+    .map(s=>({uid:s.id,titulo:(s.unidad||'—')+' · #'+s.id,sub:(s.operador||'Sin operador')+' · '+(s.estado==='enviada'?'por validar':'en validación'),go:"show('solicitudes');closeNotif()"}));
+}
+let NOTIF_MAX=null;
+function renderNotif(items){
+  const n=items.length,b=$('#nbadge');
+  if(b){if(n){b.style.display='grid';b.textContent=n>99?'99+':n;}else b.style.display='none';}
+  const box=$('#notiflist'); if(!box)return;
+  box.innerHTML=n?items.slice(0,10).map(it=>`<button class="row" onclick="${it.go}"><span class="ndot"></span><span style="flex:1;min-width:0"><span style="display:block;font-size:12.5px">${esc(it.titulo)}</span><span style="display:block;font:500 10px 'IBM Plex Mono',monospace;color:var(--muted);margin-top:2px">${esc(it.sub||'')}</span></span></button>`).join(''):`<div class="empty" style="padding:22px;text-align:center;color:var(--muted);font-size:13px">Sin notificaciones</div>`;
+}
+async function refreshNotif(){try{renderNotif(await notifFuente());}catch(e){}}
+async function vigilarNotif(){
+  if(document.hidden)return;
+  let items; try{items=await notifFuente();}catch(e){return;}
+  renderNotif(items);
+  const maxId=items.reduce((m,it)=>Math.max(m,it.uid||0),0);
+  if(NOTIF_MAX===null){NOTIF_MAX=maxId;return;}
+  const nuevas=items.filter(it=>(it.uid||0)>NOTIF_MAX);
+  NOTIF_MAX=Math.max(NOTIF_MAX,maxId);
+  if(nuevas.length){
+    toast(nuevas.length===1?('Nueva notificación · '+nuevas[0].titulo):(nuevas.length+' notificaciones nuevas'));
+    // Al coordinador le llegan solicitudes que alguien está esperando en una gasolinera:
+    // el aviso tiene que oírse aunque no esté mirando la pantalla.
+    try{ Aviso.sonar(nuevas.length>1); }catch(_){}
+  }
+}
+function toggleNotif(e){e.stopPropagation();const p=$('#notif');if(!p)return;p.classList.toggle('show');if(p.classList.contains('show'))refreshNotif();}
+function closeNotif(){const p=$('#notif');if(p)p.classList.remove('show');}
+document.addEventListener('click',e=>{if(!e.target.closest('.notifwrap'))closeNotif();});
+setInterval(vigilarNotif,30000);
+vigilarNotif();
+// ── Selector de ubicación en mapa (Leaflet + OpenStreetMap, sin Google) ──
+// El mapa vive en /static/maps.js (un solo modulo para las 3 pantallas).
+// Expone mapBtn, pickMapa, asMapInit, asFijar, asRuta, asDibujarRuta,
+// asSetTipo, asMarcar, _hav y el estado _asEstKm/_asTipo que lee el form.
+function _addCoords(fd,inputId,prefix){const el=document.getElementById(inputId);if(el&&el.dataset.lat&&el.dataset.lng){fd.append(prefix+'_lat',el.dataset.lat);fd.append(prefix+'_lng',el.dataset.lng);}}
+try{matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{if((localStorage.getItem('tr-theme')||'system')==='system')applyTheme();});}catch(e){}
+
+const PILL={borrador:'Borrador',enviada:'Enviada',en_validacion:'En validación',autorizada:'Autorizada',despachada:'Despachada',facturada:'Facturada',conciliada:'Conciliada',devuelta:'Devuelta',rechazada:'Rechazada',anulada:'Anulada',en_discrepancia:'Discrepancia',activa:'Activa',finalizada:'Finalizada',cancelada:'Cancelada'};
+function pill(e){return `<span class="pill ${e}">${PILL[e]||e}</span>`;}
+
+// caches
+let ME={}, UNIDADES=[], OPERADORES=[], REMOLQUES=[], SOLIS=[], CONTEOS={}, ASIGS=[], ANOMS=[];
+let solFiltro='pendientes', viaFiltro='activa';
+
+// ── nav ──
+const NAV=[
+  ['inicio','Resumen','M4 11.5 12 4l8 7.5M6 10v9h12v-9'],
+  ['solicitudes','Solicitudes','M5 3h14v18l-7-3-7 3zM9 8h6M9 12h6'],
+  ['viajes','Viajes','M4 19c4 0 3-6 7-6s3-6 7-6 M2.4 19a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0 M16.4 7a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0'],
+  ['problemas','Problemas','M12 3.6 2.2 20.4h19.6zM12 10v4.4M12 17.6v.4'],
+  ['operadores','Operadores','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0 M4.5 20a7.5 7.5 0 0 1 15 0'],
+  ['flota','Unidades y remolques','M2 7h13v9H2zM15 10h3.5l2.5 3v3h-3M2 16h1M8 16h4 M3.2 17a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0 M15.2 17a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0'],
+  ['perfil','Perfil','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0 M4.5 20a7.5 7.5 0 0 1 15 0'],
+];
+const TIT={inicio:['COORDINACIÓN','Resumen'],solicitudes:['BANDEJA','Solicitudes'],viajes:['OPERACIÓN','Viajes'],problemas:['ATENCIÓN','Problemas'],operadores:['EQUIPO','Operadores'],flota:['CATÁLOGO','Unidades y remolques'],perfil:['CUENTA','Perfil']};
+function pintarNav(){
+  $('#nav').innerHTML=NAV.map(([id,lbl,d])=>`<button class="navbtn" data-sec="${id}" onclick="show('${id}')"><svg class="ic" viewBox="0 0 24 24"><path d="${d}"/></svg><span style="flex:1">${lbl}</span>${id==='problemas'?'<span class="bdg" id="nav-pro" style="display:none"></span>':''}${id==='solicitudes'?'<span class="bdg" id="nav-sol" style="display:none"></span>':''}</button>`).join('');
+}
+function toggleNav(){$('#app').classList.toggle('navopen');}
+function closeNav(){$('#app').classList.remove('navopen');}
+function show(sec){
+  $$('.section').forEach(s=>s.classList.remove('on'));
+  const el=$('#s-'+sec); if(el)el.classList.add('on');
+  $$('.navbtn').forEach(b=>b.classList.toggle('on',b.dataset.sec===sec));
+  const t=TIT[sec]||['',sec]; $('#t-kick').textContent=t[0]; $('#t-title').textContent=t[1];
+  closeNav(); window.scrollTo(0,0);
+  if(sec==='inicio')loadInicio();
+  if(sec==='solicitudes')loadSolicitudes();
+  if(sec==='viajes')loadViajes();
+  if(sec==='problemas')loadProblemas();
+  if(sec==='operadores')loadOperadores();
+  if(sec==='flota')loadFlota();
+  if(sec==='perfil'&&window.TR_montarPerfil)TR_montarPerfil(document.getElementById('tr-perfil-mount'),ME);
+}
+
+// ── modal helpers ──
+// Sube al encabezado REAL del diálogo el título que el cuerpo traía dentro.
+// Trece cuerpos repiten <div class="sh"><h3>…</h3><button class="x">…</button></div>:
+// al promoverlo se gana cabecera FIJA, un solo tamaño de título y UNA sola X.
+// Conservador: si no reconoce el patrón, deja el cuerpo intacto.
+function _promoverCabecera(id,box){
+  try{
+    const bd=box.querySelector('.dlg-bd'); if(!bd)return;
+    const host=bd.firstElementChild; if(!host)return;
+    const esCab=el=>el.classList&&(el.classList.contains('sh')||el.classList.contains('mhead')||el.classList.contains('chart-h'));
+    if(host.tagName!=='H3'&&!esCab(host)){
+      if(!(host.tagName==='DIV'&&host.querySelector(':scope>h3, :scope>.chart-h, :scope>div>h3, :scope>div>.chart-h')))return;
+    }
+    let h3=host.tagName==='H3'?host:host.querySelector('h3');
+    if(!h3)h3=host.classList&&host.classList.contains('chart-h')?host:host.querySelector('.chart-h');
+    if(!h3)return;
+    const t=box.querySelector('.dlg-hd>.t');
+    if(t)t.innerHTML='<h3 id="'+id+'-t">'+h3.innerHTML+'</h3>';
+    const hd=box.querySelector('.dlg-hd'); if(hd)hd.removeAttribute('data-bridge');
+    host.querySelectorAll('button').forEach(b=>{
+      const oc=(b.getAttribute('onclick')||'');
+      if(/close(Modal|Sheet)\s*\(/.test(oc))b.remove();
+    });
+    h3.remove();
+    if(host!==h3&&!host.textContent.trim()&&!host.querySelector('img,svg,input,select,button'))host.remove();
+  }catch(_){}
+}
+
+// ── Puente al diálogo único (dialog.js) ──────────────────────────────────────
+// Las llamadas a openSheet() siguen intactas; lo que cambia es la envolvente.
+// Se conservan los ids #sheet y #ov para que sigan funcionando el
+// $('#sheet').style.maxWidth='980px' de asignar viaje y el clic en el velo.
+// ── El TURNO de la hoja ─────────────────────────────────────────────────────
+// Toda función que haga `await` y después escriba en una global o en el DOM por id toma el
+// turno ANTES y comprueba que sigue siendo el suyo DESPUÉS. Si no, su pantalla ya no existe:
+// no toca nada y se calla. Sube cuando la hoja cambia de contenido y cuando se cierra.
+let _SOL_TURNO=0;
+function solTurno(){ return _SOL_TURNO; }
+function solVigente(x){ return x===_SOL_TURNO; }
+function _solInvalidar(){ _SOL_TURNO++; }
+
+let _dlgId=null;
+// Devuelve el id del diálogo: sin él no se le puede poner cabecera ni pie nativos, que es
+// justo lo que le faltaba a los diálogos del puente.
+// REUTILIZAR LA HOJA OBLIGA A DESARMARLA PRIMERO.
+// `Dlg.setBody` sólo escribe en `#<id>-bd`. El pie `.dlg-ft` es su HERMANO y no se entera, y
+// `opts.actions` sigue siendo el array de antes — que es EXACTAMENTE el que lee EN VIVO el
+// oyente delegado del velo. O sea: cuerpo nuevo, botones viejos, atados a las closures viejas.
+// Medido: la hoja decía «No se pudo abrir» y debajo seguían vivos «Autorizar y enviar a
+// combustible», «Anular» y «Devolver»; Anular FUNCIONABA, contra la solicitud de antes.
+// La regla queda del lado del puente y no de cada pantalla: quien repinta el cuerpo declara
+// sus acciones, y si no declara ninguna no hay ninguna.
+function _desarmarHoja(id,box){
+  // El pie, a cero. El TERCER argumento no es adorno: `setActions` sólo limpia `opts.nota`
+  // cuando recibe tres, y una nota superviviente le hace reconstruir un pie que contiene sólo
+  // esa frase. Con '' la rama borra el `.dlg-ft` de verdad.
+  Dlg.setActions(id,[],'');
+  const hd=box.querySelector('.dlg-hd');
+  if(!hd)return;
+  // La cabecera, a cero. `data-bridge` esconde el <h3> y NADA MÁS: el eyebrow, el `sub` y las
+  // píldoras que escribió `Dlg.setHead` no tienen regla y seguían pintados, así que
+  // «Solicitud #7 · T-101 / Juan Pérez / [enviada]» se quedaba encima del mensaje de error.
+  // El <h3> vacío SE CONSERVA a propósito: el `aria-labelledby` del diálogo apunta a ese id,
+  // y dejarlo sin destino rompe el lector de pantalla.
+  hd.setAttribute('data-bridge','');
+  const tt=hd.querySelector('.t');
+  if(tt)tt.innerHTML='<h3 id="'+id+'-t"></h3>';
+}
+function openSheet(html){
+  // La hoja va a enseñar otra cosa: lo que estuviera en vuelo deja de tener pantalla. Va
+  // ARRIBA y vale para las DOS ramas, porque la de reutilización es justo la que engañaba —el
+  // diálogo es el mismo y el `_dlgId` es el mismo, pero el contenido ya no.
+  _solInvalidar();
+  if(_dlgId&&Dlg.el(_dlgId)){
+    const box=Dlg.el(_dlgId); box.style.maxWidth='';
+    _desarmarHoja(_dlgId,box);                 // pie y cabecera del cuerpo anterior, fuera
+    Dlg.setBody(_dlgId,html); _promoverCabecera(_dlgId,box); Dlg.adoptActions(_dlgId); return _dlgId;
+  }
+  // `onClose` es el ÚNICO sitio por el que pasan los cuatro cierres: la X, Escape, el clic en
+  // el velo y `closeSheet()`. Por eso el turno y el estado se sueltan aquí y no en
+  // `closeSheet`, que sólo cubre uno de ellos.
+  // enterSubmits:false — en la hoja de solicitud, un Intro en el odómetro o en los litros
+  // AUTORIZABA con los datos a medio corregir. Aquí las acciones se pulsan, no se teclean.
+  _dlgId=Dlg.open({size:'sm',body:html,enterSubmits:false,onClose:()=>{
+    _dlgId=null;
+    _solInvalidar();
+    // Con la hoja cerrada no hay solicitud a la vista. Dejarlas puestas es lo que permitía que
+    // una respuesta tardía pareciera buena.
+    _SUG=null; _SOL_ACT=null;
+  }});
+  const box=Dlg.el(_dlgId);
+  if(box){
+    box.id='sheet';
+    const hd=box.querySelector('.dlg-hd');
+    if(hd)hd.setAttribute('data-bridge','');   // el cuerpo ya trae su propio <h3>
+    const scrim=box.parentNode;
+    if(scrim){scrim.id='ov';scrim.classList.add('show');}
+    _promoverCabecera(_dlgId,box);
+    Dlg.adoptActions(_dlgId);
+  }
+  return _dlgId;
+}
+function closeSheet(){ if(_dlgId)Dlg.close(_dlgId); }
+// ¿Sigue abierta la hoja que abrió esta función? Tras un `await`, si la persona la cerró,
+// no hay que volver a abrirla (antes la hoja «resucitaba» al llegar la respuesta).
+function sheetVive(id){ return !!(id&&_dlgId===id&&Dlg.el(id)); }
+// ── Diálogos 2Day (reemplazan alert/confirm/prompt nativos) ──
+// ── Diálogos 2Day (reemplazan alert/confirm/prompt nativos) ──
+// Misma firma de siempre: ask({title,msg,okText,cancelText,danger}) resuelve
+// true/false; con input:true resuelve el texto o null. Por debajo usa Dlg, así
+// que la confirmación se apila POR ENCIMA de la hoja que la lanza.
+function ask(o){
+  o=o||{};
+  if(o.input){
+    return Dlg.prompt({title:o.title||'',text:o.msg||'',type:o.type||'text',
+      value:o.value||'',placeholder:o.placeholder||'',
+      okLabel:o.okText||o.ok||'Confirmar',cancelLabel:o.cancelText||'Cancelar'});
+  }
+  return Dlg.confirm({title:o.title||'Confirmar',text:o.msg||'',
+    okLabel:o.okText||o.ok||'Confirmar',cancelLabel:o.cancelText||'Cancelar',
+    danger:!!o.danger});
+}
+// Escape lo gestiona dialog.js (cierra solo el diálogo de arriba de la pila).
+
+// ── catálogos (perezosos) ──
+async function ensureCat(){
+  if(!UNIDADES.length){try{UNIDADES=await api('/api/unidades');}catch(e){}}
+  if(!OPERADORES.length){try{OPERADORES=await api('/api/operadores');}catch(e){}}
+}
+async function ensureRem(){ if(!REMOLQUES.length){try{REMOLQUES=await api('/api/remolques');}catch(e){}} }
+function unidadTipo(id){const u=UNIDADES.find(x=>x.id==id);return u?u.tipo:null;}
+function opsSort(a,b){return (a.nombre||'').localeCompare(b.nombre||'');}
+
+// ── INICIO ──
+async function loadInicio(){
+  $('#hi-nombre').textContent='Hola, '+((ME.nombre||'Coordinación').split(' ')[0]);
+  loadResumenCharts();
+  try{
+    const s=await api('/api/solicitudes'); SOLIS=s.solicitudes||[]; CONTEOS=s.conteos||{};
+    SOL_TRUNCADO=!!s.truncado; SOL_TOTAL=s.total||SOLIS.length;
+    ASIGS=await api('/api/asignaciones').catch(()=>[]) || [];   // todas: para historial + conteo
+    let anoms=[]; try{anoms=await api('/api/anomalias');}catch(e){}
+    ANOMS=anoms||[];
+    await ensureCat();
+    const porAut=(CONTEOS.enviada||0)+(CONTEOS.en_validacion||0);
+    const activos=ASIGS.filter(a=>a.estado==='activa').length;
+    const ecoAl=SOLIS.filter(x=>x.eco_alerta).length;
+    const problemas=(CONTEOS.devuelta||0)+ecoAl+ANOMS.length;
+    $('#k-aut').textContent=porAut;
+    $('#k-via').textContent=activos;
+    $('#k-pro').textContent=problemas;
+    $('#k-ope').textContent=OPERADORES.filter(o=>o.activo!==false).length;
+    setBdg('nav-sol',porAut); setBdg('nav-pro',problemas);
+    const pend=SOLIS.filter(x=>['enviada','en_validacion'].includes(x.estado)).slice(0,5);
+    $('#hi-solis').innerHTML=pend.length?pend.map(solItem).join(''):'<div class="empty">Nada por autorizar. Todo al día.</div>';
+    pintarHistorial();
+  }catch(e){ $('#hi-solis').innerHTML='<div class="empty">No se pudo cargar.</div>'; }
+}
+async function loadResumenCharts(){
+  try{
+    const d=await api('/api/coordinador/resumen');
+    chartPie($('#ch-pie'),d.composicion);
+    chartArea($('#ch-area'),d.mensual);
+    chartBar($('#ch-bar'),d.consumo);
+    chartScatter($('#ch-scatter'),d.dispersion);
+  }catch(e){ ['ch-pie','ch-area','ch-bar','ch-scatter'].forEach(id=>{const b=$('#'+id);if(b)b.innerHTML='<div class="empty">No se pudo cargar.</div>';}); }
+}
+function fmtFecha(iso){ try{const d=new Date(iso);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});}catch(e){return (iso||'').slice(0,16).replace('T',' ');} }
+function pintarHistorial(){
+  const box=$('#hi-hist'); if(!box)return;
+  const ev=[];
+  (SOLIS||[]).forEach(s=>{ if(s.creada_en)ev.push({t:s.creada_en,txt:`Solicitud #${s.id} · ${s.unidad||'—'}`,estado:s.estado}); });
+  (ASIGS||[]).forEach(a=>{ if(a.creada_en)ev.push({t:a.creada_en,txt:`Viaje · ${a.operador_nombre||'—'} → ${a.destino||'—'}`,estado:a.estado}); });
+  ev.sort((x,y)=>(y.t||'').localeCompare(x.t||''));
+  box.innerHTML=ev.length?ev.slice(0,10).map(e=>`<div class="item"><div class="who2"><b>${esc(e.txt)}</b><div class="m">${esc(fmtFecha(e.t))}</div></div>${pill(e.estado)}</div>`).join(''):'<div class="empty">Sin actividad reciente.</div>';
+}
+function setBdg(id,n){const b=$('#'+id);if(!b)return;if(n>0){b.textContent=n;b.style.display='';}else b.style.display='none';}
+
+// ── SOLICITUDES ──
+const SOL_TABS=[['pendientes','Por autorizar'],['devuelta','Devueltas'],['autorizada','Autorizadas'],['todas','Todas']];
+// Cada pestaña lleva cuántas hay. Sin el número, el coordinador devuelve una solicitud,
+// vuelve a "Por autorizar" —que es la pestaña por defecto— y la devuelta desaparece de su
+// vista sin que nada en pantalla diga que sigue ahí esperando.
+// Los conteos vienen del SERVIDOR y cubren la bandeja entera. Contar sobre `SOLIS` contaba
+// sólo lo que cupo en la ventana, así que la pestaña decía un número y la insignia del menú
+// —que sí usa los conteos— otro, sin forma de saber cuál faltaba.
+function contarSolTab(k){
+  const c=CONTEOS||{};
+  if(k==='todas') return Object.values(c).reduce((a,b)=>a+(b||0),0);
+  if(k==='pendientes') return (c.enviada||0)+(c.en_validacion||0);
+  return c[k]||0;
+}
+function pintarSolTabs(){
+  $('#sol-tabs').innerHTML=SOL_TABS.map(([k,l])=>{
+    const n=contarSolTab(k);
+    return `<button class="tab ${solFiltro===k?'on':''}" onclick="solFiltro='${k}';pintarSolis()">${l}${n?` <span style="opacity:.6">${n}</span>`:''}</button>`;
+  }).join('');
+}
+async function loadSolicitudes(){
+  pintarSolTabs();
+  try{const s=await api('/api/solicitudes');SOLIS=s.solicitudes||[];CONTEOS=s.conteos||{};
+    SOL_TRUNCADO=!!s.truncado; SOL_TOTAL=s.total||SOLIS.length;
+    pintarSolis();
+    setBdg('nav-sol',(CONTEOS.enviada||0)+(CONTEOS.en_validacion||0));
+  }catch(e){$('#sol-list').innerHTML='<div class="empty">No se pudo cargar.</div>';}
+}
+function pintarSolis(){
+  pintarSolTabs();
+  let list=SOLIS;
+  if(solFiltro==='pendientes')list=SOLIS.filter(x=>['enviada','en_validacion'].includes(x.estado));
+  else if(solFiltro!=='todas')list=SOLIS.filter(x=>x.estado===solFiltro);
+  // Si el servidor recortó, se dice. Callarlo hace desaparecer una devuelta vieja de todas
+  // las pestañas —«Todas» incluida— y no queda forma de llegar a ella desde la pantalla.
+  // `truncado` del servidor es «se llenó el límite», que en el caso justo —tantas filas
+  // como el tope— da un falso positivo. Aquí se compara con el total, que es exacto.
+  const aviso = (SOL_TRUNCADO && SOL_TOTAL > SOLIS.length)
+    ? `<div class="alertbar" style="margin-bottom:10px"><div>Se están mostrando las <b>${SOLIS.length}</b>
+         más recientes de <b>${SOL_TOTAL}</b>. Las demás no salen en ninguna pestaña.
+         <button class="btn ghost sm" style="margin-left:8px" onclick="cargarTodasSolis()">Traerlas todas</button></div></div>`
+    : '';
+  $('#sol-list').innerHTML=aviso+(list.length?list.map(solItem).join(''):'<div class="empty">Sin solicitudes en esta vista.</div>');
+}
+
+// Trae la bandeja entera cuando el corte molesta. No es lo normal: se pide a mano y sólo
+// cuando el aviso de arriba dice que falta algo.
+let SOL_TRUNCADO=false, SOL_TOTAL=0;
+async function cargarTodasSolis(){
+  try{
+    const s=await api('/api/solicitudes?limite=500');
+    SOLIS=s.solicitudes||[]; CONTEOS=s.conteos||{};
+    SOL_TRUNCADO=!!s.truncado; SOL_TOTAL=s.total||SOLIS.length;
+    pintarSolis();
+  }catch(e){ toast(e.message||'No se pudieron traer'); }
+}
+function solItem(s){
+  const rem=s.eco_alerta?'<span class="dot" title="Económico no coincide"></span>':'';
+  const litros=s.litros_autorizados||s.litros_solicitados;
+  return `<div class="item" onclick="verSolicitud(${s.id})" style="cursor:pointer">
+    <div class="who2"><b>${esc(s.unidad||'—')}</b> ${rem} <span class="mono" style="color:var(--muted)">#${s.id}</span>
+      <div class="m">${esc(s.operador||'Sin operador')}${litros?' · '+litros+' L':''}${s.folio?' · '+esc(s.folio):''}${s.tipo_recarga==='termo'?' · Termo':''}${s.capturada_asistida?' · asistida':''}</div>
+      <div class="m" style="opacity:.85">${fechaHora(s.creada_en)}${hace(s.creada_en)?' · '+hace(s.creada_en):''}</div></div>
+    ${pill(s.estado)}</div>`;
+}
+let _SOL_ACT=null;
+async function verSolicitud(id){
+  // El expediente anterior se SUELTA antes de pedir el nuevo. `_SOL_ACT` y `_SUG` son
+  // variables de módulo que sobreviven a la hoja: si la petición falla y no se limpian,
+  // `autorizarSol` compara contra el tope de la solicitud de antes.
+  // `sugOlvidar` no sólo borra: CADUCA la propuesta que venga en camino. Un `_SUG=null`
+  // suelto es un borrado sin memoria, y la petición en vuelo lo deshace.
+  _SOL_ACT=null; sugOlvidar();
+  // Se guarda el id de LA hoja que abrimos aquí. Todo lo que pintemos después va contra ella
+  // y no contra «la que haya abierta», que es distinto en cuanto hay una espera en medio.
+  const dlg=openSheet('<div class="empty">Cargando…</div>');
+  // Nace ya con el ancho final: antes cargaba a 520 y saltaba a 920 al llegar los datos.
+  {const _b=Dlg.el(dlg); if(_b)_b.style.maxWidth='920px';}
+  // El turno se toma DESPUÉS del `openSheet`, que acaba de subirlo: es el de ESTA pantalla.
+  const turno=solTurno();
+  // La hoja reutilizada se quedó sin cabecera, así que se le dice qué está cargando: una caja
+  // en blanco con una X suelta no se distingue de una caja rota.
+  Dlg.setHead(dlg,{eyebrow:'Solicitud de recarga',title:'Cargando…'});
+  let s;
+  try{ s=await api('/api/solicitudes/'+id); }
+  catch(e){
+    // Si la hoja ya cambió de contenido, ni el mensaje de error: «No se pudo abrir» tapando el
+    // expediente que SÍ se abrió es peor que callarse.
+    if(!solVigente(turno))return;
+    // `Dlg.error` pone cabecera, cuerpo Y PIE de una vez. El pie es lo que importa: la hoja se
+    // queda con «Cerrar» y «Reintentar» y con NADA del expediente anterior. «Reintentar» lleva
+    // `keepOpen`, así que vuelve a entrar por `openSheet`, que reutiliza esta misma hoja.
+    // `e` puede no ser un Error: ante un 401 `api()` navega a /login y lanza el número 0.
+    Dlg.error(dlg,{
+      eyebrow:'Solicitud de recarga',
+      title:'No se pudo abrir la solicitud #'+id,
+      text:(e&&e.message)||'El servidor no respondió. La solicitud sigue en la bandeja.',
+      onRetry:()=>verSolicitud(id)
+    });
+    return;
+  }
+  // Si la hoja que abrimos ya NO está —Escape, clic en el velo, o un 401 que navegó— no se
+  // resucita. Antes se llamaba a `openSheet` a secas y, con `_dlgId` ya en null, abría una
+  // hoja NUEVA: la solicitud reaparecía sola unos segundos después de cerrarla.
+  if(!solVigente(turno)||!Dlg.el(dlg))return;
+  _SOL_ACT=s;   // la solicitud a la vista: el lápiz y el guardado la consultan
+  const litros=s.litros_autorizados||s.litros_solicitados||'';
+  const evAlert=(s.evidencias||[]).filter(e=>e.coincide===false);
+  const puedeAut=['enviada','en_validacion'].includes(s.estado);
+  // Dos permisos distintos donde antes había uno: DEVUELTA sólo sale de EN_VALIDACION,
+  // mientras que ANULADA sale de casi todo. Compartir la condición ofrecía 'Devolver' desde
+  // tres estados en los que el servidor contesta 409.
+  const puedeDevolver = s.estado==='en_validacion';
+  // TOMARLA es el paso que faltaba. Sin él, `puedeDevolver` no se cumplía jamás al abrir una
+  // solicitud recién llegada —todas aterrizan en ENVIADA— y el pie sólo ofrecía «Anular», que
+  // es terminal, o «Autorizar». Devolver con motivo, que es la vía diseñada para una foto
+  // ilegible, no tenía camino desde esta pantalla.
+  const puedeTomar = s.estado==='enviada';
+  const puedeAnular = ['enviada','en_validacion','devuelta','borrador'].includes(s.estado)
+                      && s.litros_reales==null;
+  // El odómetro NO lo teclea el operador: llega en la EVIDENCIA, leído de la foto. Antes la
+  // cabecera mostraba `s.odometro` —siempre vacío— mientras el valor estaba dos líneas más
+  // abajo. Se dice también de dónde salió: no es lo mismo un número tecleado que uno
+  // interpretado de una imagen.
+  const evOdo=(s.evidencias||[]).filter(e=>e.tipo==='odometro')[0];
+  const odoVal = s.odometro!=null ? s.odometro
+               : (evOdo ? (evOdo.valor_final!=null?evOdo.valor_final:evOdo.valor_ia) : null);
+  const odoOrg = s.odometro!=null ? '' : (evOdo?evOrigen(evOdo):'');
+  // Los económicos ya salen en el desglose de identidad, con lo que dijeron y contra qué se
+  // compararon. Repetirlos en "Evidencias" era la misma información dos veces.
+  const evOtras=(s.evidencias||[]).filter(e=>e.tipo!=='eco' && e.tipo!=='odometro');
+  // El odómetro es EDITABLE: es quien mira la foto al lado del número antes de autorizar
+  // litros, y hasta hoy veía una lectura mal interpretada sin poder tocarla.
+  const odoEv=(s.evidencias||[]).filter(e=>e.tipo==='odometro')[0];
+  const odoHTML = odoEv
+    ? odoLectura(s.id, odoEv)
+    : (odoVal!=null?esc(odoVal)+' km':'<span class="org">no se capturó</span>');
+  // Los económicos, en la misma rejilla: qué dijo cada uno y contra qué se comparó.
+  const ecos=(s.evidencias||[]).filter(e=>e.tipo==='eco');
+  const ecosHTML=ecos.map(e=>{
+    const bad=e.coincide===false, ok=e.coincide===true;
+    const dice=e.texto_ia||'sin leer';
+    return `<div class="c"><span class="k">${esc(e.etiqueta||'Económico')} <span class="org">· ${esc(evOrigen(e))}</span></span>
+      <span class="v ${bad?'bad':ok?'ok':''}">${esc(dice)}${ok?' ✓':bad?` ✕ <span class="org">se esperaba ${esc(e.esperado||'—')}</span>`:''}</span></div>`;
+  }).join('');
+  const lectHTML=evOtras.map(e=>{
+    const v=e.valor_final!=null?e.valor_final:(e.valor_ia!=null?e.valor_ia:(e.texto_ia||'—'));
+    // La confianza viaja en cada evidencia desde siempre y no se pintaba nunca: se leía
+    // «15,010 · IA» sin saber si la IA lo vio claro o lo adivinó, que es justo lo que hay que
+    // saber antes de fijar litros contra ese número. Sólo se dice cuando la lectura es de la
+    // IA: en un QR o en un valor tecleado no significa nada.
+    const conf = (/^ia/.test(e.procedencia||'') && e.confianza)
+      ? ` · confianza ${esc(e.confianza)}` : '';
+    return `<div class="c"><span class="k">${esc(e.etiqueta||e.tipo)} <span class="org">· ${esc(evOrigen(e))}${conf}</span></span>
+      <span class="v">${esc(String(v))}</span></div>`;
+  }).join('');
+  openSheet(`
+    ${evAlert.length?`<div class="alertbar" style="margin-bottom:12px"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3.6 2.2 20.4h19.6zM12 10v4.4M12 17.6v.4"/></svg><div>Económico no coincide: ${evAlert.map(e=>esc((e.etiqueta||e.tipo)+' ('+evOrigen(e)+'): dio “'+(e.texto_ia||'—')+'”, se esperaba “'+(e.esperado||'—')+'”')).join('; ')}</div></div>`:''}
+    <div class="sol2">
+      <div class="solinfo">
+        <div class="solgrid">
+          ${!s.operador?'<div class="c"><span class="k">Operador</span><span class="v"><span class="org">sin asignar</span></span></div>':''}
+          <div class="c"><span class="k">Recarga</span><span class="v">${s.tipo_recarga==='termo'?'Termo':'Motor'}${s.remolque_eco?`<span class="org">remolque ${esc(s.remolque_eco)}</span>`:''}</span></div>
+          ${s.nivel_tanque!=null?`<div class="c"><span class="k">Nivel del tanque</span><span class="v">${Math.round(s.nivel_tanque*100)}%<span class="org">leído de la aguja</span></span></div>`:''}
+          <div class="c"><span class="k">Creada</span><span class="v">${fechaHora(s.creada_en)}<span class="org">${hace(s.creada_en)}</span></span></div>
+          ${(s.creada_por&&s.creada_por!==s.operador)||s.capturada_asistida?`<div class="c"><span class="k">La levantó</span><span class="v">${esc(s.creada_por||'—')}${s.capturada_asistida?'<span class="org">captura asistida</span>':''}</span></div>`:''}
+          ${s.motivo?`<div class="c ancho"><span class="k">Motivo</span><span class="v">${esc(s.motivo)}</span></div>`:''}
+          ${ecosHTML}
+          ${lectHTML}
+        </div>
+        ${solDespacho(s)}
+        ${solPanorama(s,odoHTML)}
+        ${puedeAut?`<label class="f" style="margin-top:6px">Litros a autorizar</label>
+          <input id="aut-litros" type="number" inputmode="decimal" step="0.01" min="0" value="${litros}" placeholder="p. ej. 350" oninput="pintarAvisoTope(${s.id})">
+          <div id="aut-aviso"></div>
+          <div id="sug"></div>`:''}
+      </div>
+      <div class="solfotos">
+        <div class="kick" style="margin:0 0 8px">Evidencia</div>
+        ${evGaleria(s)}
+        ${solHistorial(s)}
+      </div>
+    </div>
+  `);
+  // Ancho para que quepan las dos columnas; el sheet nace en 'sm'.
+  const _sh=$('#sheet'); if(_sh)_sh.style.maxWidth='920px';
+
+  // La propuesta se pide APARTE: la llamada a la IA tarda segundos y el expediente tiene que
+  // estar en pantalla ya. Si falla, el modal sigue sirviendo igual.
+  sugOlvidar();
+  if(puedeAut) cargarSugerencia(s.id);
+
+  // Cabecera NATIVA: el estado y la unidad son lo que identifica la solicitud de un vistazo,
+  // así que van arriba y no como una fila más del cuerpo.
+  Dlg.setHead(dlg,{
+    eyebrow:'Solicitud de recarga',
+    title:'#'+s.id+' · '+(s.unidad||'sin unidad'),
+    sub:esc(s.operador||'Sin operador asignado'),
+    pills:pill(s.estado)+(evAlert.length?' <span class="pill rech">económico no coincide</span>':''),
+  });
+
+  // Pie HUNDIDO: antes vivían en el cuerpo y en una pantalla baja se iban con el scroll —
+  // se podía leer la solicitud entera sin ver que había que decidir algo. La jerarquía
+  // también importa: autorizar es la primaria; anular, destructiva.
+  const acts=[];
+  if(puedeTomar)
+    acts.push({label:'Tomar para revisar',keepOpen:true,onClick:()=>tomarSol(s.id)});
+  if(puedeDevolver)
+    acts.push({label:'Devolver',keepOpen:true,onClick:()=>moverSol(s.id,'devuelta','¿Devolver al operador para corregir?')});
+  // RECHAZAR llevaba aquí todo el tiempo: `moverSol` tiene su título, su botón y su rama de
+  // motivo, y ninguna línea lo llamaba. Es distinto de devolver —el operador no puede
+  // corregirla y reenviarla, RECHAZADA es final— y por eso va con el aviso de acción seria.
+  if(puedeDevolver)
+    acts.push({label:'Rechazar',variant:'danger-quiet',keepOpen:true,
+      onClick:()=>moverSol(s.id,'rechazada','No procede. El operador NO podrá corregirla: tendrá que levantar otra.')});
+  if(puedeAnular)
+    acts.push({label:'Anular',variant:'danger-quiet',keepOpen:true,onClick:()=>moverSol(s.id,'anulada','¿Anular esta solicitud?')});
+  // La discrepancia: se ABRE desde donde el grafo lo permite, y se CIERRA desde dentro. Este
+  // estado existía, era alcanzable por API y ninguna pantalla sabía llegar a él — y desde que
+  // la lectura se congela al autorizar es la única salida cuando el número estaba mal.
+  if(['autorizada','despachada','facturada'].includes(s.estado)){
+    acts.push({label:'Marcar discrepancia',variant:'danger-quiet',keepOpen:true,
+      onClick:()=>moverSol(s.id,'en_discrepancia','Se marca para revisión: algo no cuadra entre lo autorizado, lo cargado y lo facturado.')});
+  }
+  if(s.estado==='en_discrepancia'){
+    // Salir sólo por donde el servidor deja: conciliar exige litros despachados y anular
+    // exige que NO los haya. Ofrecer el otro botón sería ofrecer un 409.
+    if(s.litros_reales!=null)
+      acts.push({label:'Resolver: ya cuadra',variant:'primary',keepOpen:true,
+        onClick:()=>moverSol(s.id,'conciliada','¿Dar por resuelta la discrepancia? El ciclo queda cerrado y no tiene marcha atrás.')});
+    else
+      acts.push({label:'Anular',variant:'danger-quiet',keepOpen:true,
+        onClick:()=>moverSol(s.id,'anulada','No se surtió diésel contra esta solicitud. ¿Anularla?')});
+  }
+  if(puedeAut) acts.push({label:'Autorizar y enviar a combustible',variant:'primary',
+                          keepOpen:true,onClick:()=>autorizarSol(s.id)});
+  if(!acts.length) acts.push({label:'Cerrar'});
+  Dlg.setActions(dlg,acts);
+}
+// De dónde salió el dato. Importa para leerlo con la confianza que merece: un QR llega
+// exacto, una foto la interpretó la IA y un valor a mano lo tecleó una persona.
+// Galería de evidencia: las fotos a la derecha, con zoom al pasar el ratón.
+// El zoom es el de una tienda: la imagen se amplía DENTRO de su marco y el punto que se
+// amplía sigue al cursor, así se puede leer un dígito del odómetro sin abrir nada.
+function evGaleria(s){
+  const fotos=(s.evidencias||[]).filter(e=>e.foto_url);
+  if(!fotos.length){
+    return '<div class="empty" style="padding:20px;text-align:center">Esta solicitud no trae fotos.'
+      +'<div style="font-size:11.5px;margin-top:6px">Los económicos leídos por QR no llevan foto: '
+      +'el código ya identifica el activo.</div></div>';
+  }
+  // Una sola foto se ve grande; con dos o más entran en cuadrícula.
+  return '<div class="evgrid" data-n="'+fotos.length+'">'+fotos.map(e=>{
+    const val=e.valor_final!=null?e.valor_final:(e.valor_ia!=null?e.valor_ia:(e.texto_ia||''));
+    const bad=e.coincide===false;
+    const tit=esc((e.etiqueta||e.tipo)+(val!==''?': '+val:''));
+    // El juicio de la IA sobre la foto va ENCIMA de la imagen. Si aparece en un rincón, la
+    // persona ya miró el número y decidió antes de leerlo.
+    const sosp = e.sospechosa ? `<div class="evsosp">
+        <svg class="ic" viewBox="0 0 24 24" style="width:15px;height:15px;flex:0 0 auto"><path d="M12 3.6 2.2 20.4h19.6zM12 10v4.4M12 17.6v.4"/></svg>
+        <span>${esc(e.sospecha_motivo||'La IA desconfía de esta imagen.')}</span></div>` : '';
+    return `<figure class="evfig">${sosp}
+      <div class="evzoom" onmousemove="evLupa(event,this)" onmouseleave="evLupaFin(this)"
+           data-url="${esc(e.foto_url)}" data-tit="${tit}"
+           onclick="verFoto(this.dataset.url,this.dataset.tit)" title="Pasa el ratón para ampliar · clic para verla entera">
+        <img src="${e.foto_url}" alt="${esc(e.etiqueta||e.tipo)}" loading="lazy">
+      </div>
+      <figcaption>
+        <span class="evcap-t">${esc(e.etiqueta||e.tipo)}<span class="evcap-o"> · ${esc(evOrigen(e))}</span></span>
+        <span class="evcap-v" style="color:${bad?'var(--danger)':'var(--ink)'}">${esc(String(val||'—'))}</span>
+      </figcaption>
+    </figure>`;
+  }).join('')+'</div>';
+}
+// El origen del zoom sigue al cursor: es lo que hace que se sienta una lupa y no un salto.
+function evLupa(ev,box){
+  const r=box.getBoundingClientRect();
+  const x=((ev.clientX-r.left)/r.width)*100, y=((ev.clientY-r.top)/r.height)*100;
+  const img=box.firstElementChild;
+  if(img){ img.style.transformOrigin=x+'% '+y+'%'; img.style.transform='scale(2.6)'; }
+}
+function evLupaFin(box){
+  const img=box.firstElementChild;
+  if(img){ img.style.transform=''; img.style.transformOrigin='center'; }
+}
+
+// Visor de la foto a tamaño completo. Sin librería: la evidencia se mira y se cierra.
+function verFoto(url, titulo){
+  const w=document.createElement('div');
+  // 200 y no 95: el velo del diálogo vive en --z-scrim=100 (dialog.css) y sube a 120
+  // cuando hay diálogos apilados. Con 95 el visor nacía SIEMPRE por debajo del modal.
+  w.style.cssText='position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.86);display:grid;place-items:center;padding:18px;cursor:zoom-out';
+  w.innerHTML='<div style="max-width:min(94vw,900px);width:100%">'
+    +'<div style="color:#fff;font-size:13px;margin-bottom:9px;display:flex;justify-content:space-between;gap:12px">'
+    +'<span>'+esc(titulo||'Evidencia')+'</span><span style="opacity:.65">toca para cerrar</span></div>'
+    +'<img src="'+url+'" alt="" style="width:100%;max-height:80vh;max-height:80dvh;object-fit:contain;border-radius:10px;background:#111"></div>';
+  // Escape cierra SOLO el visor. Antes lo atendía dialog.js y cerraba la hoja de debajo,
+  // dejando la foto flotando. Va en captura para adelantarse al oyente de Dlg.
+  const fin=()=>{ document.removeEventListener('keydown',onKey,true); w.remove(); };
+  const onKey=ev=>{ if(ev.key==='Escape'){ ev.preventDefault(); ev.stopPropagation(); fin(); } };
+  document.addEventListener('keydown',onKey,true);
+  w.setAttribute('role','dialog'); w.setAttribute('aria-modal','true'); w.setAttribute('aria-label',titulo||'Evidencia');
+  w.addEventListener('click',fin);
+  document.body.appendChild(w);
+}
+function evOrigen(e){
+  return {escaneada:'QR', ia_aceptada:'IA', ia_corregida:'IA corregida', manual:'a mano'}
+         [e.procedencia] || e.procedencia || '';
+}
+function evRow(e){
+  const ok=e.coincide===true, bad=e.coincide===false;
+  const val=e.valor_final!=null?e.valor_final:(e.valor_ia!=null?e.valor_ia:(e.texto_ia||'—'));
+  const org=evOrigen(e);
+  // La foto es la EVIDENCIA: quien autoriza litros tiene que poder ver el odómetro que los
+  // justifica. Miniatura junto al valor, y al tocarla se abre a tamaño completo.
+  // Sin miniatura: las fotos viven ahora en la columna de la derecha, a tamaño útil y con
+  // lupa. Repetirlas aquí en 46 px era ruido y no se podía leer nada en ellas.
+  return `<div class="kv"><span class="k">${esc(e.etiqueta||e.tipo)}${org?` <span style="font-weight:400;color:var(--muted);font-size:11px">· ${esc(org)}</span>`:''}</span><span class="v" style="color:${bad?'var(--danger)':ok?'var(--ok)':'var(--ink)'}">${esc(val)}${bad?' ✕':ok?' ✓':''}</span></div>`;
+}
+// Desglose de IDENTIDAD: qué activo dijo cada económico capturado y si es el asignado.
+// Es lo que contesta "¿este diésel entró donde debía?" antes de autorizar, que es la
+// única pregunta que el coordinador no puede responder mirando litros.
+function evIdentidad(s){
+  const ecos=(s.evidencias||[]).filter(e=>e.tipo==='eco');
+  if(!ecos.length)return '';
+  const filas=ecos.map(e=>{
+    const bad=e.coincide===false, ok=e.coincide===true;
+    const dice=e.texto_ia||'sin leer';
+    const esp=e.esperado||'—';
+    const org=evOrigen(e);
+    return `<div class="kv" style="align-items:flex-start">
+      <span class="k">${esc(e.etiqueta||'Económico')}${org?` <span style="font-weight:400;color:var(--muted);font-size:11px">· ${esc(org)}</span>`:''}</span>
+      <span class="v" style="text-align:right;color:${bad?'var(--danger)':ok?'var(--ok)':'var(--ink)'}">
+        ${esc(dice)}${bad?` <span style="color:var(--muted);font-weight:400">· se esperaba ${esc(esp)}</span>`:ok?' ✓':''}
+      </span></div>`;
+  }).join('');
+  const malos=ecos.filter(e=>e.coincide===false).length;
+  return `<div style="margin-top:10px"><div class="kick">Identidad de los activos${
+    malos?` <span style="color:var(--danger)">· ${malos} no coincide${malos>1?'n':''}</span>`:''}</div>${filas}</div>`;
+}
+// ── La IA propone los litros; el coordinador decide ────────────────────────
+// Lo que se le enseñó queda guardado junto a lo que autorizó, así que después se puede
+// preguntar si le hizo caso. Por eso `_SUG` viaja de vuelta en el formulario.
+// La propuesta viaja con DOS sellos. El NÚMERO DE SOLICITUD cierra el caso de la hoja que
+// cambió de solicitud; el BILLETE cierra el que el turno no ve: la MISMA solicitud en la MISMA
+// hoja pidiendo dos propuestas, que es lo que pasa al corregir el odómetro mientras la IA
+// calcula. Sólo se escribe la ÚLTIMA pedida; las anteriores se callan.
+let _SUG=null;      // {sol:<id>, tic:<billete>, r:<respuesta>} o null
+let _SUG_TIC=0;     // billete de la última propuesta PEDIDA
+
+// Olvidar la propuesta y caducar la que venga en camino son la misma decisión: van juntas.
+function sugOlvidar(){ _SUG=null; _SUG_TIC++; }
+
+// La propuesta de ESA solicitud, o nada. Único camino para leerla.
+function sugDe(id){
+  if(!_SUG||id==null)return null;
+  // Si después de guardarla se pidió otra, lo guardado ya no manda.
+  if(_SUG.tic!==_SUG_TIC)return null;
+  // Comparación numérica: el id entra desde un `onclick` del HTML en unos sitios y desde el
+  // JSON del servidor en otros, y un '52' no es un 52 para `===`.
+  return Number(_SUG.sol)===Number(id) ? _SUG.r : null;
+}
+
+// El tanque de ESA solicitud. Misma trampa: `_SOL_ACT` es global, y leerla a ciegas después
+// de un await es comparar los litros de una unidad contra el tope de otra.
+function tanqueDe(id){
+  if(!_SOL_ACT||id==null)return null;
+  return Number(_SOL_ACT.id)===Number(id) ? (_SOL_ACT.tanque||null) : null;
+}
+
+async function cargarSugerencia(id){
+  // Los dos candados se toman ANTES del await. El turno dice de qué pantalla es esto; el
+  // billete, cuál de las propuestas de esa pantalla. Sacar billete caduca a las anteriores.
+  const turno=solTurno();
+  const tic=++_SUG_TIC;
+  const c0=$('#sug'); if(!c0)return;
+  c0.innerHTML='<div class="sug"><span class="kick">Propuesta de la IA</span>'
+             +'<div class="sugjust">Calculando con las cargas reales de esta unidad…</div></div>';
+  let r; try{ r=await api('/api/solicitudes/'+id+'/sugerencia'); }
+  catch(e){
+    // Ni vaciar el hueco si esto ya no es de nadie: tiraría el «Calculando…» de la propuesta
+    // buena que se pidió después.
+    if(!solVigente(turno)||tic!==_SUG_TIC)return;
+    const c=$('#sug'); if(c)c.innerHTML='';   // sin propuesta, el campo sigue vacío y libre
+    return;
+  }
+  // AQUÍ ESTABA EL DIÉSEL: `_SUG=r` sin comprobar nada.
+  if(!solVigente(turno)||tic!==_SUG_TIC)return;
+  _SUG={sol:id, tic:tic, r:r};
+  const cg=(r.datos||{}).cargas_anteriores;
+  // Lo de hoy va ARRIBA de la propuesta: cambia la decisión, no la adorna.
+  const hoy=((r.datos||{}).ya_autorizado_hoy)||[];
+  const avisoHoy = hoy.length
+    ? `<div class="sugjust" style="color:var(--warn);font-weight:600">Hoy ya se autorizaron
+       ${esc(litros(hoy.reduce((a,o)=>a+(o.litros||0),0)))} a esta unidad
+       (${esc(hoy.map(o=>o.folio+(o.hora?' '+o.hora:'')).join(', '))}).</div>` : '';
+  const cifras=[];
+  if(cg)cifras.push(cg.cargas+' cargas reales · mediana '+litros(cg.mediana)
+                    +' · habitual '+litros(cg.p25)+' a '+litros(cg.p75));
+  if((r.datos||{}).esperado)cifras.push('viaje completo ~'+litros(r.datos.esperado.litros));
+  // El hueco se vuelve a buscar DESPUÉS del await: el `#sug` capturado antes puede estar ya
+  // desconectado del documento —`Dlg.setBody` tira los hijos— y escribir en un nodo suelto no
+  // pinta nada y NO AVISA, que es lo que hacía este defecto invisible por un lado.
+  const c=$('#sug'); if(!c)return;
+  c.innerHTML=`<div class="sug">
+    <div class="sugtop"><span class="kick">Propuesta de la IA</span>
+      ${r.litros!=null?`<span class="sugn">${esc(litros(r.litros))}</span>`:'<span class="sugjust">sin propuesta</span>'}
+      <span class="sugconf ${esc(r.confianza||'baja')}">confianza ${esc(r.confianza||'—')}</span></div>
+    ${avisoHoy}
+    <div class="sugjust">${esc(r.justificacion||'')}</div>
+    ${r.recortada?`<div class="sugjust" style="color:var(--warn)">Ajustada: ${esc(r.recortada)}.</div>`:''}
+    ${cifras.length?`<div class="sugcifras">${esc(cifras.join(' · '))}</div>`:''}
+    ${r.litros!=null?`<button class="sugusar" onclick="usarSugerencia(${id})">Usar ${esc(litros(r.litros))}</button>`:''}
+  </div>`;
+}
+
+// El número NO se precarga a propósito: un campo ya relleno se acepta sin mirarlo, y entonces
+// guardar «propuso 280, autorizó 370» no significaría nada. Aceptar tiene que ser un acto.
+// El botón dice de QUÉ solicitud es. Antes era `usarSugerencia()` a secas y rellenaba el campo
+// con `_SUG.litros`, que podía ser el de otra: decía «Usar 300» y te ponía 280.
+function usarSugerencia(id){
+  const sg=sugDe(id); if(!sg||sg.litros==null)return;
+  const i=$('#aut-litros'); if(!i)return;
+  i.value=sg.litros; i.focus();
+  // `oninput` NO salta cuando el valor se pone desde código, así que el aviso se quedaría
+  // con lo de la tecla anterior. La propuesta de la IA va topada (app/ai.py), pero su
+  // recorte aritmético puede dejarla justo encima del tope.
+  pintarAvisoTope(id);
+  const b=$('#sug .sugusar'); if(b){ b.disabled=true; b.textContent='Puesto en el campo'; }
+}
+
+// Compara lo tecleado con el tope, ahí mismo y en cada tecla.
+//
+// El tope se pintaba arriba del todo y nadie lo comparaba con nada: era un número decorativo.
+// Y si la unidad no tiene escáner —27 de las 53 activas— NO hay tope y no se inventa uno:
+// simplemente no sale aviso, porque no hay con qué comparar.
+// Recibe el id porque el tope sale de `_SOL_ACT`, que es global: pedirlo por delante es lo
+// que impide avisar «te pasas del tope» con el tope de otra unidad.
+function pintarAvisoTope(solId){
+  const box=$('#aut-aviso'); if(!box)return;
+  const t=tanqueDe(solId);
+  const el=$('#aut-litros'); const v=el?Number(el.value):NaN;
+  if(!t || t.tope==null || !v || isNaN(v) || v<=t.tope){ box.innerHTML=''; return; }
+  box.innerHTML='<div class="topeaviso"><div>Se pasa <b>'+esc(litros(v-t.tope))
+    +'</b> del tope de <b>'+esc(litros(t.tope))+'</b>.'
+    +(t.tope_motivo?'<div class="sugjust">'+esc(t.tope_motivo)+'</div>':'')
+    +'<div class="sugjust">Puedes autorizarlo igual: se pedirá confirmación y quedará registrado.</div>'
+    +'</div></div>';
+}
+
+// Litros con la coma de siempre y sin ceros de adorno: 370 L, no 370.00 L.
+function litros(n){
+  if(n==null||isNaN(Number(n)))return '—';
+  return Number(n).toLocaleString('es-MX',{maximumFractionDigits:2})+' L';
+}
+
+// ── El despacho: lo autorizado contra lo que de verdad se cargó ─────────────
+// Era la pregunta que el coordinador no podía contestar desde su propio panel. En la #47
+// autorizó 370 L y se surtieron 100: los dos números YA viajaban en la respuesta —y el
+// folio, y quién despachó y cuándo— y el modal no pintaba ninguno.
+// El panorama del combustible. Junta lo que hasta ahora estaba repartido —el escáner, el
+// odómetro, la asignación— y lo pone donde se decide: encima del campo de litros.
+//
+// El nivel va CONDICIONADO a propósito ("si salió con el tanque lleno"). El nivel real no se
+// captura nunca y ninguna carga de esta flota llena un tanque, así que afirmarlo sería
+// inventarlo; enseñar la condición al lado deja el número útil sin volverlo una mentira.
+function solPanorama(s,odoHTML){
+  const t=s.tanque;
+  // El odómetro encabeza el bloque aunque no haya panorama: es la lectura de la que sale
+  // todo lo demás, y antes vivía arriba, lejos de su propio cálculo.
+  const odo=`<div class="c ancho"><span class="k">Odómetro de esta solicitud</span><span class="v" id="odo-v">${odoHTML||'—'}</span></div>`;
+  // El bloque va con nombre porque se repinta solo cuando se corrige el odómetro: todo lo
+  // que hay dentro —Recorrido, Consumió, Nivel y el Tope— sale de esa lectura.
+  const marco=filas=>`<div id="sol-combustible"><div class="kick" style="margin:14px 0 6px">Combustible</div><div class="solgrid">${odo}${filas}</div></div>`;
+  if(!t) return marco('');
+  const n=(v,d)=>v==null?'—':Number(v).toLocaleString('es-MX',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});
+  if(t.rendimiento==null)
+    return marco(`<div class="c ancho"><span class="k">Sin panorama</span><span class="v">—<span class="org">${esc(t.nota||t.motivo_rendimiento||'falta el rendimiento de la unidad')}</span></span></div>`);
+  const fila=(k,v,extra)=>`<div class="c"><span class="k">${k}</span><span class="v">${v}${extra?`<span class="org">${extra}</span>`:''}</span></div>`;
+  // Las filas con contexto largo van a ANCHO COMPLETO: en media columna el paréntesis del
+  // escáner partía el número en dos renglones y el bloque se leía peor que la hoja de Excel
+  // que venía a sustituir.
+  const ancho=(k,v,extra)=>`<div class="c ancho"><span class="k">${k}</span><span class="v">${v}${extra?`<span class="org">${extra}</span>`:''}</span></div>`;
+  const recorrido = t.km_recorridos!=null
+    ? fila('Recorrido', n(t.km_recorridos)+' km', n(t.odometro_anterior)+' → '+n(t.odometro_actual))
+      + fila('Consumió', n(t.consumo_recorrido,2)+' L')
+      + (t.nivel_si_lleno!=null ? ancho('Nivel estimado', n(t.nivel_si_lleno,2)+' L de '+n(t.capacidad),
+          'si salió lleno · caben al menos '+n(t.caben_al_menos,0)+' L · reserva '+n(t.reserva)+' L') : '')
+    : ancho('Recorrido', '—', 'falta el odómetro de esta solicitud');
+  const viaje = t.km_viaje!=null
+    ? fila('Viaje asignado', n(t.km_viaje)+' km')
+      + fila('Debería gastar', n(t.consumo_viaje,2)+' L')
+      + ancho('Tope autorizable', '<b>'+n(t.tope,2)+' L</b>', esc(t.tope_motivo||''))
+    : ancho('Viaje asignado', '—', esc(t.nota||'sin kilómetros contra los que estimar'));
+  return marco(ancho('Rendimiento', n(t.rendimiento,2)+' km/l', esc(t.motivo_rendimiento||''))
+    + recorrido + viaje);
+}
+
+function solDespacho(s){
+  const o=s.orden; if(!o)return '';
+  const aut=o.litros_autorizados, real=o.litros_reales;
+  // El tercer número es el que se busca. Se dice con palabras porque un signo menos no
+  // distingue «faltan 270» de «se surtieron 270 de más», y son dos problemas opuestos.
+  let cls='', val='—', sub='';
+  if(aut!=null&&real!=null){
+    const d=Math.round((aut-real)*1000)/1000;
+    if(Math.abs(d)<0.005){cls='ok'; val='Cuadra'; sub='se cargó lo autorizado';}
+    else if(d>0){cls='warn'; val=litros(d); sub='sin surtir'+(aut?' · el '+Math.round(d/aut*100)+'% de lo autorizado':'');}
+    else{cls='bad'; val=litros(-d); sub='de más'+(aut?' · un '+Math.round(-d/aut*100)+'% sobre lo autorizado':'');}
+  }else if(aut!=null){ sub='aún no se despacha'; }
+  const q=[];
+  // Qué propuso la IA frente a lo que decidió la persona. Es el registro que pedía el
+  // dueño, y se lee de los datos: `litros_sugeridos` no se sobrescribe nunca.
+  if(o.litros_sugeridos!=null){
+    const d=Math.round((aut-o.litros_sugeridos)*10)/10;
+    q.push('La IA propuso <b>'+esc(litros(o.litros_sugeridos))+'</b>'
+      + (Math.abs(d)<0.05 ? ' y se autorizó eso mismo'
+                          : ' · se autorizaron '+esc(litros(aut))+' ('+(d>0?'+':'')+esc(litros(d))+')')
+      + (o.sugerencia_motivo?'<br><span style="opacity:.85">'+esc(o.sugerencia_motivo)+'</span>':''));
+  }
+  if(o.autorizada_por||o.autorizada_en)
+    q.push('Autorizó <b>'+esc(o.autorizada_por||'—')+'</b>'+(o.autorizada_en?' · '+fechaHora(o.autorizada_en):''));
+  if(o.despachada_por||o.despachada_en)
+    q.push('Despachó <b>'+esc(o.despachada_por||'—')+'</b>'+(o.despachada_en?' · '+fechaHora(o.despachada_en):''));
+  if(o.factura_id)q.push('Amparada por la factura <b>#'+esc(String(o.factura_id))+'</b>');
+  return `<div class="desp">
+    <div class="desphead"><span class="kick">Despacho</span><span class="folio">${esc(o.folio||'sin folio')}</span></div>
+    <div class="despnum">
+      <div><span class="k">Autorizados</span><b>${litros(aut)}</b></div>
+      <div><span class="k">Cargados</span><b>${real!=null?litros(real):'—'}</b>${real==null?'<span class="sub">pendiente</span>':''}</div>
+      <div class="${cls}"><span class="k">Saldo</span><b>${val}</b>${sub?`<span class="sub">${sub}</span>`:''}</div>
+    </div>
+    ${q.length?`<div class="despq">${q.join('<br>')}</div>`:''}
+  </div>`;
+}
+
+// ── El historial ───────────────────────────────────────────────────────────
+// `transiciones` llegaba entero desde el primer día y no tenía NI UNA referencia en todo el
+// panel: la solicitud no contaba su propia historia. Los nombres los resuelve ahora el
+// servidor, porque «usuario 10» no lo puede leer una persona.
+function solHistorial(s){
+  const ts=s.transiciones||[]; if(!ts.length)return '';
+  return `<div class="kick" style="margin:12px 0 4px">Historial</div>
+    <ol class="hist">${ts.map(t=>`<li>
+      ${pill(t.a)}
+      <span class="hu" title="${esc(t.usuario||'')}">${esc(t.usuario||'—')}</span>
+      <span class="hf">${fechaHora(t.momento)}</span>
+      ${t.nota&&t.nota!=='Creada'?`<span class="hn" title="${esc(t.nota)}">${esc(t.nota)}</span>`:''}
+    </li>`).join('')}</ol>`;
+}
+
+// ── Odómetro: se lee, y para cambiarlo hay que pedir el lápiz ───────────────
+// Lo que leyó la IA (`valor_ia`) NO se toca nunca; la corrección vive en `valor_final`. Por
+// eso el cambio se puede mostrar SIEMPRE, no sólo en el instante de guardarlo: basta comparar
+// los dos. Un odómetro modificado tiene que poder verse mañana también.
+const _LAPIZ='<svg viewBox="0 0 24 24"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M14.5 6.5l3 3"/></svg>';
+const _CANDADO='<svg viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="9.5" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>';
+
+function odoCambio(ev, prefijo){
+  const igual = ev.valor_ia==null||ev.valor_final==null
+             || Math.abs(Number(ev.valor_ia)-Number(ev.valor_final))<1e-9;
+  // Sin diferencia contra la IA no hay nada que señalar. Si acaba de guardarse —por ejemplo
+  // porque se deshizo una corrección anterior— se dice eso mismo, no «100 modificado a 100».
+  if(igual)return prefijo?'<span class="odocambio">Cambio guardado · es la lectura de la IA</span>':'';
+  return `<span class="odocambio" title="La lectura original de la IA se conserva">${
+    prefijo?'Cambio guardado · ':''}<b>${esc(String(ev.valor_ia))}</b> km modificado a <b>${
+    esc(String(ev.valor_final))}</b> km</span>`;
+}
+
+// La lectura se congela al autorizar: los litros se fijaron CONTRA este número, y después
+// del despacho el diésel ya está en el tanque. El servidor lo rechaza (409); aquí el lápiz
+// se retira, porque un botón que siempre contesta con un error invita a pulsarlo y luego
+// culpa a quien lo pulsó.
+const ODO_EDITABLE=['borrador','enviada','en_validacion','devuelta'];
+
+function odoLectura(solId, ev, recienGuardado){
+  const v = ev.valor_final!=null?ev.valor_final:ev.valor_ia;
+  const org = evOrigen(ev);
+  const abierto = ODO_EDITABLE.includes((_SOL_ACT||{}).estado);
+  return `<span class="odoedit" id="odo-caja">
+    <b style="font:600 14px 'IBM Plex Mono'">${v!=null?esc(String(v)):'—'}</b>
+    <span class="org">km${org?' · '+esc(org):''}</span>
+    ${abierto
+      ? `<button class="odolap" title="Modificar el odómetro" aria-label="Modificar el odómetro"
+           onclick="odoEditar(${solId},${ev.id})">${_LAPIZ}</button>`
+      : `<span class="odofijo" title="Los litros se autorizaron con esta lectura">${_CANDADO} fijado</span>`}
+    ${odoCambio(ev, recienGuardado)}
+  </span>`;
+}
+
+// El lápiz abre la edición. Antes el campo estaba siempre abierto, lo que invita a tocarlo
+// sin querer: cambiar un odómetro es una decisión, no un descuido.
+function odoEditar(solId, evId){
+  const ev=(_SOL_ACT&&(_SOL_ACT.evidencias||[]).filter(e=>e.id===evId)[0])||null;
+  const v = ev ? (ev.valor_final!=null?ev.valor_final:ev.valor_ia) : '';
+  const caja=$('#odo-caja'); if(!caja)return;
+  caja.innerHTML=`<input id="odo-in" type="number" step="0.1" min="0" value="${v!=null?v:''}" placeholder="km">
+    <button class="mini pri" onclick="corregirOdo(${solId},${evId})">Guardar</button>
+    <button class="mini" onclick="odoCancelar(${evId})">Cancelar</button>
+    ${ev&&ev.valor_ia!=null?'<span class="org">la IA leyó '+esc(String(ev.valor_ia))+' km</span>':''}`;
+  const i=$('#odo-in'); if(i){ i.focus(); i.select(); }
+}
+
+function odoCancelar(evId){
+  const ev=(_SOL_ACT&&(_SOL_ACT.evidencias||[]).filter(e=>e.id===evId)[0])||null;
+  const caja=$('#odo-caja');
+  if(caja&&ev)caja.outerHTML=odoLectura(_SOL_ACT.id, ev);
+}
+
+// Guarda el odómetro corregido. El servidor deja rastro de quién lo cambió: un coordinador
+// tocando el dato de otra persona no puede ser anónimo.
+// Rehace el bloque Combustible contra la lectura nueva. Vive aparte de `verSolicitud`
+// porque aquél reconstruye el modal entero y aquí sólo hay que tocar los números que
+// dependían del odómetro.
+// El freno es POR TURNO, no un booleano. Antes `_PANORAMA_OCUPADO` era global: un refresco
+// colgado en la #47 bloqueaba autorizar la #52 con un aviso sobre un odómetro que nadie había
+// tocado en esa pantalla. Y lleva billete porque corregir el odómetro no cambia de solicitud:
+// dos refrescos seguidos comparten turno, y sin billete el `finally` del primero le soltaba el
+// freno al segundo.
+let _PANORAMA_TURNO=0;   // turno cuyo panorama se está rehaciendo; 0 = ninguno
+let _PANORAMA_TIC=0;
+async function refrescarPanorama(solId, evId, cambio){
+  const turno=solTurno();
+  const tic=++_PANORAMA_TIC;
+  const caja=$('#sol-combustible'); if(!caja) return;
+  _PANORAMA_TURNO=turno;
+  caja.setAttribute('data-recalculando','');
+  try{
+    const s=await api('/api/solicitudes/'+solId);
+    // El mismo patrón que mordía en `cargarSugerencia`: antes se consultaba el DOM EN VIVO
+    // después del await, así que el `#sug` de la solicitud que abrieras después se repintaba
+    // con la propuesta de la anterior, y `_SOL_ACT=s` a ciegas dejaba el tope y el lápiz de
+    // la #47 gobernando la pantalla de la #52.
+    if(!solVigente(turno)||tic!==_PANORAMA_TIC) return;
+    _SOL_ACT=s;
+    const ev=(s.evidencias||[]).filter(e=>e.tipo==='odometro')[0];
+    // El rastro del cambio se conserva: es lo que dice que ese número lo puso una persona y
+    // no la IA, y se perdería al repintar con los datos recién traídos del servidor.
+    const odoHTML = ev ? odoLectura(s.id, ev, cambio)
+                       : '<span class="org">no se capturó</span>';
+    caja.outerHTML = solPanorama(s, odoHTML);
+    // La propuesta de la IA se apoyaba en los mismos kilómetros, así que también sobra. Se
+    // limpia ANTES de volver a pedirla: si la petición falla, `cargarSugerencia` deja `_SUG`
+    // como estaba, y autorizar habría mandado como «sugeridos» unos litros calculados sobre
+    // el odómetro viejo.
+    // Se CADUCA, no sólo se borra: la propuesta pedida con el odómetro viejo sigue en vuelo y
+    // volvía a escribirse encima.
+    sugOlvidar();
+    const cs=$('#sug'); if(cs)cs.innerHTML='';
+    if(['enviada','en_validacion'].includes(s.estado)) cargarSugerencia(s.id);
+  }catch(e){
+    // Ni el aviso si la pantalla ya no es ésta: el toast hablaría de un odómetro que no se ve.
+    if(!solVigente(turno)||tic!==_PANORAMA_TIC) return;
+    // No se deja el bloque apagado ni mintiendo: se dice que no se pudo rehacer.
+    const c=$('#sol-combustible');
+    if(c)c.removeAttribute('data-recalculando');
+    toast('El odómetro se guardó, pero no pude rehacer los cálculos. Vuelve a abrir la solicitud.');
+  }finally{
+    // Sólo suelta el freno si sigue siendo el suyo.
+    if(_PANORAMA_TURNO===turno && tic===_PANORAMA_TIC) _PANORAMA_TURNO=0;
+  }
+}
+
+async function corregirOdo(solId, evId){
+  const turno=solTurno();
+  const el=$('#odo-in'); if(!el)return;
+  const v=el.value.trim();
+  if(v===''||isNaN(Number(v))||Number(v)<0){ toast('Escribe el kilometraje que se ve en la foto'); return; }
+  let r;
+  // En el try va SÓLO lo que puede fallar de verdad. Antes también estaba el refresco, así
+  // que un error posterior al guardado se anunciaba como «no se pudo guardar» cuando el
+  // odómetro ya estaba escrito: mentía sobre lo que había pasado.
+  try{
+    const fd=new FormData(); fd.append('valor',Number(v));
+    r=await api('/api/solicitudes/'+solId+'/evidencia/'+evId,{method:'POST',body:fd});
+  }catch(e){ toast('No se pudo guardar: '+(e.message||'')); return; }
+
+  // El cambio se anuncia AL LADO del número y se queda ahí. Un toast encima diría lo mismo
+  // y se desvanecería; sólo hace falta cuando no hay cambio que mostrar.
+  const cambio = r.anterior!=null && Number(r.anterior)!==Number(v);
+  // De PINTAR, nada si la hoja ya cambió: `_SOL_ACT` sería otra solicitud —le mutaríamos sus
+  // evidencias— y `#odo-caja` su caja. El guardado SÍ ocurrió, así que se dice y se termina.
+  if(!solVigente(turno)){ toast('Odómetro guardado'); if(typeof loadSolicitudes==='function')loadSolicitudes(); return; }
+  if(!cambio)toast('Odómetro guardado');
+
+  // Se vuelve a la lectura, en el sitio y con el rastro del cambio al lado. Reabrir el modal
+  // entero hacía un parpadeo y devolvía a la persona al principio de lo que estaba leyendo.
+  // `_SOL_ACT` se lee con el id delante: la evidencia que se muta tiene que ser de ÉSTA.
+  const sa=(_SOL_ACT&&Number(_SOL_ACT.id)===Number(solId))?_SOL_ACT:null;
+  const ev=(sa&&(sa.evidencias||[]).filter(e=>e.id===evId)[0])||null;
+  if(ev){
+    ev.valor_final=Number(v);
+    ev.procedencia=r.procedencia||ev.procedencia;
+    const caja=$('#odo-caja');
+    if(caja)caja.outerHTML=odoLectura(solId, ev, cambio);
+  }
+  // Y AHORA LOS NÚMEROS QUE DEPENDÍAN DE ESA LECTURA. Sin esto, Recorrido, Consumió, Nivel y
+  // el Tope seguían siendo los del odómetro viejo —el que se acaba de desmentir— y los litros
+  // se fijaban contra ellos.
+  refrescarPanorama(solId, evId, cambio);
+  // La lista de detrás sí se recarga, y con guarda de verdad: `x&&x()` sobre un nombre que
+  // no existe lanza ReferenceError igual. Aquí murió una llamada a `cargarSolis`, que me
+  // inventé: la función se llama loadSolicitudes.
+  if(typeof loadSolicitudes==='function')loadSolicitudes();
+}
+
+async function autorizarSol(id){
+  // El turno de la hoja desde la que se firma. `ask()` no lo tira: `Dlg.confirm` apila su
+  // propio diálogo sin tocar `_dlgId` ni `openSheet`, así que la confirmación del tope cabe
+  // aquí dentro sin invalidar nada.
+  const turnoHoja=solTurno();
+  // Con el panorama a medio rehacer, lo que hay en pantalla son los números del odómetro
+  // viejo. Esperar un segundo es mejor que firmar contra ellos. El freno es POR TURNO: un
+  // refresco colgado en otra solicitud no tiene por qué parar ésta.
+  if(_PANORAMA_TURNO && _PANORAMA_TURNO===turnoHoja){
+    toast('Espera: estoy rehaciendo los cálculos con el odómetro nuevo');return;}
+  // RED, no cinturón: la raíz es que el pie ya no sobrevive al cuerpo. Pero esta función
+  // también se dispara con Intro —Dlg busca la acción primaria y le hace click— y su primera
+  // línea era `$('#aut-litros').value` sin guarda: con el input fuera del DOM, `$()` devuelve
+  // null y leerlo lanza TypeError DENTRO del onClick, donde nadie lo captura. La consola lo
+  // registraba y la pantalla no decía nada.
+  const inp=$('#aut-litros');
+  if(!inp||!_SOL_ACT||Number(_SOL_ACT.id)!==Number(id)){ toast('Vuelve a abrir la solicitud'); return; }
+  const v=inp.value;
+  if(!v||Number(v)<=0){toast('Indica los litros');return;}
+  // SE PASA DEL TOPE: se avisa y se deja seguir. No se bloquea —es como se diseñó el 2%, y un
+  // candado duro pararía despachos buenos, porque el propio escáner varía un 12.8% entre
+  // lecturas—. Es el mismo patrón que ya se usaba para la segunda carga del día.
+  {
+    // El tanque, con el id delante: comparar contra el tope de otra unidad es exactamente la
+    // clase de error que este arreglo viene a cerrar.
+    const t=tanqueDe(id);
+    if(t && t.tope!=null && Number(v)>t.tope){
+      const ok=await ask({title:'Se pasa del tope',
+        msg:'Vas a autorizar '+litros(Number(v))+', que son '+litros(Number(v)-t.tope)
+            +' por encima del tope de '+litros(t.tope)+'.'
+            +(t.tope_motivo?'\n\n'+t.tope_motivo:'')
+            +'\n\nQueda registrado en la orden.',
+        okText:'Autorizar de todos modos',danger:true});
+      if(!ok)return;
+    }
+  }
+  // Desde aquí hasta el final hay POST: el candado se echa ya. Las salidas de arriba —sin
+  // litros, o cancelar el aviso del tope— pasan ANTES y no lo tocan.
+  if(_SOL_ENVIANDO){ toast('Espera: ya se está enviando'); return; }
+  _SOL_ENVIANDO=true;
+  try{
+    // El salto ENVIADA -> EN_VALIDACION lo hace ahora el SERVIDOR, dentro de la misma
+    // transacción que la autorización. Aquí se decidía mirando la lista cacheada, y con
+    // una devuelta recién reenviada esa caché mentía: no se tomaba y autorizar daba 409.
+    const fd=new FormData();fd.append('litros',v);
+    // Lo que se le enseñó va SIEMPRE, se le haya hecho caso o no: es lo único que permite
+    // preguntar después si la propuesta servía.
+    // Por `sugDe`, nunca por `_SUG` a pelo: el expediente existe para poder preguntar si se le
+    // hizo caso a la IA, y registrar ahí la propuesta de OTRA solicitud lo convierte en ruido
+    // que nadie puede detectar después.
+    const sg=sugDe(id);
+    if(sg&&sg.litros!=null){
+      fd.append('litros_sugeridos',sg.litros);
+      if(sg.justificacion)fd.append('sugerencia_motivo',sg.justificacion);
+    }
+    let r;
+    try{ r=await api('/api/solicitudes/'+id+'/autorizar',{method:'POST',body:fd}); }
+    catch(e){
+      // La segunda autorización del día se detiene UNA vez. No se bloquea: casi la mitad de
+      // los días una unidad carga más de una vez y eso es trabajo normal. Sólo hay que mirarlo.
+      if(!(e.cuerpo&&e.cuerpo.codigo==='doble_carga_hoy'))throw e;
+      const ok=await ask({title:'Esta unidad ya cargó hoy',msg:e.cuerpo.mensaje,
+                          okText:'Autorizar de todos modos',danger:true});
+      if(!ok)return;
+      fd.append('confirmar','1');
+      r=await api('/api/solicitudes/'+id+'/autorizar',{method:'POST',body:fd});
+    }
+    closeSheet();
+    toast('Autorizada · '+(r.folio||'')+(r.excedido?' · por encima del tope, queda registrado':''));
+    loadSolicitudes();
+  }catch(e){toast(e.message||'No se pudo autorizar');}
+  finally{ _SOL_ENVIANDO=false; }
+}
+// Pide a la IA un motivo y lo escribe en el campo cuando llega.
+//
+// NO se espera antes de abrir el diálogo: la llamada tarda segundos y una pantalla quieta se
+// siente rota. El campo abre vacío y utilizable desde el primer momento; si el coordinador ya
+// empezó a escribir, la propuesta NO le pisa lo suyo.
+//
+// Y si la IA falla, no pasa nada: el campo se queda en blanco, que es exactamente como
+// estaba antes de que esto existiera.
+async function proponerMotivo(id, destino, inp){
+  if(!inp || !['devuelta','rechazada','anulada'].includes(destino)) return;
+  const antes = inp.placeholder;
+  inp.placeholder = 'Proponiendo un motivo…';
+  let d = null;
+  try{ d = await api('/api/solicitudes/'+id+'/motivo?destino='+encodeURIComponent(destino)); }
+  catch(e){ /* sin propuesta se escribe a mano */ }
+  inp.placeholder = antes;
+  if(d && d.motivo && !String(inp.value||'').trim()){
+    inp.value = d.motivo;
+    try{ inp.focus(); inp.select(); }catch(e){}
+  }
+}
+function campoDelDialogo(){
+  const t=[...document.querySelectorAll('[id^="dlg-in-"]')];
+  return t.length ? t[t.length-1] : null;
+}
+
+// ENVIADA -> EN_VALIDACION. Es lo que desbloquea devolver y rechazar, y además la RESERVA:
+// el estado significa «alguien la está mirando», así que el otro coordinador —y el gerente,
+// que también autoriza— lo ven en la bandeja antes de ponerse con la misma.
+//
+// Se reabre el detalle en vez de repintar sólo el pie: al tomarla cambia el estado, y con él
+// la cabecera, la píldora y la botonera entera. Media pantalla diciendo «Enviada» y la otra
+// media ofreciendo «Devolver» sería peor que el parpadeo.
+// Un envío a la vez. Las acciones del pie llevan `keepOpen`, así que el botón sigue vivo
+// mientras el POST viaja: un segundo Intro o un doble clic mandaban la operación dos veces. La
+// primera gana; la segunda choca con el estado ya cambiado y pinta un rojo «No se pudo» encima
+// de algo que SÍ había salido bien.
+let _SOL_ENVIANDO=false;
+async function tomarSol(id){
+  if(_SOL_ENVIANDO){ toast('Espera: ya se está enviando'); return; }
+  _SOL_ENVIANDO=true;
+  try{
+    const fd=new FormData(); fd.append('destino','en_validacion');
+    await api('/api/solicitudes/'+id+'/transicion',{method:'POST',body:fd});
+  }catch(e){ toast(e.message||'No se pudo tomar la solicitud'); return; }
+  finally{ _SOL_ENVIANDO=false; }
+  loadSolicitudes();
+  // Se ESPERA el repintado. Esta llamada viene de una acción con `keepOpen`, así que la hoja
+  // sigue abierta y `verSolicitud` entra por la rama de reutilización, que ahora desarma el
+  // pie antes de tocar el cuerpo. Devolver la promesa también vale: Dlg sólo mira si `onClick`
+  // devolvió `false` literal, y una promesa no lo es.
+  return verSolicitud(id);
+}
+
+async function moverSol(id,destino,confirmMsg){
+  // Éste era el que de verdad hacía daño: no lee NADA del cuerpo de la hoja —el motivo lo pide
+  // `ask()`, que apila su propio diálogo—, así que con el pie rancio «Anular» se ejecutaba
+  // entero y con éxito contra el `id` de la closure anterior. Que una acción funcione no la
+  // hace legítima: tiene que coincidir con lo que la persona está MIRANDO.
+  if(!_SOL_ACT||Number(_SOL_ACT.id)!==Number(id)){ toast('Vuelve a abrir la solicitud'); return; }
+  let motivo='';
+  const TIT={devuelta:'Devolver al operador',anulada:'Anular solicitud',
+             rechazada:'Rechazar solicitud',
+             en_discrepancia:'Marcar discrepancia',conciliada:'Resolver la discrepancia'};
+  const OK={devuelta:'Devolver',anulada:'Anular',rechazada:'Rechazar',
+            en_discrepancia:'Marcar',conciliada:'Dar por resuelta'};
+  // El motivo NO es opcional en una discrepancia: es lo único que le explica a quien la lea
+  // después por qué se detuvo una orden ya autorizada.
+  if(['devuelta','anulada','rechazada','en_discrepancia','conciliada'].includes(destino)){
+    // El diálogo se abre primero y la propuesta entra después, sobre el campo ya visible.
+    const pide=ask({title:TIT[destino],msg:confirmMsg,input:true,
+      placeholder:destino==='conciliada'?'Cómo se resolvió':'Motivo (queda en el historial)',
+      okText:OK[destino],danger:['anulada','en_discrepancia','rechazada'].includes(destino)});
+    proponerMotivo(id,destino,campoDelDialogo());
+    motivo=await pide;
+    if(motivo===null)return;
+    // Los dos extremos de la discrepancia exigen palabras: abrirla, porque detiene una orden
+    // ya autorizada; y cerrarla, porque CONCILIADA es final y sin nota nadie sabrá cómo se
+    // resolvió. `Dlg.prompt` devuelve cadena vacía al aceptar en blanco, así que hay que mirarlo.
+    if(['en_discrepancia','conciliada'].includes(destino)&&!String(motivo||'').trim()){
+      toast(destino==='conciliada'?'Escribe cómo se resolvió':'Escribe qué no cuadra');return;}
+    // Y devolver o rechazar sin una palabra tampoco vale: al chofer la app le dice «Revisa el
+    // motivo», así que mandarlo en blanco es mandarlo a buscar un texto que no está. Su
+    // pantalla ya avisa de ese hueco cuando ocurre; esto lo evita en origen.
+    if(['devuelta','rechazada'].includes(destino)&&!String(motivo||'').trim()){
+      toast(destino==='devuelta'?'Escribe qué tiene que corregir':'Escribe por qué no procede');return;}
+    // Y anular tampoco. El servidor sólo GRABA el motivo si llega uno, y nunca lo limpia: una
+    // anulación en blanco conservaba el texto de la devolución anterior y se le pintaba al
+    // chofer como si fuera el porqué de la anulación.
+    if(destino==='anulada'&&!String(motivo||'').trim()){
+      toast('Escribe por qué se anula');return;}
+  }
+  try{const fd=new FormData();fd.append('destino',destino);if(motivo)fd.append('motivo',motivo);
+    await api('/api/solicitudes/'+id+'/transicion',{method:'POST',body:fd});
+    const AVISO={devuelta:'Devuelta al operador',anulada:'Anulada',rechazada:'Rechazada',
+                en_discrepancia:'Marcada en discrepancia',conciliada:'Discrepancia resuelta'};
+    closeSheet();toast(AVISO[destino]||'Actualizada');loadSolicitudes();
+  }catch(e){toast(e.message||'No se pudo');}
+}
+
+// ── SOLICITAR COMBUSTIBLE (crea + autoriza) ──
+async function modalSolicitar(){
+  await ensureCat();
+  const uOpts=UNIDADES.map(u=>`<option value="${u.id}">${esc(u.clave)}${u.operador_titular?' · '+esc(u.operador_titular):''}</option>`).join('');
+  const oOpts=['<option value="">— Titular de la unidad —</option>'].concat(OPERADORES.slice().sort(opsSort).map(o=>`<option value="${o.id}">${esc(o.nombre)}${o.numero?' (#'+o.numero+')':''}</option>`)).join('');
+  openSheet(`
+    <div class="sh"><h3>Solicitar combustible</h3><button class="x" onclick="closeSheet()"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <p style="font-size:12.5px;color:var(--muted);margin:0 0 6px">Entra directo a la cola de Combustible, ya autorizada con folio.</p>
+    <label class="f">Unidad</label><select id="sc-unidad">${uOpts}</select>
+    <label class="f">Litros a autorizar</label><input id="sc-litros" type="number" inputmode="decimal" step="0.01" min="0" placeholder="p. ej. 350">
+    <label class="f">Operador (opcional)</label><select id="sc-oper">${oOpts}</select>
+    <label class="f">Nota (opcional)</label><input id="sc-nota" placeholder="Referencia interna">
+    <button class="btn block" style="margin-top:14px" onclick="crearSolicitud()">Crear y autorizar</button>
+  `);
+}
+async function crearSolicitud(){
+  const uid=$('#sc-unidad').value, lit=$('#sc-litros').value, op=$('#sc-oper').value, nota=$('#sc-nota').value;
+  if(!uid){toast('Elige una unidad');return;}
+  if(!lit||Number(lit)<=0){toast('Indica los litros');return;}
+  try{const fd=new FormData();fd.append('unidad_id',uid);fd.append('litros',lit);if(op)fd.append('operador_id',op);if(nota)fd.append('nota',nota);
+    let r;
+    try{ r=await api('/api/coordinador/solicitud',{method:'POST',body:fd}); }
+    catch(e){
+      // Mismo freno y misma respuesta que en el otro camino de autorizar. Sin esto el aviso
+      // llegaba como un error sin salida: la segunda recarga del día era imposible de
+      // levantar desde aquí, mientras el texto de arriba prometía que entra directo a la cola.
+      if(!(e.cuerpo&&e.cuerpo.codigo==='doble_carga_hoy'))throw e;
+      const ok=await ask({title:'Esta unidad ya cargó hoy',msg:e.cuerpo.mensaje,
+                          okText:'Crear y autorizar de todos modos',danger:true});
+      if(!ok)return;
+      fd.append('confirmar','1');
+      r=await api('/api/coordinador/solicitud',{method:'POST',body:fd});
+    }
+    closeSheet();toast('Solicitud creada · '+(r.folio||''));
+    if($('#s-inicio').classList.contains('on'))loadInicio(); else if($('#s-solicitudes').classList.contains('on'))loadSolicitudes();
+  }catch(e){toast(e.message||'No se pudo crear');}
+}
+
+// ── VIAJES ──
+const VIA_TABS=[['activa','Activos'],['finalizada','Finalizados'],['todas','Todos']];
+function pintarViaTabs(){$('#via-tabs').innerHTML=VIA_TABS.map(([k,l])=>`<button class="tab ${viaFiltro===k?'on':''}" onclick="viaFiltro='${k}';loadViajes()">${l}</button>`).join('');}
+async function loadViajes(){
+  pintarViaTabs();
+  try{const q=viaFiltro==='todas'?'':('?estado='+viaFiltro);ASIGS=await api('/api/asignaciones'+q);
+    $('#via-list').innerHTML=ASIGS.length?ASIGS.map(asigItem).join(''):'<div class="empty">Sin viajes en esta vista.</div>';
+  }catch(e){$('#via-list').innerHTML='<div class="empty">No se pudo cargar.</div>';}
+}
+
+// ── Detalle de un viaje asignado ────────────────────────────────────────────
+// No pide nada al servidor: /api/asignaciones ya trajo el diccionario completo cuando se
+// pintó la lista. Abrir el detalle de algo que ya está en memoria no debería costar una
+// vuelta a la red.
+function verAsignacion(id){
+  // En el coordinador ASIGS es un `let` del módulo y NO aparece en window; en el panel de
+  // admin se guarda como window.ASIGS. El typeof cubre los dos sin romper si no existe.
+  const src=(typeof ASIGS!=='undefined'&&ASIGS)||window.ASIGS||[];
+  const a=src.filter(x=>x.id===id)[0];
+  if(!a){ if(window.toast)toast('No se encontró ese viaje'); return; }
+  const f=(l,v)=>(v==null||v==='')?'':'<tr><td class="sub" style="white-space:nowrap;padding-right:14px;vertical-align:top">'+l+'</td><td>'+v+'</td></tr>';
+  const cuando=v=>{ if(!v)return ''; try{ return new Date(v).toLocaleString('es-MX',{dateStyle:'medium',timeStyle:'short'}); }catch(e){ return String(v); } };
+  const rems=(a.remolques||[]);
+  const remHTML=rems.length
+    ? '<table style="width:100%">'+rems.map(r=>'<tr>'
+        +'<td style="padding:3px 10px 3px 0"><b>'+esc(r.eco||'—')+'</b>'
+          +(r.termo?' <span class="pill" style="font-size:10px">termo</span>':'')+'</td>'
+        +'<td class="sub">'+esc(r.operador||'sin titular')+'</td></tr>').join('')+'</table>'
+    : '<span class="sub">Sin remolques enganchados.</span>';
+  const km = a.km_destino!=null ? a.km_destino : a.km_estimado;
+  Dlg.open({
+    size:'lg',
+    eyebrow:'Viaje asignado'+(a.estado?' · '+a.estado:''),
+    title:(a.unidad_clave||'—')+' → '+(a.destino||'sin destino'),
+    body:'<table style="width:100%">'
+      +f('Operador','<b>'+esc(a.operador_nombre||'—')+'</b>'+(a.operador_numero?' <span class="sub">#'+esc(a.operador_numero)+'</span>':''))
+      +f('Unidad','<b>'+esc(a.unidad_clave||'—')+'</b>'+(a.unidad_tipo?' <span class="sub">'+esc(a.unidad_tipo)+'</span>':''))
+      +f('Origen',esc(a.origen||'—'))
+      +f('Destino',esc(a.destino||'—'))
+      +f('Kilómetros', km!=null ? ('<b>'+Math.round(km)+' km</b>'
+           +(a.km_modificado?' <span class="sub">ajustados a mano'+(a.km_modificado_por?' por '+esc(a.km_modificado_por):'')+'</span>':' <span class="sub">estimados de la ruta</span>')) : '—')
+      +f('Tipo', a.es_retorno?'Retorno':'Ida')
+      +f('Remolques',remHTML)
+      +f('Nota',esc(a.nota||'—'))
+      +f('Creado',cuando(a.creada_en)+(a.creada_por?' · por '+esc(a.creada_por):''))
+      // Que el operador lo haya visto o no es lo que decide si hace falta llamarle: por eso
+      // se dice explícitamente en vez de dejar el hueco vacío.
+      +f('¿Lo vio el operador?', a.visto_en
+           ? ('sí, '+cuando(a.visto_en))
+           : '<span style="color:var(--danger)">todavía no</span>')
+      +f('Finalizado', a.finalizada_en?cuando(a.finalizada_en):'')
+      +'</table>',
+    actions:[{label:'Cerrar'}],
+  });
+}
+
+
+// ── Fecha y hora ────────────────────────────────────────────────────────────
+// Las listas de viajes y solicitudes no decían cuándo se habían creado. En una cola de
+// trabajo eso es media información: `hace()` responde a lo que de verdad se pregunta —
+// cuánto lleva esto esperando— y `fechaHora()` al cuándo exacto.
+function fechaHora(v){
+  if(!v) return '—';
+  try{
+    const d=new Date(v);
+    if(isNaN(d)) return String(v).slice(0,16).replace('T',' ');
+    // 24 horas: en un parte de operación «12:08 a.m.» se confunde con el mediodía.
+    return d.toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false});
+  }catch(e){ return String(v).slice(0,16).replace('T',' '); }
+}
+function hace(v){
+  if(!v) return '';
+  try{
+    const d=new Date(v); if(isNaN(d)) return '';
+    const m=Math.floor((Date.now()-d.getTime())/60000);
+    if(m<0) return '';                       // fecha futura: no se inventa nada
+    if(m<1) return 'ahora mismo';
+    if(m<60) return 'hace '+m+' min';
+    const h=Math.floor(m/60);
+    if(h<24) return 'hace '+h+' h';
+    const dd=Math.floor(h/24);
+    return dd===1?'hace 1 día':'hace '+dd+' días';
+  }catch(e){ return ''; }
+}
+
+function asigItem(a){
+  const rem=(a.remolques||[]).map(r=>r.eco).join(', ');
+  const fin=a.estado==='activa'?`<button class="btn ghost sm" onclick="event.stopPropagation();finalizarAsig(${a.id})">Finalizar</button>`:'';
+  const kmTxt=a.km_destino!=null?(Math.round(a.km_destino)+' km'+(a.km_modificado?' *':'')):'Km';
+  const kmBtn=`<button class="btn ghost sm" title="${a.km_modificado?('Km modificado a mano'+(a.km_modificado_por?' por '+esc(a.km_modificado_por):'')):'Km de la ruta (editable)'}" onclick="event.stopPropagation();editKmDestino(${a.id},${a.km_destino==null?'null':a.km_destino})">${kmTxt}</button>`;
+  const ret=a.es_retorno?'<span class="pill ghost" style="color:var(--u-tracto);border-color:color-mix(in oklab,var(--u-tracto) 40%,transparent)">Retorno</span>':'';
+  // Un viaje que desaparece solo, sin que nadie lo viera venir, se lee como un fallo. Aquí se
+  // dice cuánto lleva callado y cuánto le queda, para que cerrarlo —o darle actividad— sea
+  // una decisión y no una sorpresa. Los viajes con una solicitud viva no traen cuenta atrás
+  // porque no se cierran nunca.
+  const quieto = a.dias_inactivo, quedan = a.dias_para_cerrarse;
+  const aviso = (a.estado==='activa' && quedan!=null && quedan<=5)
+    ? `<div class="m" style="color:var(--warn);font-weight:600">Sin actividad desde hace ${quieto} d · se cerrará solo en ${quedan} d</div>`
+    : (a.estado==='activa' && quieto!=null && quieto>=3
+        ? `<div class="m">Sin actividad desde hace ${quieto} d</div>` : '');
+  return `<div class="item" style="cursor:pointer" onclick="verAsignacion(${a.id})">
+    <div class="who2"><b>${esc(a.unidad_clave||'—')}</b> → ${esc(a.destino||'—')} ${ret}
+      <div class="m">${esc(a.operador_nombre||'—')}${a.origen?' · desde '+esc(a.origen):''}${rem?' · remolques: '+esc(rem):''}</div>
+      ${aviso}
+      <div class="m" style="opacity:.85">${fechaHora(a.creada_en)}${hace(a.creada_en)?' · '+hace(a.creada_en):''}${a.finalizada_en?' · finalizado '+fechaHora(a.finalizada_en):''}</div></div>
+    ${kmBtn} ${pill(a.estado)} ${fin}</div>`;
+}
+// ── Km al destino: auto desde el mapa (haversine) y editable por el coordinador ──
+function recalcKm(){const o=$('#as-origen'),d=$('#as-destino'),k=$('#as-km');if(!o||!d||!k)return;
+  if(o.dataset.lat&&o.dataset.lng&&d.dataset.lat&&d.dataset.lng){k.value=_hav(+o.dataset.lat,+o.dataset.lng,+d.dataset.lat,+d.dataset.lng);}}
+window.onMapPick=function(){recalcKm();};
+async function editKmDestino(id,km){
+  const v=await ask({title:'Km al destino',msg:'Verifica o ajusta los km del destino (estimados del mapa). Vacío = quitar.',input:true,value:(km==null?'':String(km)),placeholder:'Km',okText:'Guardar'});
+  if(v===null)return;
+  try{const fd=new FormData();fd.append('km_destino',(v||'').trim());
+    await api('/api/asignaciones/'+id+'/km',{method:'POST',body:fd});
+    toast('Km actualizado');loadViajes();
+  }catch(e){toast(e.message||'No se pudo');}
+}
+async function finalizarAsig(id){
+  if(!await ask({title:'Finalizar viaje',msg:'¿Marcar este viaje como finalizado?',okText:'Finalizar'}))return;
+  try{await api('/api/asignaciones/'+id+'/finalizar',{method:'POST',body:new FormData()});toast('Viaje finalizado');loadViajes();}
+  catch(e){toast(e.message||'No se pudo');}
+}
+async function modalAsignar(){
+  await ensureCat(); await ensureRem();
+  // El diálogo vive en /static/maps.js: era la misma pantalla copiada en coordinador,
+  // gerente y dashboard, cada una con su propio bloque de CSS `.as-*`.
+  asignarViaje({operadores:OPERADORES, unidades:UNIDADES, remolques:REMOLQUES,
+    onCreado:()=>{ if($('#s-inicio').classList.contains('on'))loadInicio(); else loadViajes(); }});
+}
+
+// ── Mapa embebido del formulario de asignar: inicio/final + ruta OSRM + km ──
+// El buscador de lugares vive en /static/maps.js (asBuscar + asBuscarInit), con su
+// desplegable de sugerencias. Estaba copiado en las tres pantallas, y con el mismo error:
+// llamaba a asFijar(lat, lng, texto) cuando su primer argumento es 'inicio'/'final'.
+// ── PROBLEMAS ──
+async function loadProblemas(){
+  try{
+    const s=await api('/api/solicitudes');SOLIS=s.solicitudes||[];
+    let anoms=[];try{anoms=await api('/api/anomalias');}catch(e){}ANOMS=anoms||[];
+    const dev=SOLIS.filter(x=>x.estado==='devuelta');
+    const eco=SOLIS.filter(x=>x.eco_alerta&&x.estado!=='devuelta');
+    let html='';
+    if(dev.length){html+=secTitle('Devueltas al operador',dev.length)+dev.map(solItem).join('');}
+    if(eco.length){html+=secTitle('Económico no coincide',eco.length)+eco.map(solItem).join('');}
+    if(ANOMS.length){html+=secTitle('Anomalías de bitácora',ANOMS.length)+ANOMS.map(anomItem).join('');}
+    $('#pro-list').innerHTML=html||'<div class="empty">Nada pendiente. Todo en orden.</div>';
+    setBdg('nav-pro',dev.length+eco.length+ANOMS.length);
+  }catch(e){$('#pro-list').innerHTML='<div class="empty">No se pudo cargar.</div>';}
+}
+function secTitle(t,n){return `<div class="spread" style="margin:14px 0 4px"><div class="kick">${esc(t)}</div><span class="pill ghost">${n}</span></div>`;}
+function anomItem(a){
+  const inf=anomInfo(a.tipo);
+  return `<div class="item" data-anom="${a.id}" onclick="verAnomalia(${a.id})" style="cursor:pointer">
+    <div class="who2"><b>${esc(a.unidad||'—')}</b> <span class="catbadge ${inf.c}">${esc(inf.l)}</span>
+      <div class="m">${esc(a.descripcion||'')}${a.fecha?' · '+esc(a.fecha.slice(0,10)):''}</div></div>
+    <svg class="ic" viewBox="0 0 24 24" style="color:var(--muted)"><path d="M9 6l6 6-6 6"></path></svg></div>`;
+}
+async function resolverAnom(id,accion){
+  try{await api('/api/anomalias/'+id+'/'+accion,{method:'POST',body:new FormData()});closeSheet();toast(accion==='confirmar'?'Anomalía confirmada':'Anomalía descartada');loadProblemas();}
+  catch(e){toast(e.message||'No se pudo');}
+}
+
+// ── OPERADORES ──
+async function loadOperadores(){
+  try{OPERADORES=await api('/api/operadores');await ensureCat();pintarOperadores();}
+  catch(e){$('#ope-grid').innerHTML='<div class="empty">No se pudo cargar.</div>';}
+}
+function pintarOperadores(){
+  const q=($('#ope-q')&&$('#ope-q').value||'').toLowerCase().trim();
+  let list=OPERADORES.filter(o=>o.activo!==false);
+  if(q)list=list.filter(o=>(o.nombre||'').toLowerCase().includes(q)||String(o.numero||'').includes(q));
+  list.sort(opsSort);
+  $('#ope-grid').innerHTML=list.length?('<div class="grid g2">'+list.map(opCard).join('')+'</div>'):'<div class="empty">Sin operadores.</div>';
+}
+function opCard(o){
+  const tel=(o.telefono||'').replace(/\D/g,'');
+  const wa=tel?`<a class="btn gray sm" href="https://wa.me/${tel.length===10?'52'+tel:tel}" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M4 5h16v11H9l-4 3.5V5zM8 9.7h.01M12 9.7h.01M16 9.7h.01"/></svg> WhatsApp</a>`:'';
+  const call=tel?`<a class="btn ghost sm" href="tel:${esc(o.telefono)}">Llamar</a>`:'<span style="font-size:12px;color:var(--muted)">Sin teléfono</span>';
+  const rto=o.rto_real_prom!=null?o.rto_real_prom+' km/l':'—';
+  const ini=(o.nombre||'?').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+  return `<div class="card" style="padding:14px">
+    <div style="display:flex;gap:11px;align-items:center">
+      <div class="logo" style="background:var(--sunken);color:var(--muted);width:40px;height:40px;font-weight:700;font-family:'IBM Plex Sans',sans-serif;font-size:16px">${esc(ini)}</div>
+      <div style="flex:1;min-width:0"><b style="font-size:14.5px">${esc(o.nombre)}</b>
+        <div style="font-size:12px;color:var(--muted)">${o.numero?'#'+o.numero+' · ':''}${o.viajes||0} viajes · ${rto}</div></div>
+    </div>
+    <div class="row" style="margin-top:11px">${wa}${call}<button class="btn ghost sm" onclick="verOperador(${o.id})">Ver detalle</button><button class="btn ghost sm" onclick="modalTitular(${o.id})">Asignar unidad</button></div>
+  </div>`;
+}
+// Detalle COMPLETO del operador (mismo mini-informe que el gerente, solo lectura).
+async function verOperador(id){
+  const dlgOp=openSheet('<div class="empty">Cargando…</div>');
+  let o;
+  try{ o=await api('/api/operadores/'+id); }
+  catch(e){
+    Dlg.error(dlgOp,{eyebrow:'Operador',title:'No se pudo abrir el operador',
+      text:(e&&e.message)||'El servidor no respondió.',
+      onRetry:()=>verOperador(id)});
+    return;
+  }
+  if(!Dlg.el(dlgOp))return;   // se cerró mientras cargaba: no se resucita
+  const rc=(l,v)=>`<div class="rc"><div class="rl">${l}</div><div class="rv">${v}</div></div>`;
+  const rend=o.rend_mensual||{labels:[],valores:[]};
+  const maxR=Math.max(0.1,...(rend.valores||[]));
+  const spark=(rend.valores||[]).length?('<div style="display:flex;align-items:flex-end;gap:3px;height:44px;margin-top:8px">'+rend.valores.map((v,i)=>{const h=Math.max(4,Math.round(v/maxR*44));const c=v>=2.8?'var(--ok)':(v>=2.38?'var(--warn)':'var(--danger)');return `<div title="${esc(rend.labels[i])}: ${v.toFixed(2)} km/l" style="flex:1;min-width:6px;height:${h}px;background:${c};border-radius:3px 3px 0 0"></div>`;}).join('')+'</div>'):'';
+  const unids=(o.unidades||[]).slice(0,6).map(u=>`<span class="pill ghost" style="margin:2px 4px 2px 0">${esc(u.clave)} · ${u.viajes}</span>`).join('')||'<span style="color:var(--muted)">—</span>';
+  const anoms=(o.anomalias||[]).slice(0,5).map(a=>{const inf=anomInfo(a.tipo);return `<div class="item" style="padding:8px 0"><div class="who2"><b>${esc(a.unidad||'—')}</b> <span class="catbadge ${inf.c}">${esc(inf.l)}</span><div class="m">${esc((a.fecha||'').slice(0,10))}</div></div></div>`;}).join('')||'<div class="empty" style="padding:8px">Sin anomalías.</div>';
+  const viajes=(o.ultimos_viajes||[]).slice(0,6).map(v=>`<div class="item" style="padding:7px 0"><div class="who2"><b>${esc(v.unidad||'—')}</b><div class="m">${esc((v.fecha||'').slice(0,10))}${v.tipo?' · '+esc(String(v.tipo).toLowerCase()):''}</div></div><div style="text-align:right;font-size:12.5px">${v.kilometros!=null?Math.round(v.kilometros)+' km':'—'}${v.rto_real!=null?'<div class="m">'+v.rto_real.toFixed(2)+' km/l</div>':''}</div></div>`).join('')||'<div class="empty" style="padding:8px">Sin viajes.</div>';
+  openSheet(`
+    <div class="sh" style="gap:10px"><div style="display:flex;align-items:center;gap:11px;min-width:0">${o.tiene_foto?`<img src="/api/operadores/${id}/foto" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid var(--line)">`:`<span style="width:44px;height:44px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;background:var(--sunken);color:var(--muted);font-weight:700;font-size:15px">${esc((o.nombre||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase())}</span>`}<h3 style="min-width:0;overflow:hidden;text-overflow:ellipsis">${esc(o.nombre)}</h3></div><button class="x" onclick="closeSheet()"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div style="margin:2px 0 10px;display:flex;gap:8px;flex-wrap:wrap">${o.numero?'<span class="pill ghost">#'+o.numero+'</span>':''}<span class="pill ghost">${esc(o.estatus||'—')}</span>${o.telefono?'<a class="pill ghost" href="tel:'+esc(o.telefono)+'" style="text-decoration:none">'+esc(o.telefono)+'</a>':''}${o.licencia?'<span class="pill ghost">Lic. '+esc(o.licencia)+'</span>':''}</div>
+    <div class="report"><div class="rg" style="grid-template-columns:1fr 1fr 1fr">
+      ${rc('Viajes',(o.viajes||0))}
+      ${rc('Rendimiento',o.rto_real_prom!=null?o.rto_real_prom.toFixed(2)+' km/l':'—')}
+      ${rc('Desviación',o.dif_prom!=null?(o.dif_prom>0?'+':'')+o.dif_prom+' L':'—')}
+    </div>${spark?'<div class="rl" style="margin-top:12px">Rendimiento por mes</div>'+spark:''}</div>
+    <div class="report"><div class="kick">Unidades que maneja</div><div style="margin-top:8px">${unids}</div></div>
+    <div class="report"><div class="kick">Anomalías recientes</div>${anoms}</div>
+    <div class="report"><div class="kick">Últimos viajes</div>${viajes}</div>
+  `);
+}
+async function modalTitular(opId){
+  await ensureCat();
+  const o=OPERADORES.find(x=>x.id===opId)||{};
+  const suyas=UNIDADES.filter(u=>u.operador_asignado_id===opId).map(u=>u.clave).join(', ')||'ninguna';
+  const uOpts=['<option value="">— Elige unidad —</option>'].concat(UNIDADES.map(u=>`<option value="${u.id}">${esc(u.clave)}${u.operador_titular?' · titular: '+esc(u.operador_titular):''}</option>`)).join('');
+  openSheet(`
+    <div class="sh"><h3>Titular de unidad</h3><button class="x" onclick="closeSheet()"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <p style="font-size:13px;margin:0 0 6px"><b>${esc(o.nombre||'')}</b> es titular de: <b>${esc(suyas)}</b></p>
+    <label class="f">Hacer titular de la unidad</label><select id="ti-unidad">${uOpts}</select>
+    <button class="btn block" style="margin-top:14px" onclick="setTitular(${opId})">Relacionar</button>
+  `);
+}
+async function setTitular(opId){
+  const uid=$('#ti-unidad').value; if(!uid){toast('Elige una unidad');return;}
+  try{const fd=new FormData();fd.append('operador_id',opId);
+    const r=await api('/api/unidades/'+uid+'/titular',{method:'POST',body:fd});
+    UNIDADES=[];await ensureCat();closeSheet();toast('Titular actualizado');
+  }catch(e){toast(e.message||'No se pudo');}
+}
+
+// ── FLOTA ──
+function floTab(k){
+  $$('.tab[data-flo]').forEach(b=>b.classList.toggle('on',b.dataset.flo===k));
+  $('#flo-unidades').style.display=k==='unidades'?'':'none';
+  $('#flo-remolques').style.display=k==='remolques'?'':'none';
+}
+async function loadFlota(){
+  try{await ensureCat();
+    $('#flo-unidades').innerHTML=UNIDADES.length?UNIDADES.map(uRow).join(''):'<div class="empty">Sin unidades.</div>';
+    await ensureRem();
+    $('#flo-remolques').innerHTML=REMOLQUES.length?REMOLQUES.map(rRow).join(''):'<div class="empty">Sin remolques.</div>';
+  }catch(e){$('#flo-unidades').innerHTML='<div class="empty">No se pudo cargar.</div>';}
+}
+function uRow(u){
+  return `<div class="item"><div class="who2"><b>${esc(u.clave)}</b> <span class="pill ghost">${esc(u.tipo)}</span>
+    <div class="m">${u.marca?esc(u.marca)+' · ':''}${u.viajes||0} viajes${u.operador_titular?' · titular: '+esc(u.operador_titular):' · sin titular'}</div></div>
+    <button class="btn ghost sm" onclick="modalTitularUnidad(${u.id})">Titular</button></div>`;
+}
+function rRow(r){
+  return `<div class="item"><div class="who2"><b>${esc(r.eco)}</b>${r.eco_nuevo?' <span class="mono" style="color:var(--muted)">→ '+esc(r.eco_nuevo)+'</span>':''}
+    <div class="m">${r.marca?esc(r.marca)+' · ':''}${r.serie_thermo?'Thermo '+esc(r.serie_thermo):(r.usa_combustible?'con combustible':'sin combustible')}${r.operador_titular?' · titular: '+esc(r.operador_titular):' · sin titular'}</div></div>
+    <div style="display:flex;gap:6px;align-items:center;flex:0 0 auto">${r.es_dolly?'<span class="pill ghost">dolly</span>':''}<button class="btn ghost sm" onclick="modalTitularRemolque(${r.id})">Titular</button></div></div>`;
+}
+async function modalTitularRemolque(rid){
+  await ensureRem(); await ensureCat();
+  const r=REMOLQUES.find(x=>x.id===rid)||{};
+  const oOpts=['<option value="">— Quitar titular —</option>'].concat(OPERADORES.slice().sort(opsSort).map(o=>`<option value="${o.id}" ${o.id===r.operador_asignado_id?'selected':''}>${esc(o.nombre)}${o.numero?' (#'+o.numero+')':''}</option>`)).join('');
+  openSheet(`
+    <div class="sh"><h3>Titular del remolque ${esc(r.eco||'')}</h3><button class="x" onclick="closeSheet()"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <label class="f">Operador titular</label><select id="tr-op">${oOpts}</select>
+    <button class="btn block" style="margin-top:14px" onclick="setTitularRemolque(${rid})">Guardar</button>
+  `);
+}
+async function setTitularRemolque(rid){
+  const op=$('#tr-op').value;
+  try{const fd=new FormData();fd.append('operador_id',op||'');
+    await api('/api/remolques/'+rid+'/titular',{method:'POST',body:fd});
+    REMOLQUES=[];await ensureRem();closeSheet();toast('Titular actualizado');loadFlota();
+  }catch(e){toast(e.message||'No se pudo');}
+}
+async function modalTitularUnidad(uid){
+  await ensureCat();
+  const u=UNIDADES.find(x=>x.id===uid)||{};
+  const oOpts=['<option value="">— Quitar titular —</option>'].concat(OPERADORES.slice().sort(opsSort).map(o=>`<option value="${o.id}" ${o.id===u.operador_asignado_id?'selected':''}>${esc(o.nombre)}${o.numero?' (#'+o.numero+')':''}</option>`)).join('');
+  openSheet(`
+    <div class="sh"><h3>Titular de ${esc(u.clave||'')}</h3><button class="x" onclick="closeSheet()"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <label class="f">Operador titular</label><select id="tu-op">${oOpts}</select>
+    <button class="btn block" style="margin-top:14px" onclick="setTitularUnidad(${uid})">Guardar</button>
+  `);
+}
+async function setTitularUnidad(uid){
+  const op=$('#tu-op').value;
+  try{const fd=new FormData();fd.append('operador_id',op||'');
+    await api('/api/unidades/'+uid+'/titular',{method:'POST',body:fd});
+    UNIDADES=[];await ensureCat();closeSheet();toast('Titular actualizado');loadFlota();
+  }catch(e){toast(e.message||'No se pudo');}
+}
+
+// ══ Gráficos del resumen — SVG puro, temables, con tooltip (sin librerías) ═════
+const CTIP=document.getElementById('charttip');
+function tipAt(html,x,y){CTIP.innerHTML=html;CTIP.style.left=x+'px';CTIP.style.top=y+'px';CTIP.classList.add('show');}
+function tipOff(){CTIP.classList.remove('show');}
+document.addEventListener('mousemove',e=>{const m=e.target.closest?e.target.closest('[data-tip]'):null;if(m){tipAt(m.getAttribute('data-tip'),e.clientX,e.clientY);}else if(CTIP.classList.contains('show'))tipOff();});
+const TIPOCOL={TRACTO:'var(--u-tracto)',CAMION:'var(--u-camion)',Tractos:'var(--u-tracto)',Camiones:'var(--u-camion)',Remolques:'var(--u-remol)'};
+const nf=n=>Number(n).toLocaleString('es-MX');
+const tLbl=t=>t==='TRACTO'?'Tracto':(t==='CAMION'?'Camión':t);
+
+function chartPie(box,data){
+  if(!box)return;
+  const items=Object.entries(data||{}).filter(([,v])=>v>0);
+  const total=items.reduce((a,[,v])=>a+v,0);
+  if(!total){box.innerHTML='<div class="empty" style="padding:14px">Sin datos.</div>';return;}
+  const W=220,H=168,cx=110,cy=82,r=58,sw=26,C=2*Math.PI*r;
+  let acc=0,arcs='';
+  items.forEach(([k,v])=>{
+    const frac=v/total,dash=Math.max(0.5,frac*C-2),col=TIPOCOL[k]||'var(--muted)';
+    arcs+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-dasharray="${dash.toFixed(2)} ${(C-dash).toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}" data-tip="${esc(k+': '+nf(v)+' ('+Math.round(frac*100)+'%)')}"></circle>`;
+    acc+=frac*C;
+  });
+  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Composición de la flota">
+    <g transform="rotate(-90 ${cx} ${cy})">${arcs}</g>
+    <text x="${cx}" y="${cy-1}" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="26" font-weight="600" fill="var(--ink)">${nf(total)}</text>
+    <text x="${cx}" y="${cy+15}" text-anchor="middle" class="axlbl">unidades</text></svg>`;
+  const leg='<div class="leg">'+items.map(([k,v])=>`<span><i style="background:${TIPOCOL[k]}"></i>${esc(k)} · ${nf(v)} (${Math.round(v/total*100)}%)</span>`).join('')+'</div>';
+  box.innerHTML='<div class="chart">'+svg+'</div>'+leg;
+}
+function chartArea(box,m){
+  if(!box)return;
+  const L=(m&&m.labels)||[]; if(!L.length){box.innerHTML='<div class="empty" style="padding:14px">Sin datos.</div>';return;}
+  const A=m.Tractos||[],B=m.Camiones||[];
+  const W=340,H=180,padL=28,padR=10,padT=12,padB=26,pw=W-padL-padR,ph=H-padT-padB,base=padT+ph,N=L.length;
+  const maxY=Math.max(1,...L.map((_,i)=>(A[i]||0)+(B[i]||0)))*1.12;
+  const X=i=>padL+(N===1?pw/2:pw*i/(N-1)), Y=v=>base-(v/maxY)*ph;
+  const bottom=L.map((_,i)=>X(i).toFixed(1)+','+Y(A[i]||0).toFixed(1));
+  const cum=L.map((_,i)=>X(i).toFixed(1)+','+Y((A[i]||0)+(B[i]||0)).toFixed(1));
+  const areaA=`${X(0).toFixed(1)},${base} ${bottom.join(' ')} ${X(N-1).toFixed(1)},${base}`;
+  const areaB=bottom.concat(cum.slice().reverse()).join(' ');
+  let grid='';[0,.5,1].forEach(f=>{const y=(base-f*ph);grid+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--line)"/><text x="${padL-4}" y="${(y+3).toFixed(1)}" text-anchor="end" class="axlbl">${Math.round(f*maxY)}</text>`;});
+  let xl='';L.forEach((lb,i)=>{if(N>7&&i%2)return;xl+=`<text x="${X(i).toFixed(1)}" y="${base+13}" text-anchor="middle" class="axlbl">${esc(lb.slice(5))}</text>`;});
+  let cols='';L.forEach((lb,i)=>{const w=pw/N,x=X(i)-w/2;cols+=`<rect x="${Math.max(padL,x).toFixed(1)}" y="${padT}" width="${w.toFixed(1)}" height="${ph}" fill="transparent" data-tip="${esc(lb+' — Tractos '+(A[i]||0)+' · Camiones '+(B[i]||0))}"></rect>`;});
+  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Viajes por mes por tipo">${grid}
+    <polygon points="${areaA}" fill="var(--u-tracto)" fill-opacity="0.85"></polygon>
+    <polygon points="${areaB}" fill="var(--u-camion)" fill-opacity="0.8"></polygon>
+    <polyline points="${bottom.join(' ')}" fill="none" stroke="var(--card)" stroke-width="1.5"></polyline>
+    ${xl}${cols}</svg>`;
+  box.innerHTML='<div class="chart">'+svg+'</div><div class="leg"><span><i style="background:var(--u-tracto)"></i>Tractos</span><span><i style="background:var(--u-camion)"></i>Camiones</span></div>';
+}
+function chartBar(box,rows){
+  if(!box)return;
+  if(!rows||!rows.length){box.innerHTML='<div class="empty" style="padding:14px">Sin datos.</div>';return;}
+  const W=340,H=180,padL=10,padR=10,padT=16,padB=28,pw=W-padL-padR,ph=H-padT-padB,base=padT+ph,N=rows.length;
+  const maxY=Math.max(1,...rows.map(r=>r.litros))*1.14,slot=pw/N,bw=Math.min(slot*0.6,30);
+  let bars='';rows.forEach((r,i)=>{
+    const x=padL+slot*(i+0.5),h=Math.max(1,(r.litros/maxY)*ph),y=base-h,col=TIPOCOL[r.tipo]||'var(--muted)';
+    bars+=`<rect x="${(x-bw/2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${col}" data-tip="${esc(r.unidad+' · '+tLbl(r.tipo)+' · '+nf(r.litros)+' L')}"></rect>`;
+    bars+=`<text x="${x.toFixed(1)}" y="${(y-4).toFixed(1)}" text-anchor="middle" class="axlbl" fill="var(--muted)">${Math.round(r.litros/1000)}k</text>`;
+    bars+=`<text x="${x.toFixed(1)}" y="${base+12}" text-anchor="middle" class="axlbl">${esc(r.unidad)}</text>`;
+  });
+  const tipos=[...new Set(rows.map(r=>r.tipo))];
+  const leg='<div class="leg">'+tipos.map(t=>`<span><i style="background:${TIPOCOL[t]}"></i>${esc(tLbl(t))}s</span>`).join('')+'</div>';
+  box.innerHTML=`<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Consumo por unidad"><line x1="${padL}" y1="${base}" x2="${W-padR}" y2="${base}" stroke="var(--line-2)"></line>${bars}</svg></div>`+leg;
+}
+function chartScatter(box,pts){
+  if(!box)return;
+  if(!pts||!pts.length){box.innerHTML='<div class="empty" style="padding:14px">Sin datos.</div>';return;}
+  const W=340,H=192,padL=28,padR=10,padT=10,padB=30,pw=W-padL-padR,ph=H-padT-padB,base=padT+ph;
+  const xmax=Math.max(...pts.map(p=>p.km))*1.05||1;
+  const ys=pts.map(p=>p.rto),ymin=Math.min(...ys),ymax=Math.max(...ys),yp=(ymax-ymin)*0.1||1;
+  const y0=Math.max(0,ymin-yp),y1=ymax+yp;
+  const X=v=>padL+(v/xmax)*pw, Y=v=>base-((v-y0)/(y1-y0))*ph;
+  let grid='';[0,.5,1].forEach(f=>{const y=base-f*ph,val=y0+f*(y1-y0);grid+=`<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--line)"></line><text x="${padL-4}" y="${(y+3).toFixed(1)}" text-anchor="end" class="axlbl">${val.toFixed(1)}</text>`;});
+  let xt='';[0,.5,1].forEach(f=>{const x=padL+f*pw;xt+=`<text x="${x.toFixed(1)}" y="${base+13}" text-anchor="middle" class="axlbl">${Math.round(f*xmax)}</text>`;});
+  const dots=pts.map(p=>`<circle cx="${X(p.km).toFixed(1)}" cy="${Y(p.rto).toFixed(1)}" r="2.6" fill="${TIPOCOL[p.tipo]||'var(--muted)'}" fill-opacity="0.6" data-tip="${esc(tLbl(p.tipo)+' · '+Math.round(p.km)+' km · '+p.rto.toFixed(2)+' km/l')}"></circle>`).join('');
+  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Km contra rendimiento por viaje">${grid}${xt}<text x="${W-padR}" y="${H-3}" text-anchor="end" class="axlbl">km recorridos →</text>${dots}</svg>`;
+  box.innerHTML='<div class="chart">'+svg+'</div><div class="leg"><span><i style="background:var(--u-tracto)"></i>Tractos</span><span><i style="background:var(--u-camion)"></i>Camiones</span></div>';
+}
+
+// ══ Detalle de anomalía (causa + mini-informe del viaje) ═══════════════════════
+const ANOM_INFO={
+  km_imposible:{l:'Kilómetros imposibles',c:'base',e:'Los kilómetros del viaje son cero o negativos: no puede ser un dato real, casi siempre es un error de captura.'},
+  lts_imposible:{l:'Litros imposibles',c:'base',e:'Los litros cargados son cero o negativos. Revisa el comprobante o la lectura.'},
+  odometro_retrocede:{l:'Odómetro retrocede',c:'base',e:'El odómetro es menor que la última lectura registrada de la unidad: no puede ir hacia atrás.'},
+  consumo_atipico:{l:'Consumo atípico',c:'base',e:'El rendimiento de este viaje se sale del comportamiento histórico de la unidad. Puede indicar fuga, robo o un dato mal capturado.'},
+  desviacion_alta:{l:'Desviación alta',c:'base',e:'La diferencia entre litros reales y del scanner supera la tolerancia de la unidad. Se propone un descuento a confirmar.'},
+  rendimiento_fuera_banda_fisica:{l:'Rendimiento fuera de banda física',c:'consistencia',e:'El rendimiento cae fuera de lo físicamente posible para ese tipo de unidad. Revisa km y litros.'},
+  km_vs_odometro:{l:'Km no cuadran con odómetro',c:'consistencia',e:'Los kilómetros reportados no coinciden con el avance del odómetro entre lecturas contiguas.'},
+  reporte_duplicado:{l:'Reporte duplicado',c:'consistencia',e:'Coincide con otro viaje de la misma unidad y fecha: posible captura doble.'},
+  rendimiento_cv_incoherente:{l:'Rendimiento en vacío incoherente',c:'consistencia',e:'Un tramo vacío (sin carga) rinde igual o menos que uno cargado, lo cual no es coherente.'},
+  correccion_sospechosa:{l:'Corrección sospechosa',c:'consistencia',e:'Se corrigió un dato ya reportado de una forma que llama la atención. Verifica el cambio.'},
+  reporte_retractado:{l:'Reporte retractado',c:'consistencia',e:'El reporte de este viaje fue retractado o reemplazado. Revisa qué se cambió y por qué.'},
+  carga_fantasma:{l:'Carga fantasma',c:'fraude',e:'Mucho combustible cargado con casi nada de recorrido ni consumo de motor: posible carga que no usó la unidad.'},
+  comprobante_inflado:{l:'Comprobante inflado',c:'fraude',e:'Sobreconsumo con rendimiento muy por debajo del histórico y sin manejo agresivo que lo explique: el comprobante pudo inflarse.'},
+  sifoneo_tanque:{l:'Sifoneo de tanque',c:'fraude',e:'Exceso de consumo acumulado y persistente en los últimos viajes de la unidad: patrón compatible con extracción (sifoneo) de combustible.'},
+  exceso_velocidad:{l:'Exceso de velocidad',c:'telemetria',e:'La velocidad máxima del viaje es atípica frente al historial de la unidad o supera el tope permitido.'},
+  ralenti_elevado:{l:'Ralentí elevado',c:'telemetria',e:'El motor estuvo en ralentí (encendido sin avanzar) más de lo normal para esta unidad: desperdicia combustible.'},
+  paradas_panico_recurrentes:{l:'Paradas de pánico',c:'telemetria',e:'Frenadas de emergencia por encima de lo habitual para la unidad: revisa el estilo de manejo o el estado del equipo.'},
+  operador_no_disponible:{l:'Operador no disponible',c:'roles',e:'El operador reportado está en vacaciones, incapacidad, baja o inactivo. Verifica quién condujo en realidad.'},
+  operador_no_asignado:{l:'Operador no asignado',c:'roles',e:'Condujo alguien distinto al titular de la unidad. Confirma si fue un relevo autorizado.'},
+};
+function anomInfo(t){return ANOM_INFO[t]||{l:(t||'anomalía').replace(/_/g,' '),c:'base',e:'Valor fuera de rango detectado por las reglas de validación. Revisa el mini-informe del viaje.'};}
+// Comparativa PREVIOS vs RECIENTES — HTML idéntico en los 3 paneles (Admin/Coordinador/Gerente).
+function anomComparativaHTML(d){
+  const f=(v,dec)=>v==null?'—':Number(v).toLocaleString('es-MX',{maximumFractionDigits:dec});
+  const c=(d&&d.comparativa)||{}, rec=(d&&d.reciente)||{}; let rows='';
+  const bt='border-top:1px solid var(--line,#e3e7ee)';
+  const row=(l,este,ref)=>`<tr><td style="padding:6px 8px;${bt}">${l}</td><td style="padding:6px 8px;${bt};text-align:right;font-weight:600">${este}</td><td style="padding:6px 8px;${bt};text-align:right;color:var(--muted,#5c6674)">${ref}</td></tr>`;
+  if(c.rendimiento){const r=c.rendimiento,al=r.desv_sigmas!=null&&Math.abs(r.desv_sigmas)>=2?' ⚠':'';rows+=row('Rendimiento (km/L)'+al,f(r.actual,2),`hist. ${f(r.media_hist,2)} ±${f(r.sigma,2)} · ${r.n} viajes${r.desv_sigmas!=null?' · '+f(r.desv_sigmas,1)+'σ':''}`);}
+  if(c.odometro){const o=c.odometro;rows+=row('Odómetro (km)',f(o.actual,0),`anterior ${f(o.ultimo_previo,0)}${o.fecha_previo?' ('+esc(o.fecha_previo)+')':''} · Δ ${f(o.avance,0)}`);}
+  if(c.por_codigo){const pc=c.por_codigo;rows+=row('Rend. código '+esc(pc.codigo),f(pc.actual,2),`media ${f(pc.media_codigo,2)}`);}
+  rows+=row('Litros cargados',f(rec.lts_real,0),rec.lts_scaner!=null?`escáner ${f(rec.lts_scaner,0)} · dif ${f(rec.dif,0)}`:'—');
+  if(rec.pct!=null)rows+=row('Desviación',f(rec.pct*100,1)+'%','vs escáner del motor');
+  const th='text-align:VAL;padding:0 8px 4px;font-size:10.5px;color:var(--muted,#5c6674);text-transform:uppercase;letter-spacing:.05em';
+  const tabla=rows?`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr><th style="${th.replace('VAL','left')}">Dato</th><th style="${th.replace('VAL','right')}">Este viaje</th><th style="${th.replace('VAL','right')}">Previo / histórico</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<div class="sub">Sin comparación disponible para este tipo.</div>';
+  const uv=(d&&d.ultimos_viajes)||[];
+  const hist=uv.length?`<div style="margin-top:12px"><div style="${th.replace('VAL','left').replace('0 8px 4px','0 0 4px')}">Últimos viajes de la unidad</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="text-align:left;padding:2px 6px;color:var(--muted,#5c6674)">Fecha</th><th style="text-align:right;padding:2px 6px;color:var(--muted,#5c6674)">Km</th><th style="text-align:right;padding:2px 6px;color:var(--muted,#5c6674)">Litros</th><th style="text-align:right;padding:2px 6px;color:var(--muted,#5c6674)">km/L</th></tr></thead><tbody>${uv.map(x=>`<tr><td style="padding:2px 6px">${esc(x.fecha||'—')}</td><td style="padding:2px 6px;text-align:right">${f(x.km,0)}</td><td style="padding:2px 6px;text-align:right">${f(x.lts_real,0)}</td><td style="padding:2px 6px;text-align:right">${f(x.rto_real,2)}</td></tr>`).join('')}</tbody></table></div></div>`:'';
+  return tabla+hist;
+}
+async function verAnomalia(id){
+  $$('#pro-list .item').forEach(el=>el.classList.remove('sel'));
+  const row=document.querySelector('[data-anom="'+id+'"]'); if(row)row.classList.add('sel');
+  const a=(ANOMS||[]).find(x=>x.id===id)||{}; const inf=anomInfo(a.tipo);
+  const sid=openSheet('<div class="empty">Cargando…</div>');
+  let v={}; try{ if(a.viaje_id)v=await api('/api/viajes/'+a.viaje_id); }catch(e){}
+  let det={}, falloDet=false; try{ det=await api('/api/anomalias/'+id); }catch(e){ falloDet=true; }
+  if(!sheetVive(sid))return;      // la cerraron mientras cargaba: no se reabre
+  // Antes el error se tragaba y la hoja salía llena de «—», como si no hubiera datos.
+  if(falloDet&&!a.id){ openSheet('<h3>No se pudo abrir la anomalía</h3><div class="empty">El servidor no respondió. Cierra e inténtalo de nuevo.</div>'); return; }
+  const rc=(l,val)=>`<div class="rc"><div class="rl">${l}</div><div class="rv">${val}</div></div>`;
+  openSheet(`
+    <div class="sh"><h3>${esc(inf.l)}</h3><button class="x" onclick="closeSheet()"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div style="margin:2px 0 8px"><span class="catbadge ${inf.c}">${inf.c}</span> <span style="font-size:12px;color:var(--muted)">viaje #${a.viaje_id||'—'}</span></div>
+    <div class="alertbar" style="background:color-mix(in oklab,var(--warn) 11%,transparent);border-color:color-mix(in oklab,var(--warn) 38%,transparent);color:var(--warn)"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3.6 2.2 20.4h19.6zM12 10v4.4M12 17.6v.4"/></svg><div>${esc(a.descripcion||'Sin detalle')}</div></div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.55;margin:10px 0 0"><b style="color:var(--ink)">¿Por qué salió?</b> ${esc(inf.e)}</p>
+    ${det.creado_en?`<p style="font-size:12px;color:var(--muted);margin:8px 0 0">Detectada: <b style="color:var(--ink)">${new Date(det.creado_en).toLocaleString('es-MX')}</b></p>`:''}
+    <div class="report"><div class="kick">Mini-informe del viaje</div>
+      <div class="rg">
+        ${rc('Unidad',esc(v.unidad||a.unidad||'—')+(v.tipo_unidad?' · '+tLbl(v.tipo_unidad):''))}
+        ${rc('Operador',esc(v.operador||'—'))}
+        ${rc('Fecha',esc((v.fecha||a.fecha||'—').slice(0,10)))}
+        ${rc('Odómetro',v.odometro!=null?nf(v.odometro)+' km':'—')}
+        ${rc('Km del viaje',v.kilometros!=null?nf(v.kilometros)+' km':'—')}
+        ${rc('Litros reales',v.lts_real!=null?nf(v.lts_real)+' L':'—')}
+        ${rc('Litros scanner',v.lts_scaner!=null?nf(v.lts_scaner)+' L':'—')}
+        ${rc('Rend. real',v.rto_real!=null?v.rto_real.toFixed(2)+' km/l':'—')}
+        ${rc('Rend. scanner',v.rto!=null?v.rto.toFixed(2)+' km/l':'—')}
+        ${rc('Desviación',v.pct!=null?(v.pct*100).toFixed(1)+'%':'—')}
+      </div>
+    </div>
+    <div class="report"><div class="kick">Este viaje vs el historial de la unidad</div>${anomComparativaHTML(det)}</div>
+    <div class="row" style="margin-top:12px"><button class="btn ghost" style="flex:1" onclick="resolverAnom(${id},'confirmar')">Confirmar anomalía</button><button class="btn ghost" style="flex:1" onclick="resolverAnom(${id},'rechazar')">Descartar</button></div>
+  `);
+}
+
+// ── init ──
+(async function(){
+  pintarNav(); applyTheme();
+  try{ME=await api('/api/me');}catch(e){ME={};}
+  if(window.TR_aplicarPrefs)TR_aplicarPrefs(ME.prefs);
+  var _nom=ME.nombre||'Coordinación'; $('#u-nm').textContent=_nom; var _a=$('#u-av'); if(ME.tiene_foto){_a.innerHTML='<img src="/api/perfil/foto?t='+Date.now()+'" alt="" style="width:100%;height:100%;object-fit:cover">';}else{_a.textContent=_nom.split(' ').filter(Boolean).map(x=>x[0]).slice(0,2).join('').toUpperCase();}
+  $('#pf-user').textContent=ME.username||'—';
+  $('#hi-nombre').textContent='Hola, '+((ME.nombre||'Coordinación').split(' ')[0]);
+  show('inicio');
+})();
+</script>
+<script src="/static/bgfx.js?v=20260827d" defer></script>
+</body>
+</html>
