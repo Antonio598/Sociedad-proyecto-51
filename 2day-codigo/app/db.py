@@ -16,6 +16,9 @@ if "supabase.com" in _url and "sslmode=" not in _url:
 # las conoce. Se apagan sólo ahí; el modo SESIÓN (5432) es el recomendado y no lo necesita.
 if ":6543" in _url:
     _args["prepare_threshold"] = None
+# Sin esto, una base inalcanzable (host mal escrito, otra red) deja el arranque colgado sin
+# decir nada y el despliegue no termina nunca. Con 10 s falla con un error que se lee en el log.
+_args.setdefault("connect_timeout", 10)
 
 engine = create_engine(
     _url,

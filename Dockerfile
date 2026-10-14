@@ -22,16 +22,22 @@ RUN pip install --no-cache-dir -r requirements.txt
 # POST /api/proveedor/importar). Lo que no debe entrar lo filtra .dockerignore.
 COPY 2day-codigo/ ./
 
-# No corre como root.
+# La app no corre como root. El contenedor arranca como root SÓLO para arreglar el dueño del
+# volumen (EasyPanel lo monta como root) y docker-entrypoint.sh suelta los privilegios antes
+# de lanzar uvicorn.
 RUN useradd --system --uid 10001 dosdias \
  && mkdir -p /app/data/media \
  && chown -R dosdias:dosdias /app
-USER dosdias
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+# 60 s de gracia: el arranque crea tablas y revisa el esquema contra una base remota, y
+# marcarlo «unhealthy» antes de tiempo hacía que EasyPanel lo reiniciara en bucle.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD curl -fsS http://127.0.0.1:8000/health || exit 1
+
+ENTRYPOINT ["sh", "/app/docker-entrypoint.sh"]
 
 # `--proxy-headers`: sin esto la app ve la IP del proxy de EasyPanel y todos los usuarios
 # comparten "origen" en el freno del login (ocho fallos de cualquiera bloquean a todos).
