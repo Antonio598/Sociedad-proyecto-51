@@ -8,7 +8,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
 
-    database_url: str
+    # La base se da de UNA de dos formas: la URL completa, o por partes (DB_HOST, DB_USER…).
+    # Por partes es lo recomendado en paneles como EasyPanel: armar la URL a mano en un campo
+    # de texto es donde se cuelan los errores, y una contraseña con @ / : obliga a escaparla.
+    database_url: str = ""
+    db_host: str = ""
+    db_port: int = 5432
+    db_user: str = ""
+    db_password: str = ""
+    db_name: str = "postgres"
     evolution_url: str = "http://localhost:8080"
     evolution_apikey: str
     evolution_instance: str = "combustible"
