@@ -52,6 +52,46 @@ VIGENTE = Viaje.retractado_en.is_(None)
 FRONT = BASE_DIR / "frontend"
 
 
+def _cargar_semilla() -> None:
+    """Carga los datos iniciales (carpeta `seed/`) si la base está VACÍA. Sólo la primera vez.
+
+    POR QUÉ. La base de producción vive en la red interna de EasyPanel y no se expone a
+    internet, así que no hay forma de cargarla desde fuera. La app sí la alcanza, y trae
+    consigo el volcado convertido a SQL simple (01.sql, 02.sql…). Se considera vacía si no
+    existe la tabla `usuarios`: en cuanto hay datos, esto no vuelve a hacer nada.
+
+    Todo va en UNA transacción: si un archivo falla, no queda nada a medias y el arranque se
+    detiene con el error en el log, en vez de seguir con una base incompleta.
+    """
+    carpeta = BASE_DIR / "seed"
+    archivos = sorted(carpeta.glob("*.sql")) if carpeta.is_dir() else []
+    if not archivos:
+        return
+    from sqlalchemy import text
+    with engine.connect() as cx:
+        if cx.execute(text("SELECT to_regclass('usuarios')")).scalar() is not None:
+            return
+    log.warning("Base vacía: cargando %d archivo(s) de datos iniciales desde %s",
+                len(archivos), carpeta)
+    crudo = engine.raw_connection()
+    try:
+        cur = crudo.cursor()
+        for f in archivos:
+            # Sin parámetros, psycopg acepta varias sentencias en una sola llamada.
+            cur.execute(f.read_text(encoding="utf-8"))
+            log.info("  datos iniciales: %s cargado", f.name)
+        crudo.commit()
+    except Exception:
+        crudo.rollback()
+        raise
+    finally:
+        # Los archivos cambian ajustes de la sesión (search_path vacío, row_security…). Esa
+        # conexión no debe volver al pool: se cierran todas y se abren limpias.
+        crudo.invalidate()
+        engine.dispose()
+    log.warning("Datos iniciales cargados")
+
+
 def _ajustes_de_esquema() -> None:
     """Cambios de esquema que `create_all` no hace sobre tablas que ya existen.
 
@@ -122,6 +162,7 @@ def _cerrar_api_supabase() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _cargar_semilla()                  # sólo con la base vacía: ANTES de crear tablas
     Base.metadata.create_all(engine)   # crea tablas faltantes (usuarios) sin borrar datos
     _ajustes_de_esquema()
     crear_admin_si_falta()

@@ -20,3 +20,6 @@ venv/
 
 # Archivos para cargar la base en Supabase: datos reales y contraseña del usuario de la app.
 supabase-import/
+
+# Excepción: datos iniciales que la app carga sola en una base vacía (repo privado).
+!2day-codigo/seed/*.sql
