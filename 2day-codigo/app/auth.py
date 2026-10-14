@@ -127,6 +127,38 @@ def password_comprometida() -> bool:
     return settings.admin_password in _COMPROMETIDAS
 
 
+def restablecer_admin_si_se_pide() -> None:
+    """Pone ADMIN_PASSWORD_RESET como contraseña de ADMIN_USER, si la variable tiene valor.
+
+    Para recuperar el acceso cuando nadie recuerda la contraseña del admin y no hay consola
+    de base de datos a mano. Es idempotente: si la cuenta ya tiene esa contraseña no toca
+    nada, así que un reinicio con la variable todavía puesta no vuelve a cerrar sesiones.
+    """
+    nueva = settings.admin_password_reset
+    if not nueva:
+        return
+    error = validar_password_fuerte(nueva)
+    if error:
+        log.error("ADMIN_PASSWORD_RESET ignorada: %s", error)
+        return
+    with SessionLocal() as s:
+        u = s.execute(select(Usuario).where(
+            func.lower(Usuario.username) == settings.admin_user.lower())).scalars().first()
+        if u is None:
+            log.error("ADMIN_PASSWORD_RESET: no existe el usuario %s", settings.admin_user)
+            return
+        if verify_password(nueva, u.password_hash) and u.activo:
+            log.warning("ADMIN_PASSWORD_RESET sigue definida: quítala del panel, la contraseña "
+                        "de %s ya está restablecida.", u.username)
+            return
+        u.password_hash = hash_password(nueva)
+        u.activo = True
+        u.sesion_version = (u.sesion_version or 0) + 1
+        s.commit()
+        log.warning("Contraseña de %s RESTABLECIDA desde ADMIN_PASSWORD_RESET. Quita esa "
+                    "variable del panel en cuanto entres.", u.username)
+
+
 def crear_admin_si_falta() -> None:
     """Crea el usuario admin inicial si no hay usuarios en la BD.
 

@@ -169,6 +169,10 @@ class Settings(BaseSettings):
     # pública (va al repositorio, a los respaldos y a cualquier copia del proyecto). Si
     # está vacía, el arranque genera una aleatoria y la escribe UNA vez en el log.
     admin_password: str = ""
+    # Restablecer la contraseña de ADMIN_USER sin consola de base de datos. Si tiene valor, al
+    # arrancar se le pone esa contraseña a la cuenta (si no la tiene ya) y se cierran sus
+    # sesiones. Es para recuperar el acceso: quítala del panel en cuanto entres.
+    admin_password_reset: str = ""
 
     # Bot de WhatsApp: enviar acuse por cada viaje capturado
     bot_confirmar: bool = True

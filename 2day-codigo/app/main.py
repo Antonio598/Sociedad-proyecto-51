@@ -20,6 +20,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from . import ai, catalogo, geo, limites, models, rendimiento  # noqa: F401
 from .auth import (autenticar, crear_admin_si_falta, generar_password_fuerte, hash_password,
+                   restablecer_admin_si_se_pide,
                    validar_password_fuerte, verify_password)
 from .vault import cifrar, descifrar, vault_debil
 from .config import BASE_DIR, _tz, fecha_flota, precio_del_litro, ruta_media, settings
@@ -166,6 +167,7 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(engine)   # crea tablas faltantes (usuarios) sin borrar datos
     _ajustes_de_esquema()
     crear_admin_si_falta()
+    restablecer_admin_si_se_pide()
     if geo.clave_compartida():
         # No es un aviso de estilo: la clave del servidor no lleva restricción por dominio,
         # así que expuesta en el HTML cualquiera puede gastar con la tarjeta de la flota.
