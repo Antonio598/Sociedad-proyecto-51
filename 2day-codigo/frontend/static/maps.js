@@ -414,6 +414,7 @@
         window._asEstKm = r.km;
         var k = document.getElementById('as-km');
         if (k) k.value = r.km;
+        _asgLitrosPronto();
         if (info) {
           info.textContent = (r.fuente === 'recta'
             ? 'Línea recta (ruta no disponible): '
@@ -722,8 +723,41 @@
 
   // El pie manda: la primaria se habilita cuando hay con qué asignar y dice qué falta. Un
   // botón bloqueado sin explicación deja a la persona buscando qué le falta.
+  // Litros aproximados del viaje: km ÷ rendimiento real de la unidad (lecturas de motor).
+  // Lo pide el documento del dueño al asignar. Mismo cálculo que el tope al autorizar.
+  var _asgLtsTimer = null, _asgLtsTic = 0;
+  function _asgLitrosPronto() {
+    clearTimeout(_asgLtsTimer);
+    _asgLtsTimer = setTimeout(_asgLitros, 350);
+  }
+  function _asgLitros() {
+    var out = document.getElementById('asg-lts');
+    var u = document.getElementById('asg-unidad');
+    var k = document.getElementById('as-km') || document.getElementById('asg-km');
+    if (!out) return;
+    var uid = u && u.value, km = k && parseFloat(k.value);
+    if (!uid) { out.textContent = ''; return; }
+    var tic = ++_asgLtsTic;
+    var q = '/api/asignaciones/estimacion?unidad_id=' + encodeURIComponent(uid) +
+      '&remolques=' + _asgMarcados().length + (km > 0 ? '&km=' + km : '');
+    fetch(q, { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (tic !== _asgLtsTic || !d) return;
+        if (d.litros != null) {
+          out.innerHTML = '<b>≈ ' + Math.round(d.litros).toLocaleString('es-MX') +
+            ' L de diésel</b> <span style="opacity:.75">· ' + _asgEsc(d.motivo || '') + '</span>';
+        } else {
+          out.textContent = d.rendimiento ? ('Rendimiento ' + d.rendimiento + ' km/l · fija el destino para estimar litros')
+            : ('Sin estimación de litros: ' + (d.motivo || ''));
+        }
+      })
+      .catch(function () {});
+  }
+
   function _asgRevisar() {
     if (!_asgDlg) return;
+    _asgLitrosPronto();
     var g = function (id) { var e = document.getElementById(id); return e ? e.value : ''; };
     // OJO CON LOS IDS: la plantilla declara `asg-origen/destino/km` y el propio diálogo los
     // RENOMBRA a `as-*` unas líneas más abajo, para que la maquinaria del mapa los encuentre.
@@ -800,6 +834,7 @@
       '<div class="kmbar"><span class="lbl">Km</span>' +
       '<input id="asg-km" type="number" inputmode="decimal" min="0" step="0.1" placeholder="—">' +
       '<span class="est" id="as-route-info">Fija el destino para trazar la ruta</span></div>' +
+      '<div class="est" id="asg-lts" style="margin-top:6px;font-size:12.5px"></div>' +
       '</div></div>';
 
     _asgDlg = Dlg.open({
@@ -845,6 +880,7 @@
           if (chip.getAttribute('aria-disabled') === 'true') return;
           chip.classList.toggle('on');
           _asgPintarRem();
+          _asgLitrosPronto();
         }
       });
       box.addEventListener('input', _asgRevisar);

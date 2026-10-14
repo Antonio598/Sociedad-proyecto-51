@@ -1911,10 +1911,33 @@ function actualizarCfgNotif(){
     hint='Actívalos para que los cambios te salten en pantalla mientras usas la app.'; }
   if(h) h.textContent=hint;
 }
+// Aviso de VIAJE NUEVO. El documento del dueño: «al OPERADOR le llega una alerta de la
+// asignación del viaje». Se compara el id del viaje activo con el último que esta app vio.
+// La primera vez que corre (nada guardado) sólo se anota, para no avisar de un viaje viejo.
+// Si cambió, se avisa y se recarga la pantalla del viaje; si no, no se toca nada: repintar
+// a mitad de una captura borraría lo que el operador lleva escaneado.
+async function vigilarViaje(){
+  let d; try{ d=await api('/api/mi-viaje'); }catch(_){ return; }
+  const a=d&&d.activo, id=a?String(a.id):'';
+  let prev=null; try{ prev=localStorage.getItem('tr-viaje-visto'); }catch(_){}
+  try{ localStorage.setItem('tr-viaje-visto',id); }catch(_){}
+  if(prev===null || prev===id) return;
+  if(a){
+    const titulo='Nuevo viaje asignado';
+    const msg=(a.unidad_clave||'')+' → '+(a.destino||'')
+      +(a.estimacion&&a.estimacion.litros!=null?(' · ≈ '+Math.round(a.estimacion.litros)+' L'):'');
+    NOTIS.unshift({cls:'ok', titulo, msg, folio:a.unidad_clave||'', ts:Date.now(), seen:false});
+    NOTIS=NOTIS.slice(0,30); _saveNotis(); pintarNotisBadge();
+    toast(titulo+' · '+msg); notifSistema(titulo, msg);
+    try{ Aviso.sonar(false); }catch(_){}
+  }
+  loadMiViaje();
+}
 function iniciarAvisos(){
   _loadNotis(); pintarNotisBadge(); actualizarCfgNotif();
-  setInterval(()=>{ if(document.visibilityState==='visible') cargarMisSolicitudes(); }, 45000);
-  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') cargarMisSolicitudes(); });
+  vigilarViaje();
+  setInterval(()=>{ if(document.visibilityState==='visible'){ cargarMisSolicitudes(); vigilarViaje(); } }, 45000);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ cargarMisSolicitudes(); vigilarViaje(); } });
   document.addEventListener('click',e=>{ const p=$('#npanel'); if(p&&p.classList.contains('open')&&!e.target.closest('.notifwrap')) p.classList.remove('open'); });
 }
 

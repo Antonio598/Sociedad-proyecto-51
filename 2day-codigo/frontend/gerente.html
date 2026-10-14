@@ -9,8 +9,9 @@
 <link rel="stylesheet" href="/static/base.css?v=20260920c">
 <link rel="stylesheet" href="/static/dialog.css?v=20261005a">
 <!-- dialog.js se carga SIN defer: el codigo de la pagina es inline y debe encontrar Dlg ya definido -->
+<script src="/static/reportes.js?v=20261014"></script>
 <script src="/static/dialog.js?v=20261005a"></script>
-<script src="/static/maps.js?v=20260827d"></script>
+<script src="/static/maps.js?v=20261014"></script>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
@@ -356,6 +357,15 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
         </div>
       </section>
 
+      <!-- REPORTES (componente compartido: /static/reportes.js) -->
+      <section class="section" id="s-reportes">
+        <div class="card">
+          <div class="spread"><h2 style="font-size:20px">Reportes</h2></div>
+          <p class="meta" style="margin:4px 0 0">Consumo en litros y en costo, rendimiento por tractocamión, camión y termo, y alertas de exceso, para el periodo que elijas y comparado contra el año anterior o el periodo previo.</p>
+        </div>
+        <div id="rp-mount" style="margin-top:14px"></div>
+      </section>
+
       <section class="section" id="s-perfil">
         <div class="card">
           <h2 style="font-size:22px;margin-bottom:10px">Perfil</h2>
@@ -438,13 +448,15 @@ const NAV=[
   ['operaciones','Operaciones','M13 2 4 13h7l-1 9 9-11h-7z'],
   ['exportar','Exportar reportes','M12 3v11M8 10l4 4 4-4M5 21h14'],
   ['operadores','Operadores','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0 M4.5 20a7.5 7.5 0 0 1 15 0'],
+  ['reportes','Reportes','M4 20V4M4 20h16M7 16v-5M11 16V8M15 16v-3M19 16V6'],
   ['perfil','Perfil','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0 M4.5 20a7.5 7.5 0 0 1 15 0'],
 ];
-const TIT={panorama:['GERENCIA','Panorama'],consulta:['INTELIGENCIA','Consulta IA'],rendimiento:['ANÁLISIS','Rendimiento'],combustible:['COMBUSTIBLE','Combustible'],viajes:['BITÁCORA','Viajes y recargas'],anomalias:['AUDITORÍA','Anomalías'],operaciones:['OPERACIÓN','Operaciones'],exportar:['REPORTES','Exportar reportes'],operadores:['EQUIPO','Operadores'],perfil:['CUENTA','Perfil']};
+const TIT={reportes:['ANÁLISIS','Reportes'],panorama:['GERENCIA','Panorama'],consulta:['INTELIGENCIA','Consulta IA'],rendimiento:['ANÁLISIS','Rendimiento'],combustible:['COMBUSTIBLE','Combustible'],viajes:['BITÁCORA','Viajes y recargas'],anomalias:['AUDITORÍA','Anomalías'],operaciones:['OPERACIÓN','Operaciones'],exportar:['REPORTES','Exportar reportes'],operadores:['EQUIPO','Operadores'],perfil:['CUENTA','Perfil']};
 function pintarNav(){$('#nav').innerHTML=NAV.map(([id,lbl,d])=>`<button class="navbtn" data-sec="${id}" onclick="show('${id}')"><svg class="ic" viewBox="0 0 24 24"><path d="${d}"/></svg><span style="flex:1">${lbl}</span>${id==='anomalias'?'<span class="bdg" id="nav-an" style="display:none"></span>':''}</button>`).join('');}
 function toggleNav(){$('#app').classList.toggle('navopen');}
 function closeNav(){$('#app').classList.remove('navopen');}
 function show(sec){
+  if(sec==='reportes'&&window.Reportes&&!window._rpMontado){window._rpMontado=1;Reportes.montar(document.getElementById('rp-mount'));}
   $$('.section').forEach(s=>s.classList.remove('on'));
   const el=$('#s-'+sec); if(el)el.classList.add('on');
   $$('.navbtn').forEach(b=>b.classList.toggle('on',b.dataset.sec===sec));

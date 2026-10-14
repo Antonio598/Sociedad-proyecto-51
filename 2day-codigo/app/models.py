@@ -474,6 +474,9 @@ class AnalisisReporte(Base):
     texto: Mapped[str] = mapped_column(Text)                                     # narrativa de Claude
     resumen: Mapped[dict | None] = mapped_column(JSONB, nullable=True)           # datos agregados usados
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Nada se borra (documento del dueño): «eliminar» un reporte lo ARCHIVA. Deja de verse en
+    # el historial pero sigue en la base. La columna la añade main._ajustes_de_esquema.
+    archivado_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class EscaneoMotor(Base):
@@ -2095,3 +2098,44 @@ class AsientoConsumo(Base):
         # es único), `combustible` (2 valores), `vigente` ni `contable` (van como predicado de los
         # parciales de arriba), ni sobre `importe`.
     )
+
+
+class CargaExterna(Base):
+    """Carga de diésel hecha FUERA de XIGA y Oxxo (normalmente una transferencia al chofer).
+
+    El documento del dueño: «todo lo que se carga fuera de esas dos plataformas, normalmente
+    son transferencias electrónicas a los chóferes, los cuales deben reportar las cargas. El
+    responsable del combustible lleva un Excel con el registro de todas esas cargas». Aquí
+    vive ese registro, capturado a mano o importado desde la plantilla, y entra al consumo de
+    los reportes junto con las cargas de las plataformas.
+
+    NADA SE BORRA: una carga equivocada se ANULA con motivo y queda a la vista. Los reportes
+    sólo suman las no anuladas.
+    """
+
+    __tablename__ = "cargas_externas"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    fecha: Mapped[date] = mapped_column(Date, index=True)
+    unidad_id: Mapped[int | None] = mapped_column(ForeignKey("unidades.id"), nullable=True, index=True)
+    remolque_id: Mapped[int | None] = mapped_column(ForeignKey("remolques.id"), nullable=True, index=True)
+    # El económico tal como se escribió: si no resolvió a un activo, permite revisarlo después.
+    eco_texto: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    uso: Mapped[str] = mapped_column(String(10), default="motor")    # motor | termo
+    operador_id: Mapped[int | None] = mapped_column(ForeignKey("operadores.id"), nullable=True)
+    operador_texto: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    litros: Mapped[float] = mapped_column(Float)
+    importe: Mapped[float | None] = mapped_column(Float, nullable=True)
+    referencia: Mapped[str | None] = mapped_column(String(80), nullable=True)   # folio / transferencia
+    nota: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    # 'formulario' o el nombre del archivo importado; `lote` agrupa una importación.
+    origen: Mapped[str] = mapped_column(String(120), default="formulario")
+    lote: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
+    capturada_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    creada_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    anulada_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    anulada_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    motivo_anulacion: Mapped[str | None] = mapped_column(String(400), nullable=True)
+
+    unidad: Mapped["Unidad | None"] = relationship()
+    remolque: Mapped["Remolque | None"] = relationship()

@@ -613,6 +613,36 @@ def analizar_desempeno_persona(payload: dict) -> str:
     return "".join(b.text for b in resp.content if b.type == "text") or "No se pudo generar el análisis."
 
 
+
+_SYSTEM_UNIDAD = (
+    "Eres ingeniero de flota especializado en motores diésel de tractocamiones (Cummins, Detroit). "
+    "Te doy la serie de LECTURAS DE COMPUTADORA DE MOTOR de UNA unidad (cada lectura cubre un "
+    "periodo: km, litros, rendimiento km/l, % y litros en ralentí, velocidad máxima y promedio, "
+    "RPM, % en crucero y en marcha alta, frenadas, paradas de pánico), las alertas que el sistema "
+    "ya detectó y el promedio de la flota. Entrega en español con markdown ligero (**negritas**, "
+    "viñetas con -), en estas secciones:\n"
+    "**Diagnóstico** (cómo está la unidad contra sí misma y contra la flota) · "
+    "**Qué le está costando combustible** (con litros o pesos cuando el dato lo permita) · "
+    "**Recomendaciones de operación** (concretas y accionables: ralentí, velocidad, cambios, "
+    "crucero, mantenimiento a revisar) · **Qué vigilar en la próxima lectura**.\n"
+    "Usa sólo los datos que te doy; si algo no se puede concluir, dilo. Sé breve."
+)
+
+
+def recomendar_unidad(payload: dict) -> str:
+    """Recomendaciones para operar mejor UNA unidad, desde sus lecturas de motor (facturable).
+    Es el reporte con IA por tractocamión que pide el documento del dueño."""
+    import json
+    resp = _get_client().messages.create(
+        model=settings.anthropic_model,
+        max_tokens=1200,
+        system=_SYSTEM_UNIDAD,
+        messages=[{"role": "user", "content": "Lecturas de motor de la unidad:\n\n"
+                   + json.dumps(payload, ensure_ascii=False, default=str)}],
+    )
+    registrar_uso("recomendacion_unidad", resp)
+    return "".join(b.text for b in resp.content if b.type == "text") or "No se pudo generar el análisis."
+
 _SYSTEM_FACTURAS = (
     "Eres analista financiero de una flota de transporte. Te doy una comparativa MENSUAL entre "
     "los LITROS DESPACHADOS (recargas por tarjeta) y los LITROS FACTURADOS por el proveedor "

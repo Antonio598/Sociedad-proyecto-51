@@ -13,8 +13,9 @@
 <link rel="stylesheet" href="/static/base.css?v=20260920c">
 <link rel="stylesheet" href="/static/dialog.css?v=20261005a">
 <!-- dialog.js se carga SIN defer: el codigo de la pagina es inline y debe encontrar Dlg ya definido -->
+<script src="/static/reportes.js?v=20261014"></script>
 <script src="/static/dialog.js?v=20261005a"></script>
-<script src="/static/maps.js?v=20260827d"></script>
+<script src="/static/maps.js?v=20261014"></script>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
@@ -381,6 +382,11 @@ td.mono{font:500 12px 'IBM Plex Mono'}
         <div id="uso-body"></div>
       </section>
 
+
+      <!-- REPORTES POR PERIODO (componente compartido: /static/reportes.js) -->
+      <section class="section" id="s-reportes">
+        <div id="rp-mount"></div>
+      </section>
 
       <!-- REPORTE EJECUTIVO -->
       <section class="section" id="s-reporte">
@@ -753,13 +759,13 @@ const tipoCell=t=>`<b>${tipoLbl(t)}</b><br>${catPill(t)}`;
 // ── Navegación ──────────────────────────────────────────────────────────────
 const NAV=[
   {top:true,items:[['resumen','Resumen','M4 13h6v8H4zM14 3h6v18h-6zM4 3h6v6H4z']]},
-  {grp:'Análisis',items:[['graficos','Gráficos','M4 20V4M4 20h16M8 16l3-4 3 2 4-6'],['conciliacion','Motor vs comprobante','M4 8h11l-2.5-2.5M20 16H9l2.5 2.5'],['reporte','Reporte ejecutivo','M6 3h9l4 4v14H6zM15 3v4h4M9.5 13h6M9.5 16.5h6'],['costos','Rendimiento de costos','M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'],['exportar','Exportar reportes','M12 3v11M8 10l4 4 4-4M5 21h14'],['analisis','Análisis IA','M12 3.5l1.9 5 5 1.9-5 1.9-1.9 5-1.9-5-5-1.9 5-1.9zM18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z'],['anomalias','Anomalías','M12 3.6 2.2 20.4h19.6zM12 10v4.4M12 17.6v.4'],['proveedor','Cargas del proveedor','M3 17V7h11v10zM14 10h3.5l2.5 3v4h-6M2 17h1M13 17h2 M4.2 17.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0 M15.2 17.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0']]},
+  {grp:'Análisis',items:[['reportes','Reportes por periodo','M4 20V4M4 20h16M7 16v-5M11 16V8M15 16v-3M19 16V6'],['graficos','Gráficos','M4 20V4M4 20h16M8 16l3-4 3 2 4-6'],['conciliacion','Motor vs comprobante','M4 8h11l-2.5-2.5M20 16H9l2.5 2.5'],['reporte','Reporte ejecutivo','M6 3h9l4 4v14H6zM15 3v4h4M9.5 13h6M9.5 16.5h6'],['costos','Rendimiento de costos','M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'],['exportar','Exportar reportes','M12 3v11M8 10l4 4 4-4M5 21h14'],['analisis','Análisis IA','M12 3.5l1.9 5 5 1.9-5 1.9-1.9 5-1.9-5-5-1.9 5-1.9zM18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z'],['anomalias','Anomalías','M12 3.6 2.2 20.4h19.6zM12 10v4.4M12 17.6v.4'],['proveedor','Cargas del proveedor','M3 17V7h11v10zM14 10h3.5l2.5 3v4h-6M2 17h1M13 17h2 M4.2 17.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0 M15.2 17.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0']]},
   {grp:'Operación',items:[['solicitudes','Solicitudes de recarga','M5 3h14v18l-7-3-7 3zM9 8h6M9 12h6'],['asignaciones','Asignar viajes','M4 19c4 0 3-6 7-6s3-6 7-6 M2.4 19a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0 M16.4 7a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0'],['historial','Historial','M4 6h16M4 12h16M4 18h10'],['termo','Horas de termo','M12 3.5a9 9 0 1 0 0 17 9 9 0 0 0 0-17M12 7.5V12l3 1.8']]},
   {grp:'Flota',items:[['unidades','Unidades','M3 13h11l2-4h4l1 4v4h-2M3 13V6h11v7M3 17h1M9 17h4 M5.2 17.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0 M15.2 17.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0'],['remolques','Remolques','M2 6h15v10H2zM17 13h4M2 16h2M9 16h3 M4.2 17a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0 M9.2 17a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0'],['operadores','Operadores','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M4.5 20a7.5 7.5 0 0 1 15 0'],['catalogo','Diferencias de catálogo','M9 4h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M9 4v16M13 9.5h4M13 13.5h4']]},
   {grp:'Cuentas',items:[['usuarios','Usuarios y accesos','M8.5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6M2.5 19a6 6 0 0 1 12 0M17 10.5a2.8 2.8 0 1 0-1.5-5.2M21.5 18a5.5 5.5 0 0 0-4-4.7'],['accesos','Accesos de la flota','M14 6a4 4 0 1 0-4 4l-5 5v3h3l1-1v-2h2v-2h1.5A4 4 0 0 0 14 6z'],['desempeno','Desempeño','M4 20V10M4 20h16M9 20V6M14 20v-8M19 20V4']]},
   {grp:'Sistema',items:[['uso','Consumo de IA','M12 3.5l1.9 5 5 1.9-5 1.9-1.9 5-1.9-5-5-1.9 5-1.9zM18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z'],['desarrollos','Desarrollos','M14 7l6 5-6 5M10 7l-6 5 6 5'],['config','Perfil y configuración','M10.3 4.3a1.9 1.9 0 0 1 3.4 0l.25.7a1.9 1.9 0 0 0 2.5 1.05l.7-.28a1.9 1.9 0 0 1 2.38 2.38l-.28.7a1.9 1.9 0 0 0 1.05 2.5l.7.25a1.9 1.9 0 0 1 0 3.4l-.7.25a1.9 1.9 0 0 0-1.05 2.5l.28.7a1.9 1.9 0 0 1-2.38 2.38l-.7-.28a1.9 1.9 0 0 0-2.5 1.05l-.25.7a1.9 1.9 0 0 1-3.4 0l-.25-.7a1.9 1.9 0 0 0-2.5-1.05l-.7.28a1.9 1.9 0 0 1-2.38-2.38l.28-.7a1.9 1.9 0 0 0-1.05-2.5l-.7-.25a1.9 1.9 0 0 1 0-3.4l.7-.25a1.9 1.9 0 0 0 1.05-2.5l-.28-.7a1.9 1.9 0 0 1 2.38-2.38l.7.28a1.9 1.9 0 0 0 2.5-1.05zM12 14.6a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2z']]},
 ];
-const TIT={resumen:['Resumen','RESUMEN'],graficos:['Gráficos','GRÁFICOS'],conciliacion:['Motor vs comprobante','CONCILIACIÓN'],reporte:['Reporte ejecutivo','REPORTE'],costos:['Rendimiento de costos','COSTOS'],exportar:['Exportar reportes','EXPORTAR'],analisis:['Análisis de Claude','ANÁLISIS'],anomalias:['Anomalías','ANOMALÍAS'],proveedor:['Cargas del proveedor y libro mayor','PROVEEDOR'],solicitudes:['Solicitudes de recarga','SOLICITUDES'],asignaciones:['Asignación de viajes','ASIGNACIONES'],historial:['Historial de viajes','HISTORIAL'],termo:['Horas de termo','TERMO'],unidades:['Unidades motrices','UNIDADES'],remolques:['Remolques','REMOLQUES'],operadores:['Operadores','OPERADORES'],catalogo:['Diferencias contra el maestro de placas','CATÁLOGO'],uso:['Consumo de IA','CONSUMO'],desarrollos:['Desarrollos','DESARROLLOS'],usuarios:['Usuarios y accesos','USUARIOS'],accesos:['Accesos de la flota','ACCESOS'],desempeno:['Desempeño del equipo','DESEMPEÑO'],config:['Perfil y configuración','PERFIL · CONFIG'],perfil:['Perfil y configuración','PERFIL · CONFIG']};
+const TIT={resumen:['Resumen','RESUMEN'],reportes:['Reportes por periodo','REPORTES'],graficos:['Gráficos','GRÁFICOS'],conciliacion:['Motor vs comprobante','CONCILIACIÓN'],reporte:['Reporte ejecutivo','REPORTE'],costos:['Rendimiento de costos','COSTOS'],exportar:['Exportar reportes','EXPORTAR'],analisis:['Análisis de Claude','ANÁLISIS'],anomalias:['Anomalías','ANOMALÍAS'],proveedor:['Cargas del proveedor y libro mayor','PROVEEDOR'],solicitudes:['Solicitudes de recarga','SOLICITUDES'],asignaciones:['Asignación de viajes','ASIGNACIONES'],historial:['Historial de viajes','HISTORIAL'],termo:['Horas de termo','TERMO'],unidades:['Unidades motrices','UNIDADES'],remolques:['Remolques','REMOLQUES'],operadores:['Operadores','OPERADORES'],catalogo:['Diferencias contra el maestro de placas','CATÁLOGO'],uso:['Consumo de IA','CONSUMO'],desarrollos:['Desarrollos','DESARROLLOS'],usuarios:['Usuarios y accesos','USUARIOS'],accesos:['Accesos de la flota','ACCESOS'],desempeno:['Desempeño del equipo','DESEMPEÑO'],config:['Perfil y configuración','PERFIL · CONFIG'],perfil:['Perfil y configuración','PERFIL · CONFIG']};
 // Las entradas con varios cargadores DEVUELVEN `Promise.all`. Si no, la flecha devuelve
 // `undefined`, `correrLoader` la da por resuelta al instante y su `.then` retira el aviso
 // de fallo mientras las peticiones siguen en vuelo: la sección se quedaba muda otra vez.
@@ -1010,6 +1016,7 @@ function show(sec){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('on'));
   $('#s-'+sec).classList.add('on');
   $('#title').textContent=TIT[sec][0]; $('#crumb').textContent=TIT[sec][1];
+  if(sec==='reportes'&&window.Reportes&&!window._rpMontado){window._rpMontado=1;Reportes.montar(document.getElementById('rp-mount'));}
   // El grupo de la sección activa se abre solo, y el que se había abierto solo antes se
   // cierra. Va DESPUÉS de marcar `.navbtn.on` porque `navPintar` lee esa clase para
   // señalar el grupo cuando queda plegado. Llegar aquí desde el buscador, la campana o el
@@ -1179,8 +1186,8 @@ const SECC_ADMIN=new Set(['analisis','config','uso']);
 // Secciones visibles por rol (el permiso REAL lo valida el servidor; esto solo acomoda la
 // vista). admin: todas. Coordinador: lo OPERATIVO. Gerente: SOLO LECTURA (audita y consulta).
 const SECC_POR_ROL={
-  coordinador:new Set(['solicitudes','asignaciones','unidades','remolques','operadores','perfil']),
-  gerente:new Set(['resumen','graficos','conciliacion','anomalias','historial','termo','operadores','uso','solicitudes','asignaciones','consulta','perfil']),
+  coordinador:new Set(['reportes','solicitudes','asignaciones','unidades','remolques','operadores','perfil']),
+  gerente:new Set(['reportes','resumen','graficos','conciliacion','anomalias','historial','termo','operadores','uso','solicitudes','asignaciones','consulta','perfil']),
 };
 let ROL='admin';
 
@@ -1844,12 +1851,12 @@ async function cargarHistorial(autoload){autoload=autoload!==false;
 }
 async function cargarReporte(id){if(!id)return;try{const d=await api('/api/analisis/'+id);renderReporte(d);$('#ia-hist').value=id;}catch(e){console.error(e);$('#ia-box').innerHTML='<span style="color:var(--danger)">No se pudo cargar el reporte.</span>';}}
 async function genAnalisis(){$('#ia-box').innerHTML=iaCargando();try{const fd=new FormData();if(ANALISIS_PERIODO.desde)fd.append('desde',ANALISIS_PERIODO.desde);if(ANALISIS_PERIODO.hasta)fd.append('hasta',ANALISIS_PERIODO.hasta);const d=await apiPost('/api/analisis',fd);renderReporte(d);await cargarHistorial(false);$('#ia-hist').value=d.id;toast('Reporte generado y guardado');}catch(e){console.error(e);$('#ia-box').innerHTML='<span style="color:var(--danger)">'+esc(e.message||'No se pudo generar el análisis.')+'</span>';}}
-async function borrarReporte(id){if(!id)return;if(!await ask({title:'Eliminar reporte',msg:'¿Eliminar este reporte de análisis? No se puede deshacer.',okText:'Eliminar',danger:true}))return;try{await apiDel('/api/analisis/'+id);toast('Reporte eliminado');await cargarHistorial();}catch(e){console.error(e);toast(e.message||'No se pudo eliminar');}}
+async function borrarReporte(id){if(!id)return;if(!await ask({title:'Archivar reporte',msg:'¿Archivar este reporte de análisis? Deja de verse en el historial, pero se conserva: en la herramienta no se borra información.',okText:'Archivar',danger:true}))return;try{await apiDel('/api/analisis/'+id);toast('Reporte archivado');await cargarHistorial();}catch(e){console.error(e);toast(e.message||'No se pudo archivar');}}
 function renderReporte(d){const r=d.resumen||{};const box=$('#ia-box');
   const rango=(r.rango_fechas&&r.rango_fechas[0])?` · ${esc(r.rango_fechas[0])} a ${esc(r.rango_fechas[1]||r.rango_fechas[0])}`:'';
   const pp=r.periodo_pedido;const perStr=pp?` · <b style="color:var(--accent)">Periodo: ${esc(pp.desde||'inicio')} → ${esc(pp.hasta||'hoy')}</b>`:'';
   const meta=`${esc(fechaHora(d.creado_en))}${r.total_viajes!=null?' · '+fmt(r.total_viajes,0)+' viajes':''}${perStr}${rango}${r.rendimiento_global_km_l!=null?' · '+fmt(r.rendimiento_global_km_l,3)+' km/l global':''}`;
-  box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px"><div class="sub">${ic('chart')} Reporte · ${meta}</div>${d.id?`<button class="btn sm" style="color:var(--danger);border:1px solid color-mix(in oklab,var(--danger) 40%,transparent)" onclick="borrarReporte(${d.id})">Eliminar reporte</button>`:''}</div>
+  box.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px"><div class="sub">${ic('chart')} Reporte · ${meta}</div>${d.id?`<button class="btn sm" style="color:var(--danger);border:1px solid color-mix(in oklab,var(--danger) 40%,transparent)" onclick="borrarReporte(${d.id})">Archivar reporte</button>`:''}</div>
     <div class="ia-charts">
       <div class="iacard"><h5>Unidades de menor rendimiento</h5><div id="iac-rend"></div></div>
       <div class="iacard"><h5>Anomalías por tipo</h5><div id="iac-anom"></div></div>
@@ -2055,14 +2062,14 @@ function verTermo(i){
     <div class="tablewrap" style="margin-top:14px"><table><thead><tr><th>Mes</th><th>Hrs trab.</th><th>Litros</th><th>L/h</th></tr></thead><tbody>${hist.map(x=>`<tr${x.mes===t.mes?' style="background:color-mix(in oklab,var(--accent) 7%,transparent)"':''}><td>${esc(x.mes||'—')}</td><td class="mono">${fmt(ht(x),0)}</td><td class="mono">${fmt(x.litros_thermo,1)}</td><td class="mono">${fmt(x.rto_thermo,2)}</td></tr>`).join('')}</tbody></table></div>`);
 }
 async function loadUnidades(){UNIS=await api('/api/unidades');$('#uni-count').textContent=`${UNIS.length} unidades`;
-  $('#unidades-body').innerHTML=UNIS.map(u=>`<tr${u.activo?'':' style="opacity:.5"'}><td class="mono"><b>${esc(u.clave)}</b>${u.activo?'':' <span class="pill rech">baja</span>'}</td><td>${tipoPill(u.tipo)}</td><td>${esc(u.marca)||'—'}</td><td class="mono">${u.anio||'—'}</td><td class="mono">${esc(u.placa)||'—'}</td><td>${esc(u.operador_titular||u.operador_asignado)||'<span class="sub">sin titular</span>'} <span class="link" style="font-size:11px" data-titular="${u.id}">cambiar</span></td><td class="mono">${fmt(u.viajes,0)}</td><td class="mono"><b>${fmt(u.rto_real_prom,3)}</b></td><td style="text-align:right;white-space:nowrap"><span class="link" data-unidad="${esc(u.clave)}">ver</span>${ROL==='admin'?` · <span class="link" onclick="editarUnidad(${u.id})">editar</span> · <span class="link" style="color:var(--danger)" onclick="eliminarUnidad(${u.id})">eliminar</span>`:''}</td></tr>`).join('');}
+  $('#unidades-body').innerHTML=UNIS.map(u=>`<tr${u.activo?'':' style="opacity:.5"'}><td class="mono"><b>${esc(u.clave)}</b>${u.activo?'':' <span class="pill rech">baja</span>'}</td><td>${tipoPill(u.tipo)}</td><td>${esc(u.marca)||'—'}</td><td class="mono">${u.anio||'—'}</td><td class="mono">${esc(u.placa)||'—'}</td><td>${esc(u.operador_titular||u.operador_asignado)||'<span class="sub">sin titular</span>'} <span class="link" style="font-size:11px" data-titular="${u.id}">cambiar</span></td><td class="mono">${fmt(u.viajes,0)}</td><td class="mono"><b>${fmt(u.rto_real_prom,3)}</b></td><td style="text-align:right;white-space:nowrap"><span class="link" data-unidad="${esc(u.clave)}">ver</span>${ROL==='admin'?` · <span class="link" onclick="editarUnidad(${u.id})">editar</span> · <span class="link" style="color:var(--danger)" onclick="eliminarUnidad(${u.id})">dar de baja</span>`:''}</td></tr>`).join('');}
 async function verUnidad(clave){const[uni,vs]=await Promise.all([api('/api/unidades'),api('/api/viajes?unidad='+encodeURIComponent(clave)+'&limit=12')]);const u=uni.find(x=>x.clave===clave)||{};
   openModal(`<h3>Unidad ${esc(clave)} ${tipoPill(u.tipo)}</h3><div class="sub" style="margin-top:2px">${esc(u.marca)||'—'} · ${u.anio||'—'} · placa ${esc(u.placa)||'—'}</div>
   <div class="grid2"><span class="k">Serie (VIN)</span><span class="v">${esc(u.serie)||'—'}</span><span class="k">Motor</span><span class="v">${esc(u.motor)||'—'}</span><span class="k">Operador asignado</span><span class="v">${esc(u.operador_asignado)||'—'}</span><span class="k">Viajes</span><span class="v">${fmt(u.viajes,0)}</span><span class="k">RTO real prom.</span><span class="v">${fmt(u.rto_real_prom,3)} km/l</span><span class="k">Usa remolque</span><span class="v">${u.usa_remolque?'Sí':'No'}</span></div>
   <div class="sech">Últimos viajes</div><div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Operador</th><th>Km</th><th>RTO real</th><th>%</th></tr></thead><tbody>${vs.length?vs.map(v=>`<tr><td class="mono" style="color:var(--muted)">${v.fecha}</td><td>${esc(v.operador)||'—'}</td><td class="mono">${fmt(v.kilometros,1)}</td><td class="mono">${fmt(v.rto_real,3)}</td><td class="mono">${pctFmt(v.pct)}</td></tr>`).join(''):`<tr><td colspan="5" class="empty">Sin viajes</td></tr>`}</tbody></table></div>`);
 }
 async function loadRemolques(){REMS=await api('/api/remolques');$('#rem-count').textContent=`${REMS.length} remolques`;
-  $('#remolques-body').innerHTML=REMS.map(r=>`<tr${r.activo?'':' style="opacity:.5"'}><td class="mono"><b>${esc(r.eco)}</b>${r.activo?'':' <span class="pill rech">baja</span>'}</td><td class="mono">${esc(r.eco_nuevo)||'—'}</td><td>${esc(r.marca)||'—'}</td><td class="mono">${r.anio||'—'}</td><td class="mono">${esc(r.placa)||'—'}</td><td class="mono">${esc(r.serie_thermo)||'—'}</td><td>${r.es_dolly?'<span class="pill rech">Dolly</span>':r.usa_combustible?'<span class="pill conf">Sí</span>':'<span class="pill rech">No</span>'}</td><td style="text-align:right;white-space:nowrap"><span class="link" onclick="editarRemolque(${r.id})">editar</span> · <span class="link" style="color:var(--danger)" onclick="eliminarRemolque(${r.id})">eliminar</span></td></tr>`).join('');}
+  $('#remolques-body').innerHTML=REMS.map(r=>`<tr${r.activo?'':' style="opacity:.5"'}><td class="mono"><b>${esc(r.eco)}</b>${r.activo?'':' <span class="pill rech">baja</span>'}</td><td class="mono">${esc(r.eco_nuevo)||'—'}</td><td>${esc(r.marca)||'—'}</td><td class="mono">${r.anio||'—'}</td><td class="mono">${esc(r.placa)||'—'}</td><td class="mono">${esc(r.serie_thermo)||'—'}</td><td>${r.es_dolly?'<span class="pill rech">Dolly</span>':r.usa_combustible?'<span class="pill conf">Sí</span>':'<span class="pill rech">No</span>'}</td><td style="text-align:right;white-space:nowrap"><span class="link" onclick="editarRemolque(${r.id})">editar</span> · <span class="link" style="color:var(--danger)" onclick="eliminarRemolque(${r.id})">dar de baja</span></td></tr>`).join('');}
 
 // ── Operadores (lista + ficha editable) ──────────────────────────────────────
 let OPS=[],UNIS=[],REMS=[];
@@ -2513,7 +2520,7 @@ async function verOperador(id){const o=await api('/api/operadores/'+id);const in
     ? `<div id="acc-cab" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div>Usuario: <b>${esc(o.cuenta.username)}</b> <span class="pill conf">con acceso</span></div><button class="btn sm" onclick="resetAcceso(${o.id})">Restablecer contraseña</button></div>`
     : `<div id="acc-cab" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"></div><div id="acc-form"><div class="grid2" style="gap:8px 16px;align-items:end"><div><label>Usuario</label><input id="acc-user" value="op${o.numero!=null?o.numero:o.id}"></div><div><label>Contraseña (opcional)</label><input id="acc-pw" placeholder="Vacío = se genera una"></div></div><button class="btn primary sm" style="margin-top:10px" id="acc-crear" onclick="crearAcceso(${o.id})">Crear acceso</button><div class="sub" style="margin-top:6px">El operador no cambia su contraseña; la restableces tú desde aquí.</div></div>`}
     <div id="op-acc-msg" class="msg"></div></div>
-  <div style="display:flex;gap:10px;justify-content:space-between;margin-top:14px"><button class="btn" style="color:var(--danger);border-color:color-mix(in oklab,var(--danger) 40%,transparent)" onclick="eliminarOperador(${o.id})">Eliminar</button><div style="display:flex;gap:10px"><button class="btn" onclick="closeModal()">Cerrar</button><button class="btn primary" onclick="guardarOperador(${o.id})">Guardar</button></div></div>
+  <div style="display:flex;gap:10px;justify-content:space-between;margin-top:14px"><button class="btn" style="color:var(--danger);border-color:color-mix(in oklab,var(--danger) 40%,transparent)" onclick="eliminarOperador(${o.id})">Dar de baja</button><div style="display:flex;gap:10px"><button class="btn" onclick="closeModal()">Cerrar</button><button class="btn primary" onclick="guardarOperador(${o.id})">Guardar</button></div></div>
   <div class="msg" id="ed-msg" style="text-align:right"></div>
   ${o.anomalias.length?'<div class="sech">Anomalías de sus viajes</div>'+o.anomalias.slice(0,8).map(a=>`<div style="margin:6px 0;font-size:12px"><b>${esc(a.unidad)}</b> · ${tipoLbl(a.tipo)} ${catPill(a.tipo)} <span class="pill ${a.estado==='PENDIENTE'?'pend':a.estado==='CONFIRMADA'?'conf':'rech'}">${a.estado}</span> <span class="sub">${a.fecha||''}</span></div>`).join(''):''}`);
 }
@@ -3009,7 +3016,7 @@ function verUsuario(id){
     ${fila('Alta',u.creado_en?_uFecha(u.creado_en):'')}
     ${fila('Último acceso',_uFecha(u.ultimo_acceso))}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap">
-      ${u.id===window.US_YO?'':`<button class="btn" style="background:transparent;color:var(--danger);border:1px solid color-mix(in oklab,var(--danger) 40%,transparent)" onclick="modalEliminarUsuario(${u.id})">Eliminar</button>`}
+      ${u.id===window.US_YO?'':`<button class="btn" style="background:transparent;color:var(--danger);border:1px solid color-mix(in oklab,var(--danger) 40%,transparent)" onclick="modalEliminarUsuario(${u.id})">Inhabilitar</button>`}
       ${u.id===window.US_YO?'':`<button class="btn" style="background:var(--sunken);color:${u.activo?'var(--ink)':'var(--ok)'};border:1px solid var(--line)" onclick="toggleUsuarioActivo(${u.id})">${u.activo?'Inhabilitar':'Reactivar'}</button>`}
       <button class="btn" style="background:var(--sunken);color:var(--ink);border:1px solid var(--line)" onclick="modalEditarUsuario(${u.id})">Editar</button>
       <button class="btn" onclick="resetUsuario(${u.id})">Reset clave</button>
@@ -3225,20 +3232,20 @@ async function modalEliminarUsuario(id){
          ${filas.map(([t,n])=>`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:2px 0"><span>${esc(ETIQ[t]||t)}</span><span style="${_UMONO}">${n}</span></div>`).join('')}
        </div>
        <p style="font-size:13px;margin:0 0 13px;line-height:1.5">Por eso <b>no se va a borrar</b>: eso dejaría sin autor lo que autorizó. Lo que se hará es <b>inhabilitarla</b>, y entonces <b>${esc(nm)}</b> no vuelve a entrar. El expediente se conserva.</p>`
-    : `<p style="font-size:13px;margin:0 0 13px;line-height:1.5">Esta cuenta no tiene ningún registro a su nombre, así que <b>se eliminará de verdad</b> y no se podrá deshacer.</p>`;
+    : `<p style="font-size:13px;margin:0 0 13px;line-height:1.5">Se va a <b>inhabilitar</b>: <b>${esc(nm)}</b> no vuelve a entrar. En la herramienta no se borra información, así que la cuenta se conserva y se puede reactivar.</p>`;
   // Si no se pudo consultar qué registros tiene, NO se afirma que «se eliminará de verdad»
   // (era falso cuando la cuenta sí tenía registros): se avisa y se bloquea la confirmación.
   if(!infoOk){
-    openModal(`<h3>Eliminar a ${esc(nm)}</h3><p style="font-size:13px;margin:0;line-height:1.5">No se pudo comprobar si esta cuenta tiene registros a su nombre, así que no se sabe si se borrará o solo se inhabilitará. Cierra y vuelve a intentarlo.</p>`);
+    openModal(`<h3>Inhabilitar a ${esc(nm)}</h3><p style="font-size:13px;margin:0;line-height:1.5">No se pudo consultar el historial de esta cuenta. Cierra y vuelve a intentarlo.</p>`);
     $('#modal').style.maxWidth='470px'; return;
   }
-  openModal(`<h3 style="margin:0 0 10px">${total?'Inhabilitar':'Eliminar'} a ${esc(nm)}</h3>
+  openModal(`<h3 style="margin:0 0 10px">Inhabilitar a ${esc(nm)}</h3>
     ${detalle}
     <div style="background:color-mix(in oklab,var(--accent) 8%,transparent);border:1px solid color-mix(in oklab,var(--accent) 35%,transparent);border-radius:8px;padding:10px 12px;margin:0 0 14px">
       <label style="${_ULBL};color:var(--accent)">Confirma con tu contraseña de administrador</label>
       <input id="du-clave-admin" type="password" autocomplete="new-password" placeholder="Tu contraseña de administrador" style="${_UIST};margin:6px 0 0">
     </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" style="background:var(--sunken);color:var(--ink);border:1px solid var(--line)" onclick="closeModal()">Cancelar</button><button class="btn" id="du-ok" style="background:var(--danger);color:#fff" onclick="doEliminarUsuario(${id})">${total?'Inhabilitar':'Eliminar'}</button></div>`);
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" style="background:var(--sunken);color:var(--ink);border:1px solid var(--line)" onclick="closeModal()">Cancelar</button><button class="btn" id="du-ok" style="background:var(--danger);color:#fff" onclick="doEliminarUsuario(${id})">Inhabilitar</button></div>`);
   $('#modal').style.maxWidth='470px';
 }
 async function doEliminarUsuario(id){
@@ -4100,11 +4107,11 @@ function _fraseSuelto(s){
 // hologramas, y a un remolque no le importa su cuenta de la app.
 function _avisoBorrado(url){
   if(url.indexOf('/api/operadores/')===0)
-    return 'Si tiene historial —viajes, solicitudes, asignaciones— NO se borra: se da de baja y se le corta el acceso.\n\nSi no tiene nada, se borra de verdad, y con él su cuenta de la app. La unidad o el remolque que tuviera asignados quedan libres, no se borran.';
-  return 'Si tiene historial —viajes, cargas de diésel, asientos del libro mayor, lecturas de motor— NO se borra: se da de baja y no se pierde nada.\n\nSi no tiene nada, se borra de verdad. Sus alias se van con él; las etiquetas y las tarjetas se sueltan, no se borran: el holograma y el plástico siguen existiendo.';
+    return 'Se da de baja y se le corta el acceso a la app. En la herramienta no se borra información: su historial —viajes, solicitudes, asignaciones— se conserva.';
+  return 'Se da de baja: deja de aparecer para asignar, pero en la herramienta no se borra información y todo su historial se conserva.';
 }
 async function confirmarBorrado(url,nombre,recargar){
-  if(!await ask({title:'Eliminar',msg:`¿Eliminar "${nombre}"?\n\n`+_avisoBorrado(url),okText:'Eliminar',danger:true}))return;
+  if(!await ask({title:'Dar de baja',msg:`¿Dar de baja "${nombre}"?\n\n`+_avisoBorrado(url),okText:'Dar de baja',danger:true}))return;
   try{
     const d=await apiDel(url);
     if(d.baja||d.inhabilitada){
@@ -4266,6 +4273,9 @@ function verAsignacion(id){
       +f('Destino',esc(a.destino||'—'))
       +f('Kilómetros', km!=null ? ('<b>'+Math.round(km)+' km</b>'
            +(a.km_modificado?' <span class="sub">ajustados a mano'+(a.km_modificado_por?' por '+esc(a.km_modificado_por):'')+'</span>':' <span class="sub">estimados de la ruta</span>')) : '—')
+      +f('Litros estimados', (a.estimacion&&a.estimacion.litros!=null)
+           ? ('<b>≈ '+Math.round(a.estimacion.litros).toLocaleString('es-MX')+' L</b> <span class="sub">'+esc(a.estimacion.motivo||'')+'</span>')
+           : '<span class="sub">'+esc((a.estimacion&&a.estimacion.motivo)||'—')+'</span>')
       +f('Tipo', a.es_retorno?'Retorno':'Ida')
       +f('Remolques',remHTML)
       +f('Nota',esc(a.nota||'—'))

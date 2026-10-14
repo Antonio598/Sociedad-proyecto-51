@@ -104,6 +104,9 @@ def _ajustes_de_esquema() -> None:
         # Ver Usuario.sesion_version: cerrar sesiones al restablecer la contraseña.
         cx.execute(text("ALTER TABLE usuarios "
                         "ADD COLUMN IF NOT EXISTS sesion_version integer NOT NULL DEFAULT 0"))
+        # Ver AnalisisReporte.archivado_en: archivar en vez de borrar.
+        cx.execute(text("ALTER TABLE analisis_reportes "
+                        "ADD COLUMN IF NOT EXISTS archivado_en timestamptz"))
     try:
         with engine.begin() as cx:
             # Una penalización por viaje, garantizado por la base y no sólo por el `if` del
@@ -697,7 +700,51 @@ def _asignacion_dict(a: AsignacionViaje, db: Session) -> dict:
         "estado": a.estado.value,
         "creada_en": a.creada_en.isoformat() if a.creada_en else None,
         "finalizada_en": a.finalizada_en.isoformat() if a.finalizada_en else None,
+        # Litros que el viaje debería gastar según la lectura del motor. Sólo para los viajes
+        # vivos: cada cálculo lee la serie de escaneos y un listado histórico no lo necesita.
+        "estimacion": (_estimar_litros(db, a.unidad_id, rendimiento.km_efectivo(a), asig=a)
+                       if a.estado == EstadoAsignacion.ACTIVA else None),
     }
+
+
+def _estimar_litros(db: Session, unidad_id: int | None, km: float | None, *,
+                    asig=None) -> dict:
+    """Litros aproximados de un viaje: km ÷ rendimiento real de la unidad.
+
+    El documento del dueño: al asignar, «la herramienta debe calcular la cantidad aproximada
+    de litros que se van a consumir», con el km del viaje y «el dato duro que se extrae de
+    rendimiento de combustible de los PDF de las lecturas de los motores». Es el MISMO
+    rendimiento con el que después se calcula el tope al autorizar
+    (`rendimiento.tope_autorizable`), incluida la separación por configuración (sencillo /
+    full) y su respaldo sin separar, para que lo que se ve al asignar y lo que se autoriza
+    salgan de la misma cuenta.
+    """
+    if not unidad_id:
+        return {"litros": None, "motivo": "sin unidad"}
+    uni = db.get(Unidad, unidad_id)
+    cfg = rendimiento.config_de_asignacion(db, asig, uni)
+    r = rendimiento.vigente(db, unidad_id, config=cfg)
+    if not r.hay and cfg is not None:
+        r = rendimiento.vigente(db, unidad_id)
+    if not r.hay:
+        return {"litros": None, "rendimiento": None,
+                "motivo": f"sin rendimiento de motor: {r.motivo}"}
+    if not km or km <= 0:
+        return {"litros": None, "rendimiento": r.valor, "motivo": "sin kilómetros del viaje"}
+    lts = rendimiento.litros_estimados(km, r.valor)
+    return {"litros": round(lts, 1), "rendimiento": r.valor, "km": km,
+            "motivo": f"{km:,.0f} km ÷ {r.valor} km/l · {r.motivo}"}
+
+
+@app.get("/api/asignaciones/estimacion")
+def asignacion_estimacion(unidad_id: int, km: float | None = None,
+                          remolques: int = Query(0, ge=0, le=2),
+                          user: dict = Depends(require_gestion),
+                          db: Session = Depends(get_db)) -> dict:
+    """Vista previa de los litros mientras el coordinador arma el viaje (antes de guardarlo)."""
+    from types import SimpleNamespace
+    asig = SimpleNamespace(remolque_ids=list(range(remolques)))
+    return _estimar_litros(db, unidad_id, km, asig=asig)
 
 
 @app.post("/api/asignaciones")
@@ -4529,53 +4576,17 @@ def unidad_borrar(uid: int, user: dict = Depends(require_admin), db: Session = D
     u = db.get(Unidad, uid)
     if u is None:
         raise HTTPException(404, "Unidad no encontrada")
+    # NADIE BORRA INFORMACIÓN (documento del dueño): «eliminar» es siempre una BAJA. El
+    # registro y todo lo que cuelga de él se conservan; sólo deja de estar activo.
     retienen = _retienen_de_verdad(db, "unidades", uid)
-    if retienen:
-        u.activo = False
-        registrar_actividad(db, accion="unidad_baja", usuario=user, entidad="unidad",
-                            entidad_id=uid, meta={"clave": u.clave, "retienen": retienen},
-                            commit=False)
-        db.commit()
-        # `viajes` y `escaneos` se conservan porque la pantalla ya los nombraba.
-        return {"ok": True, "baja": True, "retienen": retienen,
-                "viajes": retienen.get("viajes", 0),
-                "escaneos": retienen.get("escaneos_motor", 0)}
-    clave = u.clave
-    suelto = _desenganchar(db, "unidades", uid)
-    registrar_actividad(db, accion="unidad_eliminada", usuario=user, entidad="unidad",
-                        entidad_id=uid, meta={"clave": clave, "desenganchado": suelto},
+    u.activo = False
+    registrar_actividad(db, accion="unidad_baja", usuario=user, entidad="unidad",
+                        entidad_id=uid, meta={"clave": u.clave, "retienen": retienen},
                         commit=False)
-    db.delete(u)
     db.commit()
-    return {"ok": True, "eliminado": True, "desenganchado": suelto}
-
-
-def _remolque_dict(r: Remolque) -> dict:
-    return {
-        "id": r.id, "eco": r.eco, "eco_nuevo": r.eco_nuevo, "marca": r.marca, "anio": r.anio,
-        "placa": r.placa, "placas_nuevas": r.placas_nuevas, "serie": r.serie,
-        "serie_thermo": r.serie_thermo, "descripcion": r.descripcion,
-        "es_dolly": r.es_dolly, "usa_combustible": r.usa_combustible, "activo": r.activo,
-        # La medida decide si puede ir en pareja: dos remolques sólo se enganchan si los
-        # dos son de 40 pies. Va al cliente para que el selector lo aplique al marcar.
-        "medida_pies": r.medida_pies,
-        "operador_asignado_id": r.operador_asignado_id,
-        "operador_titular": r.operador_titular.nombre if r.operador_titular else None,
-    }
-
-
-def _apply_remolque(r: Remolque, f) -> None:
-    for k in ("eco_nuevo", "marca", "placa", "placas_nuevas", "serie", "serie_thermo", "descripcion"):
-        if k in f:
-            setattr(r, k, _pstr(f, k))
-    if "anio" in f:
-        r.anio = _pi(f.get("anio"))
-    if "es_dolly" in f:
-        r.es_dolly = _pbool(f, "es_dolly")
-    if "usa_combustible" in f:
-        r.usa_combustible = _pbool(f, "usa_combustible")
-    if "activo" in f:
-        r.activo = _pbool(f, "activo")
+    return {"ok": True, "baja": True, "retienen": retienen,
+            "viajes": retienen.get("viajes", 0),
+            "escaneos": retienen.get("escaneos_motor", 0)}
 
 
 @app.get("/api/remolques")
@@ -4628,22 +4639,15 @@ def remolque_borrar(rid: int, user: dict = Depends(require_admin), db: Session =
     r = db.get(Remolque, rid)
     if r is None:
         raise HTTPException(404, "Remolque no encontrado")
+    # NADIE BORRA INFORMACIÓN (documento del dueño): «eliminar» es siempre una BAJA. El
+    # registro y todo lo que cuelga de él se conservan; sólo deja de estar activo.
     retienen = _retienen_de_verdad(db, "remolques", rid)
-    if retienen:
-        r.activo = False
-        registrar_actividad(db, accion="remolque_baja", usuario=user, entidad="remolque",
-                            entidad_id=rid, meta={"eco": r.eco, "retienen": retienen},
-                            commit=False)
-        db.commit()
-        return {"ok": True, "baja": True, "retienen": retienen}
-    eco = r.eco
-    suelto = _desenganchar(db, "remolques", rid)
-    registrar_actividad(db, accion="remolque_eliminado", usuario=user, entidad="remolque",
-                        entidad_id=rid, meta={"eco": eco, "desenganchado": suelto},
+    r.activo = False
+    registrar_actividad(db, accion="remolque_baja", usuario=user, entidad="remolque",
+                        entidad_id=rid, meta={"eco": r.eco, "retienen": retienen},
                         commit=False)
-    db.delete(r)
     db.commit()
-    return {"ok": True, "eliminado": True, "desenganchado": suelto}
+    return {"ok": True, "baja": True, "retienen": retienen}
 
 
 @app.get("/api/operadores")
@@ -4749,7 +4753,10 @@ async def operadores_fusionar_lote(request: Request, user: dict = Depends(requir
                    .values(operador_id=destino.id))
         db.execute(update(Unidad).where(Unidad.operador_asignado_id == oid)
                    .values(operador_asignado_id=destino.id))
-        db.delete(o)
+        # Nada se borra: el duplicado queda de baja, con su historial ya movido al real.
+        o.activo = False
+        registrar_actividad(db, accion="operador_fusionado", usuario=user, entidad="operador",
+                            entidad_id=oid, meta={"destino": destino.id})
         movidos += 1
     _commit(db, "No se pudo fusionar el lote")
     return {"ok": True, "destino": destino.nombre, "fusionados": movidos}
@@ -4795,7 +4802,10 @@ async def operador_fusionar(op_id: int, request: Request, user: dict = Depends(r
                .values(operador_id=destino.id))
     db.execute(update(Unidad).where(Unidad.operador_asignado_id == origen.id)
                .values(operador_asignado_id=destino.id))
-    db.delete(origen)
+    # Nada se borra: el origen queda de baja, con su historial ya movido al real.
+    origen.activo = False
+    registrar_actividad(db, accion="operador_fusionado", usuario=user, entidad="operador",
+                        entidad_id=origen.id, meta={"destino": destino.id})
     _commit(db, "No se pudo vincular el operador")
     return {"ok": True, "destino": destino.nombre, "origen_borrado": op_id}
 
@@ -5267,32 +5277,18 @@ async def usuario_borrar(uid: int, request: Request, user: dict = Depends(requir
         _no_dejar_sin_admin(db, u)
 
     username, nombre = u.username, u.nombre
+    # NADIE BORRA INFORMACIÓN (documento del dueño): «eliminar» es siempre una BAJA. El
+    # registro y todo lo que cuelga de él se conservan; sólo deja de estar activo.
     retienen = _retienen_de_verdad(db, "usuarios", uid)
-    if retienen:
-        ya_estaba = not u.activo
-        u.activo = False
-        registrar_actividad(db, accion="usuario_inhabilitado", usuario=user,
-                            entidad="usuario", entidad_id=uid,
-                            meta={"username": username, "retienen": retienen})
-        db.commit()
-        log.info("Cuenta %s inhabilitada por %s (la retienen %s)",
-                 username, user.get("username"), retienen)
-        return {"ok": True, "inhabilitada": True, "ya_estaba": ya_estaba,
-                "retienen": retienen, "username": username, "nombre": nombre}
-
-    # La bitácora se SUELTA, no se borra: el renglón sigue contando que a las 14:32 alguien
-    # inhabilitó una cuenta, sólo que ya no apunta a una fila que no existe. Antes bastaba
-    # un único `login` para que la cuenta no se pudiera borrar jamás.
-    suelto = _desenganchar(db, "usuarios", uid)
-    registrar_actividad(db, accion="usuario_eliminado", usuario=user,
+    ya_estaba = not u.activo
+    u.activo = False
+    registrar_actividad(db, accion="usuario_inhabilitado", usuario=user,
                         entidad="usuario", entidad_id=uid,
-                        meta={"username": username, "nombre": nombre,
-                              "desenganchado": suelto}, commit=False)
-    db.delete(u)
+                        meta={"username": username, "retienen": retienen})
     db.commit()
-    log.info("Cuenta %s ELIMINADA por %s", username, user.get("username"))
-    return {"ok": True, "eliminada": True, "username": username, "nombre": nombre,
-            "desenganchado": suelto}
+    log.info("Cuenta %s inhabilitada por %s", username, user.get("username"))
+    return {"ok": True, "inhabilitada": True, "ya_estaba": ya_estaba,
+            "retienen": retienen, "username": username, "nombre": nombre}
 
 
 @app.get("/api/usuarios/{uid}/retienen")
@@ -5536,86 +5532,19 @@ def operador_borrar(op_id: int, user: dict = Depends(require_admin), db: Session
     todo = _quien_retiene(db, "operadores", op_id)
     retienen = _retienen_de_verdad(db, "operadores", op_id)
 
-    # La cuenta de la app es SUYA y no significa nada sin él, así que se va con él. Pero
-    # sólo si ella misma no arrastra nada: si esa cuenta autorizó o despachó algo, manda
-    # eso y el operador se queda en baja (con el acceso cortado, que es lo que importa).
-    cuenta_borrada = None
-    if (cuenta is not None and set(retienen) == {"usuarios"}
-            and not _retienen_de_verdad(db, "usuarios", cuenta.id)):
-        cuenta_borrada = cuenta.username
-        _desenganchar(db, "usuarios", cuenta.id)
-        db.delete(cuenta)
-        db.flush()                      # para que el recuento de abajo ya no la vea
-        retienen = _retienen_de_verdad(db, "operadores", op_id)
-
-    if retienen:
-        o.activo = False
-        registrar_actividad(db, accion="operador_baja", usuario=user, operador_id=op_id,
-                            entidad="operador", entidad_id=op_id,
-                            meta={"retienen": retienen, "cuenta_cortada": cortada,
-                                  "usuario": cuenta.username if cuenta else None})
-        db.commit()
-        return {"ok": True, "baja": True, "retienen": retienen,
-                "viajes": retienen.get("viajes", 0),
-                "unidades_a_cargo": todo.get("unidades", 0),
-                "cuenta_cortada": cortada,
-                "usuario": cuenta.username if cuenta else None}
-
-    nombre_op = o.nombre
-    suelto = _desenganchar(db, "operadores", op_id)
-    if cuenta_borrada:
-        suelto["cuenta_borrada"] = cuenta_borrada
-    # OJO: aquí NO se pasa `operador_id`, o el renglón nuevo apuntaría al operador que
-    # estamos a punto de borrar y la clave foránea lo impediría.
-    registrar_actividad(db, accion="operador_eliminado", usuario=user,
+    # NADIE BORRA INFORMACIÓN (documento del dueño): «eliminar» es siempre una BAJA. El
+    # registro y todo lo que cuelga de él se conservan; sólo deja de estar activo.
+    o.activo = False
+    registrar_actividad(db, accion="operador_baja", usuario=user, operador_id=op_id,
                         entidad="operador", entidad_id=op_id,
-                        meta={"nombre": nombre_op, "desenganchado": suelto},
-                        commit=False)
-    db.delete(o)   # la foto (base64) vive en la fila: se borra con el operador
+                        meta={"retienen": retienen, "cuenta_cortada": cortada,
+                              "usuario": cuenta.username if cuenta else None})
     db.commit()
-    return {"ok": True, "eliminado": True, "desenganchado": suelto,
-            "cuenta_borrada": cuenta_borrada}
-
-
-_FOTO_EXT = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
-
-
-async def _leer_foto(file: UploadFile) -> tuple[str, str]:
-    """Lee la imagen subida (chunks, tope 12MB, valida firma) y la devuelve como
-    (base64, mime) para GUARDARLA codificada en la BD. Lanza 400 si algo falla."""
-    ext = _FOTO_EXT.get(file.content_type or "")
-    if not ext:
-        raise HTTPException(400, "Formato no soportado (usa JPG, PNG o WebP)")
-    # El cliente ya comprime la foto (lado máx 1600px) antes de subir, así que en la práctica
-    # llegan <1 MB. El tope alto es solo una red de seguridad si la compresión no corrió.
-    limite = 12 * 1024 * 1024
-    buf = bytearray()
-    while True:
-        chunk = await file.read(65536)
-        if not chunk:
-            break
-        buf.extend(chunk)
-        if len(buf) > limite:
-            raise HTTPException(400, "La imagen supera el límite de 12 MB")
-    data = bytes(buf)
-    if not _es_imagen(data, ext):
-        raise HTTPException(400, "El archivo no parece una imagen válida")
-    return base64.b64encode(data).decode("ascii"), (file.content_type or "image/jpeg")
-
-
-def _espejar_foto(db: Session, *, desde_usuario: "Usuario | None" = None,
-                  desde_operador: "Operador | None" = None) -> None:
-    """Mantiene la MISMA foto en la cuenta (usuarios) y el operador del padrón enlazados: el
-    último cambio —lo suba el operador desde su perfil o el Admin desde la ficha— se ve en
-    todas las vistas. No hace commit (lo hace el endpoint que llama)."""
-    if desde_usuario is not None and desde_usuario.operador_id:
-        op = db.get(Operador, desde_usuario.operador_id)
-        if op is not None:
-            op.foto, op.foto_mime = desde_usuario.foto, desde_usuario.foto_mime
-    if desde_operador is not None:
-        acc = db.scalar(select(Usuario).where(Usuario.operador_id == desde_operador.id))
-        if acc is not None:
-            acc.foto, acc.foto_mime = desde_operador.foto, desde_operador.foto_mime
+    return {"ok": True, "baja": True, "retienen": retienen,
+            "viajes": retienen.get("viajes", 0),
+            "unidades_a_cargo": todo.get("unidades", 0),
+            "cuenta_cortada": cortada,
+            "usuario": cuenta.username if cuenta else None}
 
 
 @app.post("/api/operadores/{op_id}/foto")
@@ -6515,53 +6444,52 @@ async def solicitud_evidencia(
 # sale. El dato se separaría de su propia prueba.
 _EVIDENCIA_EDITABLE = {EstadoSolicitud.BORRADOR, EstadoSolicitud.ENVIADA,
                        EstadoSolicitud.EN_VALIDACION, EstadoSolicitud.DEVUELTA}
-_EVIDENCIA_EDITABLE_OPERADOR = {EstadoSolicitud.BORRADOR, EstadoSolicitud.DEVUELTA}
+# Combustible (y admin) revisan km y horas DESPUÉS de que el coordinador autoriza, antes de
+# cargar: su ventana llega hasta el despacho.
+_EVIDENCIA_EDITABLE_COMBUSTIBLE = _EVIDENCIA_EDITABLE | {EstadoSolicitud.AUTORIZADA}
 
 
 @app.post("/api/solicitudes/{sol_id}/evidencia/{ev_id}")
 def evidencia_corregir(sol_id: int, ev_id: int, valor: float = Form(...),
                        user: dict = Depends(require_user),
                        db: Session = Depends(get_db)) -> dict:
-    """Corrige el valor que leyó la IA. Guarda que fue corregido a mano: ese dato mide
-    qué tan confiable es la lectura automática por tipo de instrumento.
+    """Corrige el valor que leyó la IA (kilómetros u horas). Guarda que fue corregido a mano:
+    ese dato mide qué tan confiable es la lectura automática por tipo de instrumento.
 
-    Lo puede hacer el operador (sólo en SUS solicitudes) y también quien coordina, gerencia o
-    administra: es el coordinador quien mira la foto al lado del número antes de autorizar
-    litros, y hasta hoy veía un odómetro mal leído sin poder tocarlo. La corrección de un
-    tercero deja rastro de quién la hizo — cambiar el dato de otra persona no puede ser
-    anónimo.
+    QUIÉN, según el documento del dueño («el único dato que cualquier usuario puede corregir
+    son los kilómetros y las horas»):
+      · el COORDINADOR (y gerencia/admin) mientras valida, antes de autorizar;
+      · el RESPONSABLE DE COMBUSTIBLE también DESPUÉS de que el coordinador autorizó, porque
+        su paso es justamente revisar esos datos antes de cargar. Hasta el despacho.
+      · el OPERADOR nunca: «no captura ningún tipo de dato», sólo escanea y toma fotos. Si
+        la foto salió mal, la repite.
+    Toda corrección deja rastro de quién la hizo, el valor anterior y el nuevo.
     """
     ev = db.get(EvidenciaRecarga, ev_id)
     if ev is None or ev.solicitud_id != sol_id:
         raise HTTPException(404, "Evidencia no encontrada")
     rol = user.get("rol")
-    # Propiedad: un operador solo corrige evidencia de SUS solicitudes.
     if rol == "operador":
-        s0 = db.get(SolicitudRecarga, sol_id)
-        if s0 is None or s0.operador_id != _mi_operador_id(user, db):
-            raise HTTPException(403, "No es tu solicitud")
-    elif rol not in ("coordinador", "gerente", "admin"):
-        # `combustible` no corrige lecturas: cuando la orden llega a él ya está autorizada, y
-        # mover el odómetro entonces cambiaría la base de una decisión ya tomada.
+        raise HTTPException(403, "El operador no captura datos: si la lectura salió mal, "
+                                 "repite la foto.")
+    if rol not in ("coordinador", "gerente", "admin", "combustible"):
         raise HTTPException(403, "Tu rol no puede corregir evidencia")
-    # Y no basta con QUIÉN: importa CUÁNDO. La misma razón que le cierra la puerta a
-    # combustible se la cierra a todos en cuanto la solicitud se autoriza, porque los litros
-    # se fijaron CONTRA esta lectura. Después del despacho el diésel ya está en el tanque:
-    # cambiar el odómetro entonces no corrige un dato, falsea el expediente de una decisión
-    # tomada — y el rendimiento km/L que sale de ahí deja de cuadrar con nada.
+    # Y no basta con QUIÉN: importa CUÁNDO. Después del despacho el diésel ya está en el
+    # tanque: cambiar el odómetro entonces no corrige un dato, falsea el expediente de una
+    # decisión tomada — y el rendimiento km/L que sale de ahí deja de cuadrar con nada.
     s_est = db.get(SolicitudRecarga, sol_id)
-    abierto = _EVIDENCIA_EDITABLE_OPERADOR if rol == "operador" else _EVIDENCIA_EDITABLE
+    abierto = (_EVIDENCIA_EDITABLE_COMBUSTIBLE if rol in ("combustible", "admin")
+               else _EVIDENCIA_EDITABLE)
     if s_est is not None and s_est.estado not in abierto:
         # El mensaje NO manda a ninguna puerta: desde rechazada, conciliada y anulada no sale
         # ninguna transición, así que sugerir un remedio ahí sería mentirle a quien lo lee.
-        # Al operador sí se le puede decir algo útil, porque devolver la solicitud existe.
-        if rol == "operador":
+        if s_est.estado == EstadoSolicitud.AUTORIZADA:
             raise HTTPException(
-                409, "Ya enviaste esta solicitud. Pídele a tu coordinador que te la devuelva "
-                     "si necesitas corregir la lectura.")
+                409, "La solicitud ya está autorizada: desde aquí la corrige el responsable "
+                     "de combustible, antes de despachar.")
         raise HTTPException(
-            409, f"La solicitud ya está {s_est.estado.value}: la lectura quedó fijada cuando "
-                 f"se autorizaron los litros y ya no se puede modificar.")
+            409, f"La solicitud ya está {s_est.estado.value}: la lectura quedó fijada con el "
+                 f"despacho y ya no se puede modificar.")
     anterior = ev.valor_final if ev.valor_final is not None else ev.valor_ia
     ev.valor_final = valor
     # Si la IA había leído algo y el valor cambia, es una corrección; si no leyó, es manual.
@@ -6584,7 +6512,7 @@ def evidencia_corregir(sol_id: int, ev_id: int, valor: float = Form(...),
     # anotarlo llena la bitácora de ruido: un fallo del panel hizo que alguien pulsara
     # «Guardar» cinco veces seguidas y quedaron cinco «correcciones» de 958387 a 958387.
     cambio = anterior is None or abs(float(anterior) - float(valor)) > 1e-9
-    if rol != "operador" and cambio:
+    if cambio:
         registrar_actividad(
             db, accion="evidencia_corregida", usuario=user.get("id"), rol=rol,
             entidad="evidencia", entidad_id=ev.id,
@@ -6617,7 +6545,13 @@ def _evidencia_faltante(s: SolicitudRecarga, db: Session) -> list[str]:
     + económico de la unidad + un económico por cada remolque enganchado (si es tracto)."""
     tipos = [e.tipo for e in s.evidencias]
     faltan: list[str] = []
-    n_eco = sum(1 for t in tipos if t == "eco")
+    # Sólo cuentan los económicos que COINCIDIERON con lo asignado, y cada activo una vez. El
+    # documento del dueño: «si el número económico no coincide con el que le asignó el
+    # coordinador, la herramienta no lo va a dejar avanzar». Antes la pantalla lo impedía
+    # pero el servidor contaba cualquier evidencia `eco`, aunque dijera «no coincide».
+    n_eco = len({(e.texto_ia or "").upper() or f"#{e.id}"
+                 for e in s.evidencias if e.tipo == "eco" and e.coincide is True})
+    eco_malo = any(e.tipo == "eco" and e.coincide is False for e in s.evidencias)
     # Recarga de TERMO (diésel del equipo de frío): otra combinación de evidencia — económico
     # de la unidad + horas del termo; NO lleva odómetro/kilometraje (esos son del motor).
     if getattr(s, "tipo_recarga", "motor") == "termo":
@@ -6659,7 +6593,9 @@ def _evidencia_faltante(s: SolicitudRecarga, db: Session) -> list[str]:
         if asig and asig.remolque_ids:
             esperado_eco += min(2, len(asig.remolque_ids))
     if n_eco < esperado_eco:
-        faltan.append(f"económico ({n_eco} de {esperado_eco})")
+        faltan.append(f"económico verificado ({n_eco} de {esperado_eco})"
+                      + (": el económico escaneado no coincide con el asignado"
+                         if eco_malo else ""))
     return faltan
 
 
@@ -7878,8 +7814,12 @@ async def analisis(request: Request, user: dict = Depends(require_admin),
 
 @app.get("/api/analisis/historial")
 def analisis_historial(user: dict = Depends(require_user), db: Session = Depends(get_db)) -> list[dict]:
+    # Sin los archivados ni las recomendaciones por unidad (ésas se ven en «Lecturas de motor»).
     filas = db.execute(
-        select(AnalisisReporte).order_by(AnalisisReporte.id.desc()).limit(30)
+        select(AnalisisReporte)
+        .where(AnalisisReporte.archivado_en.is_(None),
+               func.coalesce(AnalisisReporte.resumen["tipo"].astext, "") != "unidad")
+        .order_by(AnalisisReporte.id.desc()).limit(30)
     ).scalars().all()
     return [
         {"id": r.id, "creado_en": r.creado_en.isoformat() if r.creado_en else None,
@@ -7900,12 +7840,86 @@ def analisis_por_id(rep_id: int, user: dict = Depends(require_user), db: Session
 
 @app.delete("/api/analisis/{rep_id}")
 def analisis_borrar(rep_id: int, user: dict = Depends(require_admin), db: Session = Depends(get_db)) -> dict:
+    """ARCHIVA el reporte: nadie borra información (documento del dueño). Deja de aparecer en
+    el historial, pero el registro y su texto se conservan."""
     r = db.get(AnalisisReporte, rep_id)
     if r is None:
         raise HTTPException(404, "Reporte no encontrado")
-    db.delete(r)
+    if r.archivado_en is None:
+        r.archivado_en = datetime.now(timezone.utc)
+        registrar_actividad(db, accion="analisis_archivado", usuario=user,
+                            entidad="analisis", entidad_id=rep_id)
     db.commit()
-    return {"ok": True, "eliminado": True}
+    return {"ok": True, "archivado": True, "eliminado": True}
+
+
+@app.get("/api/motor/unidades/{uid}/recomendaciones")
+def motor_recomendaciones_ver(uid: int, user: dict = Depends(require_ver_combustible),
+                              db: Session = Depends(get_db)) -> dict:
+    """La última recomendación de IA guardada para la unidad (no gasta crédito)."""
+    r = db.execute(
+        select(AnalisisReporte)
+        .where(AnalisisReporte.resumen["tipo"].astext == "unidad",
+               AnalisisReporte.resumen["unidad_id"].astext == str(uid),
+               AnalisisReporte.archivado_en.is_(None))
+        .order_by(AnalisisReporte.id.desc()).limit(1)).scalar()
+    if r is None:
+        return {"recomendacion": None}
+    return {"recomendacion": r.texto, "id": r.id,
+            "creado_en": r.creado_en.isoformat() if r.creado_en else None,
+            "lecturas": (r.resumen or {}).get("lecturas")}
+
+
+@app.post("/api/motor/unidades/{uid}/recomendaciones")
+def motor_recomendaciones_generar(uid: int, user: dict = Depends(require_combustible),
+                                  db: Session = Depends(get_db)) -> dict:
+    """Reporte con IA por tractocamión, desde sus lecturas de motor (documento del dueño:
+    «ver recomendaciones para mejorar la operación de cada tractocamión»). Gasta crédito de
+    IA, por eso es una acción explícita y el resultado se guarda para volver a leerlo gratis.
+    """
+    if not settings.anthropic_api_key:
+        raise HTTPException(503, "Falta ANTHROPIC_API_KEY: la IA no está configurada")
+    u = db.get(Unidad, uid)
+    if u is None:
+        raise HTTPException(404, "Unidad no encontrada")
+    serie = db.execute(select(EscaneoMotor).where(EscaneoMotor.unidad_id == uid)
+                       .order_by(EscaneoMotor.periodo_fin.desc()).limit(20)).scalars().all()
+    if not serie:
+        raise HTTPException(409, "Esta unidad no tiene lecturas de motor todavía")
+    alertas = alertas_de_serie(serie, u)
+    campos = ("periodo_inicio", "periodo_fin", "km", "litros", "rendimiento", "tiempo",
+              "pct_ralenti", "lts_ralenti", "tiempo_ralenti", "vel_max", "vel_prom", "rpm_prom",
+              "rpm_max", "carga_prom", "pct_crucero", "pct_top_gear", "km_crucero",
+              "km_top_gear", "frenadas", "paradas_panico", "fuera_marcha", "odometro_total")
+    lecturas = []
+    for e in serie:
+        d = {c: getattr(e, c, None) for c in campos}
+        a = alertas.get(e.id, {})
+        d["alerta"] = bool(a.get("alerta"))
+        d["motivos"] = a.get("motivos", [])
+        lecturas.append(d)
+    km_f, lts_f = db.execute(
+        select(func.sum(EscaneoMotor.km), func.sum(EscaneoMotor.litros))
+        .join(Unidad, Unidad.id == EscaneoMotor.unidad_id)
+        .where(Unidad.tipo == u.tipo)).one()
+    payload = {
+        "unidad": {"economico": u.clave, "tipo": u.tipo.value if u.tipo else None,
+                   "motor": u.motor, "anio": u.anio, "marca": u.marca,
+                   "rendimiento_objetivo": u.rendimiento_objetivo},
+        "lecturas": lecturas,
+        "promedio_flota_mismo_tipo_kml": (round(km_f / lts_f, 3) if km_f and lts_f else None),
+        "precio_litro": precio_del_litro(fecha_flota().year),
+    }
+    texto = ai.recomendar_unidad(payload)
+    r = AnalisisReporte(texto=texto, resumen={"tipo": "unidad", "unidad_id": uid,
+                                              "clave": u.clave, "lecturas": len(lecturas)})
+    db.add(r)
+    registrar_actividad(db, accion="recomendacion_unidad", usuario=user,
+                        entidad="unidad", entidad_id=uid)
+    db.commit()
+    return {"recomendacion": texto, "id": r.id,
+            "creado_en": r.creado_en.isoformat() if r.creado_en else None,
+            "lecturas": len(lecturas)}
 
 
 @app.get("/api/stats/anomalias-precision")
@@ -8179,3 +8193,15 @@ def _despachar(payload: dict) -> None:
         log.info("QR actualizado — escanéalo desde el manager: http://localhost:8080/manager")
     else:
         log.debug("Evento no manejado: %s", evento)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Módulos con rutas propias. Van al FINAL: importan dependencias de este archivo
+# (get_db, require_*, registrar_actividad), que a esta altura ya existen.
+# ─────────────────────────────────────────────────────────────────────────────
+from . import cargas_externas as _cargas_externas  # noqa: E402
+
+_cargas_externas.registrar(app)
+from . import reportes as _reportes  # noqa: E402
+
+_reportes.registrar(app)

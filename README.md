@@ -31,3 +31,21 @@ pg_restore --no-owner --no-privileges -d "URL_DE_SUPABASE_SESSION_POOLER" base.d
 
 Las fotos no están en la base: copia también la carpeta `data/media` del servidor anterior
 al volumen de EasyPanel.
+
+## Fuentes de cargas de combustible
+
+| Fuente | Cómo entra hoy |
+|---|---|
+| XIGA | Excel del proveedor → *Combustible → Cargas del proveedor* (`ingesta.CONTRATOS["XYGA"]`) |
+| Oxxo (EOX) | Excel del proveedor → mismo lugar (`ingesta.CONTRATOS["OXXO"]`) |
+| Fuera de plataforma (transferencias) | *Combustible → Cargas fuera de plataforma*: formulario o plantilla de Excel |
+
+**Pendiente: API de XIGA.** Cuando se tenga la documentación y las credenciales, la conexión
+entra como un lector más en `ingesta.LECTORES`, que entregue las mismas filas que hoy salen del
+Excel. Así la API y el Excel comparten el mismo camino de importación, validación y conciliación.
+
+## Recuperar el acceso del administrador
+
+Si nadie recuerda la contraseña de `ADMIN_USER`, pon `ADMIN_PASSWORD_RESET=<contraseña nueva>`
+en las variables de la app y despliega. Al arrancar se le pone esa contraseña y se cierran sus
+sesiones. Entra y **borra la variable**.

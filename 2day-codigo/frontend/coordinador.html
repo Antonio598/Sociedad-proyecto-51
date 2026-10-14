@@ -10,8 +10,9 @@
 <link rel="stylesheet" href="/static/dialog.css?v=20261005a">
 <!-- dialog.js se carga SIN defer: el codigo de la pagina es inline y debe encontrar Dlg ya definido -->
 <script src="/static/aviso.js?v=20260903a"></script>
+<script src="/static/reportes.js?v=20261014"></script>
 <script src="/static/dialog.js?v=20261005a"></script>
-<script src="/static/maps.js?v=20260827d"></script>
+<script src="/static/maps.js?v=20261014"></script>
 <style>
 /* Paleta categórica de los gráficos (Tractos/Camiones/Remolques), validada CVD-safe en claro y oscuro */
 *{box-sizing:border-box}
@@ -402,6 +403,15 @@ input:focus,select:focus,textarea:focus{outline:2px solid color-mix(in oklab,var
       </section>
 
       <!-- PERFIL -->
+      <!-- REPORTES (componente compartido: /static/reportes.js) -->
+      <section class="section" id="s-reportes">
+        <div class="card">
+          <div class="spread"><h2 style="font-size:20px">Reportes</h2></div>
+          <p class="meta" style="margin:4px 0 0">Consumo en litros y en costo, rendimiento por tractocamión, camión y termo, y alertas de exceso, para el periodo que elijas y comparado contra el año anterior o el periodo previo.</p>
+        </div>
+        <div id="rp-mount" style="margin-top:14px"></div>
+      </section>
+
       <section class="section" id="s-perfil">
         <div class="card">
           <h2 style="font-size:22px;margin-bottom:10px">Perfil</h2>
@@ -497,15 +507,17 @@ const NAV=[
   ['problemas','Problemas','M12 3.6 2.2 20.4h19.6zM12 10v4.4M12 17.6v.4'],
   ['operadores','Operadores','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0 M4.5 20a7.5 7.5 0 0 1 15 0'],
   ['flota','Unidades y remolques','M2 7h13v9H2zM15 10h3.5l2.5 3v3h-3M2 16h1M8 16h4 M3.2 17a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0 M15.2 17a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0'],
+  ['reportes','Reportes','M4 20V4M4 20h16M7 16v-5M11 16V8M15 16v-3M19 16V6'],
   ['perfil','Perfil','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0 M4.5 20a7.5 7.5 0 0 1 15 0'],
 ];
-const TIT={inicio:['COORDINACIÓN','Resumen'],solicitudes:['BANDEJA','Solicitudes'],viajes:['OPERACIÓN','Viajes'],problemas:['ATENCIÓN','Problemas'],operadores:['EQUIPO','Operadores'],flota:['CATÁLOGO','Unidades y remolques'],perfil:['CUENTA','Perfil']};
+const TIT={reportes:['ANÁLISIS','Reportes'],inicio:['COORDINACIÓN','Resumen'],solicitudes:['BANDEJA','Solicitudes'],viajes:['OPERACIÓN','Viajes'],problemas:['ATENCIÓN','Problemas'],operadores:['EQUIPO','Operadores'],flota:['CATÁLOGO','Unidades y remolques'],perfil:['CUENTA','Perfil']};
 function pintarNav(){
   $('#nav').innerHTML=NAV.map(([id,lbl,d])=>`<button class="navbtn" data-sec="${id}" onclick="show('${id}')"><svg class="ic" viewBox="0 0 24 24"><path d="${d}"/></svg><span style="flex:1">${lbl}</span>${id==='problemas'?'<span class="bdg" id="nav-pro" style="display:none"></span>':''}${id==='solicitudes'?'<span class="bdg" id="nav-sol" style="display:none"></span>':''}</button>`).join('');
 }
 function toggleNav(){$('#app').classList.toggle('navopen');}
 function closeNav(){$('#app').classList.remove('navopen');}
 function show(sec){
+  if(sec==='reportes'&&window.Reportes&&!window._rpMontado){window._rpMontado=1;Reportes.montar(document.getElementById('rp-mount'));}
   $$('.section').forEach(s=>s.classList.remove('on'));
   const el=$('#s-'+sec); if(el)el.classList.add('on');
   $$('.navbtn').forEach(b=>b.classList.toggle('on',b.dataset.sec===sec));
@@ -1656,6 +1668,9 @@ function verAsignacion(id){
       +f('Destino',esc(a.destino||'—'))
       +f('Kilómetros', km!=null ? ('<b>'+Math.round(km)+' km</b>'
            +(a.km_modificado?' <span class="sub">ajustados a mano'+(a.km_modificado_por?' por '+esc(a.km_modificado_por):'')+'</span>':' <span class="sub">estimados de la ruta</span>')) : '—')
+      +f('Litros estimados', (a.estimacion&&a.estimacion.litros!=null)
+           ? ('<b>≈ '+Math.round(a.estimacion.litros).toLocaleString('es-MX')+' L</b> <span class="sub">'+esc(a.estimacion.motivo||'')+'</span>')
+           : '<span class="sub">'+esc((a.estimacion&&a.estimacion.motivo)||'—')+'</span>')
       +f('Tipo', a.es_retorno?'Retorno':'Ida')
       +f('Remolques',remHTML)
       +f('Nota',esc(a.nota||'—'))

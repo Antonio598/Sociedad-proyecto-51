@@ -280,6 +280,22 @@ label.f{display:block;margin:0 6px 0 0;font-size:12.5px;font-weight:600;color:va
 <div id="rend-lista" style="margin-top:14px"><div class="card"><div class="empty">Cargando…</div></div></div>
       </section>
 
+      <!-- CARGAS FUERA DE PLATAFORMA -->
+      <section class="section" id="s-externas">
+        <div class="card">
+          <div class="spread"><h2 style="font-size:20px">Cargas fuera de plataforma</h2><span class="meta" id="ext-n"></span></div>
+          <p class="meta" style="margin:4px 0 0">Las cargas que no pasan por XIGA ni por Oxxo (transferencias a choferes). Captúralas una por una o importa la plantilla de Excel. Entran al consumo de los reportes. Nada se borra: una carga equivocada se anula con motivo.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+            <button class="btn sm" id="ext-nueva">Capturar carga</button>
+            <a class="btn sm" href="/api/cargas-externas/plantilla.xlsx" style="text-decoration:none">Descargar plantilla</a>
+            <input type="file" id="ext-file" accept=".xlsx" style="display:none">
+            <button class="btn sm" id="ext-importar">Importar Excel</button>
+          </div>
+          <div id="ext-aviso" style="margin-top:12px"></div>
+        </div>
+        <div class="card"><div id="ext-lista"><div class="empty">Cargando…</div></div></div>
+      </section>
+
       <!-- LECTURAS DE MOTOR -->
       <section class="section" id="s-motor">
         <div class="card">
@@ -315,6 +331,15 @@ label.f{display:block;margin:0 6px 0 0;font-size:12.5px;font-weight:600;color:va
       </section>
 
       <!-- PERFIL -->
+      <!-- REPORTES (componente compartido: /static/reportes.js) -->
+      <section class="section" id="s-reportes">
+        <div class="card">
+          <div class="spread"><h2 style="font-size:20px">Reportes</h2></div>
+          <p class="meta" style="margin:4px 0 0">Consumo en litros y en costo, rendimiento por tractocamión, camión y termo, y alertas de exceso, para el periodo que elijas y comparado contra el año anterior o el periodo previo.</p>
+        </div>
+        <div id="rp-mount" style="margin-top:14px"></div>
+      </section>
+
       <section class="section" id="s-perfil">
         <div class="card">
           <div class="kick">MI CUENTA</div>
@@ -336,6 +361,8 @@ label.f{display:block;margin:0 6px 0 0;font-size:12.5px;font-weight:600;color:va
 </div>
 <div id="toast"></div>
 
+<script src="/static/aviso.js?v=20260903a"></script>
+<script src="/static/reportes.js?v=20261014"></script>
 <script src="/static/dialog.js?v=20261005a"></script>
 <script src="/static/perfil.js?v=20260920a"></script>
 <script>
@@ -364,12 +391,22 @@ async function vigilarNotif(){
   if(document.hidden)return;
   let items; try{items=await notifFuente();}catch(e){return;}
   renderNotif(items);
-  const maxId=items.reduce((m,it)=>Math.max(m,it.uid||0),0);
-  if(NOTIF_MAX===null){NOTIF_MAX=maxId;return;}
-  const nuevas=items.filter(it=>(it.uid||0)>NOTIF_MAX);
-  NOTIF_MAX=Math.max(NOTIF_MAX,maxId);
-  if(nuevas.length)toast(nuevas.length===1?('Nueva notificación · '+nuevas[0].titulo):(nuevas.length+' notificaciones nuevas'));
+  // Por CONJUNTO de ids, no por el mayor: una solicitud vieja que el coordinador autoriza hoy
+  // tiene un id menor que la última vista y, comparando por máximo, nunca se avisaba.
+  const ids=new Set(items.map(it=>it.uid));
+  if(NOTIF_MAX===null){NOTIF_MAX=ids;return;}
+  const nuevas=items.filter(it=>!NOTIF_MAX.has(it.uid));
+  NOTIF_MAX=ids;
+  if(nuevas.length){
+    const t=nuevas.length===1?('Autorizada por el coordinador · '+nuevas[0].titulo):(nuevas.length+' solicitudes autorizadas por despachar');
+    toast(t);
+    try{ Aviso.sonar(false); }catch(_){}
+    try{ if('Notification' in window && Notification.permission==='granted') new Notification('2Day — Combustible',{body:t,icon:'/static/icon-192.png',tag:'2day-despacho'}); }catch(_){}
+  }
 }
+// Pide permiso de avisos del sistema con el primer clic (los navegadores no dejan pedirlo
+// sin un gesto de la persona). Si ya se concedió o se negó, no vuelve a preguntar.
+document.addEventListener('click',()=>{ try{ if('Notification' in window && Notification.permission==='default') Notification.requestPermission(); }catch(_){} },{once:true});
 function toggleNotif(e){e.stopPropagation();const p=$('#notif');if(!p)return;p.classList.toggle('show');if(p.classList.contains('show'))refreshNotif();}
 function closeNotif(){const p=$('#notif');if(p)p.classList.remove('show');}
 document.addEventListener('click',async e=>{if(!e.target.closest('.notifwrap'))closeNotif();});
@@ -384,19 +421,22 @@ const NAV=[
   ['inicio','Resumen','M4 11.5 12 4l8 7.5M6 10v9h12v-9'],
   ['despacho','Despacho','M6 21V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v16M4 21h12M6 9h8M15 8l3 2v7a1.5 1.5 0 0 0 3 0V10l-3-3'],
   ['proveedor','Cargas del proveedor','M3 7h11v8H3zM14 10h4l3 3v2h-7zM5.5 17.5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0M15.5 17.5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0'],
+  ['externas','Cargas fuera de plataforma','M3 6h18v12H3zM3 10h18M7 15h3M16 15h1'],
   ['gasto','Gasto por conductor','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0 M4.5 20a7.5 7.5 0 0 1 15 0 M18 4v6M21 7h-6'],
   ['rendimiento','Rendimiento y alertas','M4 20V4M4 20h16M8 16l3-4 3 2 4-6'],
   ['motor','Lecturas de motor','M7 7h10v10H7zM10 10h4v4h-4zM9 4v3M15 4v3M9 17v3M15 17v3M4 9h3M4 15h3M17 9h3M17 15h3'],
   ['penalizaciones','Penalizaciones','M6 2h12v20l-3-2-3 2-3-2-3 2zM9 8h6M9 12h5'],
+  ['reportes','Reportes','M4 20V4M4 20h16M7 16v-5M11 16V8M15 16v-3M19 16V6'],
   ['perfil','Perfil','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0 M4.5 20a7.5 7.5 0 0 1 15 0'],
 ];
-const TIT={inicio:['COMBUSTIBLE','Resumen'],despacho:['DESPACHO','Despacho'],proveedor:['CONSUMO FACTURADO','Cargas del proveedor'],gasto:['CONSUMO','Gasto por conductor'],rendimiento:['ANÁLISIS','Rendimiento y alertas'],motor:['TELEMETRÍA','Lecturas de motor'],penalizaciones:['DESCUENTOS','Penalizaciones'],perfil:['CUENTA','Perfil']};
+const TIT={externas:['CONSUMO','Cargas fuera de plataforma'],reportes:['ANÁLISIS','Reportes'],inicio:['COMBUSTIBLE','Resumen'],despacho:['DESPACHO','Despacho'],proveedor:['CONSUMO FACTURADO','Cargas del proveedor'],gasto:['CONSUMO','Gasto por conductor'],rendimiento:['ANÁLISIS','Rendimiento y alertas'],motor:['TELEMETRÍA','Lecturas de motor'],penalizaciones:['DESCUENTOS','Penalizaciones'],perfil:['CUENTA','Perfil']};
 function pintarNav(){
   $('#nav').innerHTML=NAV.map(([id,lbl,d])=>`<button class="navbtn" data-sec="${id}" onclick="show('${id}')"><svg class="ic" viewBox="0 0 24 24"><path d="${d}"/></svg><span style="flex:1">${lbl}</span>${id==='despacho'?'<span class="bdg" id="nav-desp" style="display:none"></span>':''}</button>`).join('');
 }
 function toggleNav(){$('#app').classList.toggle('navopen');}
 function closeNav(){$('#app').classList.remove('navopen');}
 function show(sec){
+  if(sec==='reportes'&&window.Reportes&&!window._rpMontado){window._rpMontado=1;Reportes.montar(document.getElementById('rp-mount'));}
   $$('.section').forEach(s=>s.classList.remove('on'));
   const el=$('#s-'+sec); if(el)el.classList.add('on');
   $$('.navbtn').forEach(b=>b.classList.toggle('on',b.dataset.sec===sec));
@@ -406,6 +446,7 @@ function show(sec){
   if(sec==='despacho')loadDespacho();
   if(sec==='proveedor')loadProveedorSec();
   if(sec==='gasto')loadGasto();
+  if(sec==='externas')loadExternas();
   if(sec==='rendimiento')loadRendimiento();
   if(sec==='motor')loadMotor();
   if(sec==='penalizaciones')loadPenalizaciones();
@@ -778,7 +819,11 @@ async function pintarEvidencias(id){
   catch(e){ box.innerHTML='<div class="meta">No se pudo cargar la evidencia.</div>'; return; }
   const evs=d.evidencias||[];
   if(!evs.length){ box.innerHTML='<div class="meta">Esta solicitud no trae evidencia.</div>'; return; }
-  const LBL={odometro:'Odómetro',eco:'Número económico',termo:'Horas del termo',nivel:'Nivel del tanque'};
+  const LBL={odometro:'Odómetro',eco:'Número económico',termo:'Horas del termo',nivel:'Nivel del tanque',kilometraje:'Kilometraje del viaje',horas_motor:'Horas de motor'};
+  // El responsable de combustible PUEDE corregir km y horas (documento del dueño) mientras la
+  // solicitud no se haya despachado. Sólo esos datos: el resto es dato duro.
+  const CORREGIBLE={odometro:1,kilometraje:1,termo:1,horas_motor:1};
+  const abierta=['enviada','en_validacion','autorizada'].includes(d.estado);
   box.innerHTML='<div class="meta" style="font-weight:700;margin-bottom:8px">Evidencia de la recarga</div>'
     +'<div style="display:flex;gap:12px;flex-wrap:wrap">'
     +evs.map(e=>{
@@ -797,8 +842,103 @@ async function pintarEvidencias(id){
         +'<figcaption class="meta" style="margin-top:5px">'+esc(LBL[e.tipo]||e.tipo)
         +(val!=null&&val!==''?' · <b>'+esc(String(val))+'</b>':'')
         +(mal?'<br><span style="color:var(--danger);font-weight:700">no coincide con '+esc(e.esperado||'la unidad')+'</span>':'')
+        +(e.procedencia==='ia_corregida'||e.procedencia==='manual'?'<br><span class="meta">corregido a mano</span>':'')
+        +(abierta&&CORREGIBLE[e.tipo]?'<br><button class="btn sm" style="margin-top:5px" data-corr-sol="'+id+'" data-corr-ev="'+e.id+'" data-corr-tipo="'+esc(LBL[e.tipo]||e.tipo)+'" data-corr-val="'+esc(val==null?'':String(val))+'">Corregir</button>':'')
         +'</figcaption></figure>';
     }).join('')+'</div>';
+}
+
+// Corrección de km u horas por el responsable de combustible. Queda registrada (quién, antes
+// y después) y, si mueve el km, el tope se recalcula al abrir la orden.
+document.addEventListener('click',async ev=>{
+  const b=ev.target.closest&&ev.target.closest('[data-corr-ev]'); if(!b)return;
+  const v=await Dlg.prompt({title:'Corregir '+b.dataset.corrTipo,
+    text:'Escribe el valor que se ve en la foto. La corrección queda registrada con tu nombre.',
+    label:b.dataset.corrTipo,type:'number',value:b.dataset.corrVal,okLabel:'Guardar corrección'});
+  if(v==null||String(v).trim()==='')return;
+  const fd=new FormData(); fd.append('valor',String(v).trim());
+  try{
+    await api('/api/solicitudes/'+b.dataset.corrSol+'/evidencia/'+b.dataset.corrEv,{method:'POST',body:fd});
+    toast('Corrección guardada');
+    pintarEvidencias(Number(b.dataset.corrSol));
+  }catch(e){ toast(e.message||'No se pudo corregir'); }
+});
+
+// ── Cargas fuera de plataforma ───────────────────────────────────────────────
+async function loadExternas(){
+  const box=$('#ext-lista'); if(!box)return;
+  let d; try{ d=await api('/api/cargas-externas'); }catch(e){ box.innerHTML='<div class="empty">'+esc(e.message||'No se pudo cargar')+'</div>'; return; }
+  const cs=d.cargas||[];
+  $('#ext-n').textContent=num(d.total_litros)+' L vigentes · $'+num(d.total_importe);
+  const TD='<td style="padding:6px;border-bottom:1px solid var(--line)';
+  box.innerHTML=cs.length?'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'
+    +['Fecha','Económico','Uso','Operador','Litros','Importe','Referencia','Origen',''].map(h=>'<th style="text-align:left;padding:6px;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted)">'+h+'</th>').join('')
+    +'</tr></thead><tbody>'+cs.map(c=>'<tr style="'+(c.anulada?'opacity:.55':'')+'">'
+      +TD+'">'+esc(c.fecha)+'</td>'
+      +TD+'"><b>'+esc(c.eco||'—')+'</b></td>'
+      +TD+'">'+esc(c.uso)+'</td>'
+      +TD+'">'+esc(c.operador||'—')+'</td>'
+      +TD+';text-align:right">'+num(c.litros)+'</td>'
+      +TD+';text-align:right">'+(c.importe!=null?'$'+num(c.importe):'—')+'</td>'
+      +TD+'">'+esc(c.referencia||'')+'</td>'
+      +TD+'" class="meta">'+esc(c.origen)+'</td>'
+      +TD+'">'+(c.anulada
+          ? '<span class="meta" title="'+esc(c.motivo_anulacion||'')+'">anulada</span>'
+          : '<button class="btn sm" data-ext-anular="'+c.id+'">Anular</button>')+'</td></tr>').join('')
+    +'</tbody></table></div>'
+    :'<div class="empty">Todavía no hay cargas fuera de plataforma.</div>';
+}
+document.addEventListener('click',async ev=>{
+  const an=ev.target.closest&&ev.target.closest('[data-ext-anular]');
+  if(an){
+    const m=await Dlg.prompt({title:'Anular carga',text:'La carga queda a la vista como anulada y deja de contar en el consumo.',label:'Motivo',okLabel:'Anular'});
+    if(m==null)return;
+    const fd=new FormData(); fd.append('motivo',m);
+    try{ await api('/api/cargas-externas/'+an.dataset.extAnular+'/anular',{method:'POST',body:fd}); toast('Carga anulada'); loadExternas(); }
+    catch(e){ toast(e.message||'No se pudo anular'); }
+    return;
+  }
+  if(ev.target.id==='ext-importar'){ $('#ext-file').click(); return; }
+  if(ev.target.id==='ext-nueva'){ capturarExterna(); }
+});
+document.addEventListener('change',async ev=>{
+  if(ev.target.id!=='ext-file'||!ev.target.files[0])return;
+  const file=ev.target.files[0]; ev.target.value='';
+  const av=$('#ext-aviso');
+  const enviar=async dry=>{ const fd=new FormData(); fd.append('file',file); fd.append('dry',dry?'true':'false');
+    return api('/api/cargas-externas/importar',{method:'POST',body:fd}); };
+  av.innerHTML='<div class="meta">Revisando el archivo…</div>';
+  let r; try{ r=await enviar(true); }catch(e){ av.innerHTML='<div class="meta" style="color:var(--danger)">'+esc(e.message)+'</div>'; return; }
+  const errs=(r.errores||[]).map(x=>'<li>Fila '+x.fila+': '+esc(x.errores.join('; '))+'</li>').join('');
+  if(r.filas_con_error){
+    av.innerHTML='<div class="meta" style="color:var(--danger);font-weight:700">'+r.filas_con_error+' fila(s) con error. Corrígelas y vuelve a importar; no se guardó nada.</div><ul class="meta" style="margin:6px 0 0 18px">'+errs+'</ul>';
+    return;
+  }
+  if(!r.filas_validas){ av.innerHTML='<div class="meta">El archivo no trae cargas.</div>'; return; }
+  const ok=await Dlg.confirm({title:'Importar cargas',text:r.filas_validas+' carga(s), '+num(r.litros)+' L en total. ¿Guardarlas?',okLabel:'Guardar'});
+  if(!ok){ av.innerHTML=''; return; }
+  try{ r=await enviar(false); av.innerHTML='<div class="meta" style="color:var(--ok);font-weight:700">'+r.filas_validas+' carga(s) importadas.</div>'; loadExternas(); }
+  catch(e){ av.innerHTML='<div class="meta" style="color:var(--danger)">'+esc(e.message)+'</div>'; }
+});
+function capturarExterna(){
+  const hoy=new Date().toISOString().slice(0,10);
+  const campo=(id,lbl,tipo,extra)=>'<label style="display:block;margin-top:10px" for="'+id+'">'+lbl+'</label><input id="'+id+'" type="'+tipo+'" '+(extra||'')+'>';
+  const dlg=Dlg.open({size:'sm',title:'Capturar carga fuera de plataforma',
+    body:campo('ce-fecha','Fecha','date','value="'+hoy+'" max="'+hoy+'"')
+      +campo('ce-eco','Económico (unidad o remolque)','text','placeholder="T205"')
+      +'<label style="display:block;margin-top:10px" for="ce-uso">Uso</label><select id="ce-uso"><option value="motor">Motor</option><option value="termo">Termo</option></select>'
+      +campo('ce-op','Operador (nombre o número de empleado)','text','')
+      +campo('ce-lts','Litros','number','min="0" step="0.01" inputmode="decimal"')
+      +campo('ce-imp','Importe (opcional)','number','min="0" step="0.01" inputmode="decimal"')
+      +campo('ce-ref','Referencia / folio de transferencia','text','')
+      +campo('ce-nota','Nota','text',''),
+    actions:[{label:'Cancelar',onClick:()=>Dlg.close(dlg)},{label:'Guardar',variant:'primary',onClick:async()=>{
+      const v=id=>(document.getElementById(id)||{}).value||'';
+      const fd=new FormData();
+      [['fecha','ce-fecha'],['eco','ce-eco'],['uso','ce-uso'],['operador','ce-op'],['litros','ce-lts'],['importe','ce-imp'],['referencia','ce-ref'],['nota','ce-nota']].forEach(([k,id])=>fd.append(k,v(id)));
+      try{ await api('/api/cargas-externas',{method:'POST',body:fd}); toast('Carga guardada'); Dlg.close(dlg); loadExternas(); }
+      catch(e){ toast(e.message||'No se pudo guardar'); }
+    }}]});
 }
 
 async function loadFacturas(){
@@ -1076,9 +1216,42 @@ function motUnidadHTML(u){
         <div class="meta">${u.objetivo!=null?'obj '+_f2(u.objetivo):'sin objetivo'}</div>
       </div>
     </div>
-    ${abierto?`<div style="margin-top:8px;border-top:1px solid var(--line)">${u.lecturas.map(motLecturaHTML).join('')}</div>`:''}
+    ${abierto?`<div style="margin-top:8px;border-top:1px solid var(--line)">${u.n?`<div style="padding:10px 0 2px"><button class="btn sm" data-rec-uid="${u.id}" data-rec-clave="${esc(u.clave)}">Recomendaciones IA</button></div>`:''}${u.lecturas.map(motLecturaHTML).join('')}</div>`:''}
   </div>`;
 }
+
+// ── Recomendaciones de IA por unidad (desde sus lecturas de motor) ───────────
+// Primero se enseña la última guardada (gratis); generar una nueva gasta crédito de IA y es
+// una acción explícita.
+function mdLite(t){
+  return (t||'').split('\n').map(l=>{
+    l=esc(l).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    if(/^#{1,4}\s/.test(l))return '<h4 style="margin:12px 0 4px">'+l.replace(/^#+\s/,'')+'</h4>';
+    if(/^\s*[-*]\s/.test(l))return '<li>'+l.replace(/^\s*[-*]\s/,'')+'</li>';
+    return l.trim()?'<p style="margin:6px 0">'+l+'</p>':'';
+  }).join('').replace(/(<li>.*?<\/li>)+/gs,m=>'<ul style="margin:4px 0 4px 18px">'+m+'</ul>');
+}
+async function verRecomendacion(uid,clave){
+  const dlg=Dlg.open({size:'lg',eyebrow:'Lecturas de motor',title:'Recomendaciones IA · '+clave,body:'<div class="meta">Cargando…</div>'});
+  const pintar=(d)=>Dlg.setBody(dlg,(d&&d.recomendacion
+      ? '<div class="meta" style="margin-bottom:8px">Generada '+esc((d.creado_en||'').slice(0,16).replace('T',' '))+' con '+esc(d.lecturas||'')+' lectura(s)</div>'+mdLite(d.recomendacion)
+      : '<div class="meta">Todavía no hay recomendaciones para esta unidad.</div>')
+    +'<div style="margin-top:14px"><button class="btn sm" data-rec-generar="'+uid+'">'+(d&&d.recomendacion?'Generar de nuevo':'Generar recomendaciones')+'</button>'
+    +' <span class="meta">usa crédito de IA</span></div>');
+  try{ pintar(await api('/api/motor/unidades/'+uid+'/recomendaciones')); }
+  catch(e){ Dlg.setBody(dlg,'<div class="meta">'+esc(e.message||'No se pudo cargar')+'</div>'); }
+  window._recDlg={dlg,pintar};
+}
+document.addEventListener('click',async ev=>{
+  const b=ev.target.closest&&ev.target.closest('[data-rec-uid]');
+  if(b){ ev.stopPropagation(); verRecomendacion(Number(b.dataset.recUid),b.dataset.recClave); return; }
+  const g=ev.target.closest&&ev.target.closest('[data-rec-generar]');
+  if(g&&window._recDlg){
+    g.disabled=true; g.textContent='Analizando lecturas…';
+    try{ window._recDlg.pintar(await api('/api/motor/unidades/'+g.dataset.recGenerar+'/recomendaciones',{method:'POST'})); }
+    catch(e){ g.disabled=false; g.textContent='Generar recomendaciones'; toast(e.message||'No se pudo generar'); }
+  }
+});
 
 function motToggle(clave){
   if(MOT.abiertas.has(clave))MOT.abiertas.delete(clave); else MOT.abiertas.add(clave);
