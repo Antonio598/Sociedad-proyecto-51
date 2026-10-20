@@ -71,6 +71,10 @@ class EstadoAnomalia(str, enum.Enum):
     PENDIENTE = "PENDIENTE"
     CONFIRMADA = "CONFIRMADA"
     RECHAZADA = "RECHAZADA"
+    # El sistema la retiró sola porque, tras corregir el viaje, ya no aplica. Antes se BORRABA,
+    # y nadie borra información. No es un acierto ni una falsa alarma, así que no entra en la
+    # precisión de las reglas (que sólo cuenta CONFIRMADA contra RECHAZADA).
+    RETIRADA = "RETIRADA"
 
 
 # Los cuatro perfiles de la plataforma web (migración de WhatsApp a app). El permiso se

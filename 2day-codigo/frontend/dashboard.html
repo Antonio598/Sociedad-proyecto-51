@@ -1873,7 +1873,7 @@ function renderReporte(d){const r=d.resumen||{};const box=$('#ia-box');
   api('/api/stats/viajes-mes').then(vm=>{if(vm.labels.length)areaChart($('#iac-mes'),vm.labels.map(mesLbl),vm.viajes,'var(--accent)');else $('#iac-mes').innerHTML='<div class="empty" style="padding:20px">Sin datos</div>';}).catch(()=>{});}
 
 // ── Anomalías ────────────────────────────────────────────────────────────────
-async function loadAnomalias(){const est=$('#f-estado').value;const rows=await api('/api/anomalias?estado='+est);const p={PENDIENTE:'pend',CONFIRMADA:'conf',RECHAZADA:'rech'};
+async function loadAnomalias(){const est=$('#f-estado').value;const rows=await api('/api/anomalias?estado='+est);const p={PENDIENTE:'pend',CONFIRMADA:'conf',RECHAZADA:'rech',RETIRADA:'rech'};
   $('#anom-body').innerHTML=rows.length?rows.map(a=>`<tr style="cursor:pointer" onclick="detalleAnomalia(${a.id})"><td class="mono">${esc(a.unidad)||'—'}</td><td class="mono" style="color:var(--muted)">${a.fecha||'—'}</td><td>${tipoCell(a.tipo)}</td><td style="white-space:normal;max-width:460px;color:var(--muted)">${esc(a.descripcion)}</td><td><span class="pill ${p[a.estado]}">${a.estado}</span></td><td style="text-align:right">${a.estado==='PENDIENTE'?`<button class="mini g" onclick="event.stopPropagation();resolver(${a.id},'confirmar')">Confirmar</button> <button class="mini r" onclick="event.stopPropagation();resolver(${a.id},'rechazar')">Rechazar</button>`:''}</td></tr>`).join(''):`<tr><td colspan="6" class="empty">Sin anomalías</td></tr>`;}
 // Comparativa PREVIOS vs RECIENTES — HTML idéntico en los 3 paneles (Admin/Coordinador/Gerente).
 function anomComparativaHTML(d){
@@ -1909,7 +1909,7 @@ async function detalleAnomalia(id){
       onRetry:()=>{ Dlg.close(dlg); detalleAnomalia(id); }});
     return;
   }
-  const p={PENDIENTE:'pend',CONFIRMADA:'conf',RECHAZADA:'rech'};
+  const p={PENDIENTE:'pend',CONFIRMADA:'conf',RECHAZADA:'rech',RETIRADA:'rech'};
   const det=d.creado_en?new Date(d.creado_en).toLocaleString('es-MX'):'—';
   const res=d.resuelto_en?new Date(d.resuelto_en).toLocaleString('es-MX'):null;
   dlgHead(dlg,{eyebrow:'Anomalía · viaje #'+(d.viaje_id||'—'),title:tipoLbl(d.tipo),

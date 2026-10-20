@@ -213,7 +213,8 @@ def _crear_anomalia(session: Session, viaje: Viaje, tipo: str, descripcion: str)
         select(Anomalia).where(
             Anomalia.viaje_id == viaje.id,
             Anomalia.tipo == tipo,
-            Anomalia.estado != EstadoAnomalia.RECHAZADA,
+            # Una RETIRADA tampoco cuenta: si el problema vuelve a aparecer, se levanta de nuevo.
+            Anomalia.estado.not_in([EstadoAnomalia.RECHAZADA, EstadoAnomalia.RETIRADA]),
         )
     ).scalars().first()
     if existente is not None:
@@ -450,4 +451,8 @@ def _retirar_obsoletas(session: Session, viaje: Viaje, tipos_vigentes: set[str])
     for a in pendientes:
         if a.tipo not in tipos_vigentes:
             log.info("Anomalía [%s] del viaje %s ya no aplica — se retira", a.tipo, viaje.id)
-            session.delete(a)
+            # Se RETIRA, no se borra: queda el rastro de que el sistema la levantó y de cuándo
+            # dejó de aplicar.
+            from datetime import datetime, timezone
+            a.estado = EstadoAnomalia.RETIRADA
+            a.resuelto_en = datetime.now(timezone.utc)

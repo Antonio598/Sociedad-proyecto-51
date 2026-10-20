@@ -104,6 +104,8 @@ def _ajustes_de_esquema() -> None:
         # Ver Usuario.sesion_version: cerrar sesiones al restablecer la contraseña.
         cx.execute(text("ALTER TABLE usuarios "
                         "ADD COLUMN IF NOT EXISTS sesion_version integer NOT NULL DEFAULT 0"))
+        # Ver EstadoAnomalia.RETIRADA: retirar en vez de borrar.
+        cx.execute(text("ALTER TYPE estadoanomalia ADD VALUE IF NOT EXISTS 'RETIRADA'"))
         # Ver AnalisisReporte.archivado_en: archivar en vez de borrar.
         cx.execute(text("ALTER TABLE analisis_reportes "
                         "ADD COLUMN IF NOT EXISTS archivado_en timestamptz"))
@@ -195,6 +197,7 @@ async def lifespan(app: FastAPI):
         from .db import SessionLocal
         with SessionLocal() as _s:
             _n = cerrar_viajes_inactivos(_s)
+            _registrar_viajes_cerrados(_s)
         if _n:
             log.info("Al arrancar se cerraron %d viaje(s) abandonado(s)", len(_n))
     except Exception:
@@ -254,7 +257,21 @@ async def _cookie_de_sesion_rota(request: Request, call_next):
     try:
         return await call_next(request)
     except (binascii.Error, ValueError) as e:
-        if "session" not in request.cookies:
+        # SÓLO si el error nació al decodificar la cookie (dentro de SessionMiddleware). Antes
+        # se atrapaba CUALQUIER ValueError de CUALQUIER pantalla: un fallo de programación
+        # —p.ej. desempacar mal una consulta— se presentaba como «Sesión inválida», cerraba la
+        # sesión del usuario y escondía el error real de los logs.
+        # El marco de sessions.py está en la pila de TODA petición (envuelve la app), así que no
+        # basta con que aparezca: el error debe nacer AHÍ, al decodificar la cookie
+        # (`json.loads(b64decode(...))`), sin nada más adentro que base64 o json.
+        import traceback as _tb
+        archivos = [fr.f_code.co_filename.replace("\\", "/")
+                    for fr, _ in _tb.walk_tb(e.__traceback__)]
+        ult_sesion = max((i for i, a in enumerate(archivos) if a.endswith("/sessions.py")),
+                         default=-1)
+        de_la_cookie = ult_sesion >= 0 and all(
+            a.endswith("/base64.py") or "/json/" in a for a in archivos[ult_sesion + 1:])
+        if "session" not in request.cookies or not de_la_cookie:
             raise
         log.warning("Cookie de sesión ilegible desde %s (%s): se descarta",
                     request.client.host if request.client else "?", type(e).__name__)
@@ -928,6 +945,9 @@ async def asignacion_crear(request: Request, user: dict = Depends(require_gestio
                                                "destino": destino}, commit=True)
     log.info("Asignación de viaje %s: operador %s -> unidad %s (%s remolques), destino %r",
              a.id, operador_id, unidad_id, len(remolque_ids), destino)
+    # La asignación anterior de este operador (y las ajenas confirmadas) se acaban de cerrar:
+    # su viaje entra al historial.
+    _registrar_viajes_cerrados(db)
     return _asignacion_dict(a, db)
 
 
@@ -1101,7 +1121,19 @@ def cerrar_viajes_inactivos(db: Session) -> list[int]:
     if cerrados:
         db.commit()
         log.info("Viajes cerrados por %d días sin actividad: %s", dias, cerrados)
+        _registrar_viajes_cerrados(db)
     return cerrados
+
+
+def _registrar_viajes_cerrados(db: Session) -> None:
+    """Pasa al historial (tabla `viajes`) las asignaciones cerradas que aún no están ahí.
+    Ver app/viajes_app.py. Secundario al cierre: si falla, se registra y el cierre sigue."""
+    try:
+        from .viajes_app import registrar_pendientes
+        registrar_pendientes(db)
+    except Exception:
+        log.exception("No se pudieron registrar en el historial los viajes cerrados")
+        db.rollback()
 
 @app.get("/api/asignaciones")
 def asignaciones(estado: str | None = None, limit: int = Query(100, ge=1, le=500),
@@ -1139,6 +1171,7 @@ async def asignacion_finalizar(asig_id: int, request: Request,
             meta={"operador_id": a.operador_id})
         db.commit()
         db.refresh(a)
+        _registrar_viajes_cerrados(db)
     return _asignacion_dict(a, db)
 
 
@@ -2253,7 +2286,11 @@ def mi_rendimiento(user: dict = Depends(require_operador), db: Session = Depends
         return meses.setdefault(k, {"km": 0.0, "viajes": 0, "rto_sum": 0.0, "rto_n": 0,
                                     "ideal_sum": 0.0, "recargas": 0, "litros": 0.0})
 
-    for fecha, km, rto, uid in vs:
+    # La consulta trae CINCO columnas (la configuración va al final). Antes se desempacaban
+    # cuatro y la pantalla reventaba en cuanto el operador tenía un viaje; y la referencia se
+    # buscaba por unidad sola cuando `_ref` está indexado por (unidad, configuración), así
+    # que el rendimiento «ideal» nunca salía.
+    for fecha, km, rto, uid, cfg in vs:
         m = M(fecha.strftime("%Y-%m"))
         m["viajes"] += 1
         m["km"] += km or 0
@@ -2262,7 +2299,7 @@ def mi_rendimiento(user: dict = Depends(require_operador), db: Session = Depends
             m["rto_n"] += 1
             # Sólo promedian los viajes de unidades CON escáner: mezclar los que no tienen
             # referencia con los que sí daría un promedio que no significa nada.
-            ref = _ref.get(uid)
+            ref = _ref.get((uid, cfg.value if cfg else None))
             if ref:
                 m["ideal_sum"] += ref
                 m["ideal_n"] = m.get("ideal_n", 0) + 1
@@ -5911,8 +5948,11 @@ def viaje_reactivar(viaje_id: int, user: dict = Depends(require_admin),
         return {"ok": True, "ya_vigente": True}
     v.retractado_en = None
     v.retractado_motivo = None
-    db.execute(delete(Anomalia).where(Anomalia.viaje_id == viaje_id,
-                                      Anomalia.tipo == "reporte_retractado"))
+    # La anomalía de «reporte retractado» se RETIRA (nada se borra): ya no aplica.
+    db.execute(update(Anomalia).where(Anomalia.viaje_id == viaje_id,
+                                      Anomalia.tipo == "reporte_retractado",
+                                      Anomalia.estado == EstadoAnomalia.PENDIENTE)
+               .values(estado=EstadoAnomalia.RETIRADA, resuelto_en=func.now()))
     db.commit()
     log.info("Viaje %s reactivado manualmente desde el panel", viaje_id)
     return {"ok": True}
@@ -6741,6 +6781,13 @@ async def solicitud_despachar(sol_id: int, request: Request,
     s.orden.despachada_por_id = user.get("id")
     s.orden.despachada_en = datetime.now(timezone.utc)
     db.commit()
+    # Si el viaje ya se había cerrado, su renglón del historial se rehace con esta carga.
+    try:
+        from .viajes_app import recalcular_de_solicitud
+        recalcular_de_solicitud(db, s)
+    except Exception:
+        log.exception("No se pudo actualizar el historial con el despacho de %s", s.id)
+        db.rollback()
     return {"ok": True, "estado": s.estado.value, "litros_reales": litros}
 
 
