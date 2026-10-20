@@ -4291,6 +4291,15 @@ function verAsignacion(id){
   });
 }
 
+// Finalizar un viaje activo. El botón detiene el clic (para no abrir el detalle de la fila),
+// así que la acción va en el propio botón: un oyente en `document` nunca lo recibiría. En el
+// rediseño se perdió el oyente que había y el botón quedó sin hacer nada.
+async function finalizarAsig(id,btn){
+  if(!await ask({title:'Finalizar viaje',msg:'¿Marcar este viaje como finalizado? El operador ya no podrá pedir combustible con él.',okText:'Finalizar'}))return;
+  if(btn)btn.disabled=true;
+  try{ await apiPost('/api/asignaciones/'+id+'/finalizar',new FormData()); toast('Viaje finalizado'); loadAsignaciones(); }
+  catch(e){ if(btn)btn.disabled=false; toast('No se pudo finalizar: '+(e.message||'')); }
+}
 async function loadAsignaciones(){
   const body=$('#asig-body'); if(!body)return;
   let list=[];
@@ -4313,7 +4322,7 @@ async function loadAsignaciones(){
       <td style="white-space:normal;max-width:200px;color:var(--muted)">${esc(a.origen)||'—'}</td>
       <td style="white-space:normal;max-width:240px;color:var(--muted)">${esc(a.nota)||'—'}</td>
       <td class="mono" style="color:var(--muted)">${fechaCorta(a.creada_en)}</td>
-      <td style="text-align:right"><button class="mini r" onclick="event.stopPropagation()" data-finaliza-asig="${a.id}">Finalizar</button></td>
+      <td style="text-align:right"><button class="mini r" onclick="event.stopPropagation();finalizarAsig(${a.id},this)" data-finaliza-asig="${a.id}">Finalizar</button></td>
     </tr>`).join('')+
     '</tbody></table></div></div>';
 }
