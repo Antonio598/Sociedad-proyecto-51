@@ -4589,6 +4589,34 @@ def unidad_borrar(uid: int, user: dict = Depends(require_admin), db: Session = D
             "escaneos": retienen.get("escaneos_motor", 0)}
 
 
+
+def _remolque_dict(r: Remolque) -> dict:
+    return {
+        "id": r.id, "eco": r.eco, "eco_nuevo": r.eco_nuevo, "marca": r.marca, "anio": r.anio,
+        "placa": r.placa, "placas_nuevas": r.placas_nuevas, "serie": r.serie,
+        "serie_thermo": r.serie_thermo, "descripcion": r.descripcion,
+        "es_dolly": r.es_dolly, "usa_combustible": r.usa_combustible, "activo": r.activo,
+        # La medida decide si puede ir en pareja: dos remolques sólo se enganchan si los
+        # dos son de 40 pies. Va al cliente para que el selector lo aplique al marcar.
+        "medida_pies": r.medida_pies,
+        "operador_asignado_id": r.operador_asignado_id,
+        "operador_titular": r.operador_titular.nombre if r.operador_titular else None,
+    }
+
+
+def _apply_remolque(r: Remolque, f) -> None:
+    for k in ("eco_nuevo", "marca", "placa", "placas_nuevas", "serie", "serie_thermo", "descripcion"):
+        if k in f:
+            setattr(r, k, _pstr(f, k))
+    if "anio" in f:
+        r.anio = _pi(f.get("anio"))
+    if "es_dolly" in f:
+        r.es_dolly = _pbool(f, "es_dolly")
+    if "usa_combustible" in f:
+        r.usa_combustible = _pbool(f, "usa_combustible")
+    if "activo" in f:
+        r.activo = _pbool(f, "activo")
+
 @app.get("/api/remolques")
 # LECTURA con require_gestion (incluye al gerente), igual que /api/operadores. Antes
 # era require_coordinador y dejaba fuera al gerente: su formulario de "Levantar viaje"
@@ -5546,6 +5574,47 @@ def operador_borrar(op_id: int, user: dict = Depends(require_admin), db: Session
             "cuenta_cortada": cortada,
             "usuario": cuenta.username if cuenta else None}
 
+
+
+_FOTO_EXT = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+
+
+async def _leer_foto(file: UploadFile) -> tuple[str, str]:
+    """Lee la imagen subida (chunks, tope 12MB, valida firma) y la devuelve como
+    (base64, mime) para GUARDARLA codificada en la BD. Lanza 400 si algo falla."""
+    ext = _FOTO_EXT.get(file.content_type or "")
+    if not ext:
+        raise HTTPException(400, "Formato no soportado (usa JPG, PNG o WebP)")
+    # El cliente ya comprime la foto (lado máx 1600px) antes de subir, así que en la práctica
+    # llegan <1 MB. El tope alto es solo una red de seguridad si la compresión no corrió.
+    limite = 12 * 1024 * 1024
+    buf = bytearray()
+    while True:
+        chunk = await file.read(65536)
+        if not chunk:
+            break
+        buf.extend(chunk)
+        if len(buf) > limite:
+            raise HTTPException(400, "La imagen supera el límite de 12 MB")
+    data = bytes(buf)
+    if not _es_imagen(data, ext):
+        raise HTTPException(400, "El archivo no parece una imagen válida")
+    return base64.b64encode(data).decode("ascii"), (file.content_type or "image/jpeg")
+
+
+def _espejar_foto(db: Session, *, desde_usuario: "Usuario | None" = None,
+                  desde_operador: "Operador | None" = None) -> None:
+    """Mantiene la MISMA foto en la cuenta (usuarios) y el operador del padrón enlazados: el
+    último cambio —lo suba el operador desde su perfil o el Admin desde la ficha— se ve en
+    todas las vistas. No hace commit (lo hace el endpoint que llama)."""
+    if desde_usuario is not None and desde_usuario.operador_id:
+        op = db.get(Operador, desde_usuario.operador_id)
+        if op is not None:
+            op.foto, op.foto_mime = desde_usuario.foto, desde_usuario.foto_mime
+    if desde_operador is not None:
+        acc = db.scalar(select(Usuario).where(Usuario.operador_id == desde_operador.id))
+        if acc is not None:
+            acc.foto, acc.foto_mime = desde_operador.foto, desde_operador.foto_mime
 
 @app.post("/api/operadores/{op_id}/foto")
 async def operador_foto_subir(op_id: int, file: UploadFile = File(...),
