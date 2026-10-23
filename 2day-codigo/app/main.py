@@ -6780,6 +6780,12 @@ async def solicitud_despachar(sol_id: int, request: Request,
     s.orden.litros_reales = litros
     s.orden.despachada_por_id = user.get("id")
     s.orden.despachada_en = datetime.now(timezone.utc)
+    # Recarga de TERMO: su renglón en «Horas de termo» (horas, trabajadas, litros, L/h).
+    try:
+        from .lecturas import registrar_termo_de_despacho
+        registrar_termo_de_despacho(db, s, litros)
+    except Exception:
+        log.exception("No se pudieron anotar las horas de termo de la solicitud %s", s.id)
     db.commit()
     # Si el viaje ya se había cerrado, su renglón del historial se rehace con esta carga.
     try:
@@ -8321,3 +8327,6 @@ _cargas_externas.registrar(app)
 from . import reportes as _reportes  # noqa: E402
 
 _reportes.registrar(app)
+from . import lecturas as _lecturas  # noqa: E402
+
+_lecturas.registrar(app)

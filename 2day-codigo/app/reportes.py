@@ -191,6 +191,16 @@ def ranking_termos(db: Session, d: date, h: date) -> dict:
         if clave[1] is None:
             continue
         grupos[clave].append((cuando, horas, float(litros)))
+    # La LECTURA INICIAL de cada termo es su primera lectura de horas, con 0 litros: así la
+    # primera recarga ya mide L/h desde el punto de partida en vez de necesitar dos.
+    from datetime import datetime, time as _time, timezone as _tz
+    from .models import LecturaInicial
+    for li in db.execute(select(LecturaInicial).where(
+            LecturaInicial.anulada_en.is_(None), LecturaInicial.horas_termo.isnot(None),
+            LecturaInicial.fecha >= d, LecturaInicial.fecha <= h)).scalars():
+        clave = ("R", li.remolque_id) if li.remolque_id else ("U", li.unidad_id)
+        grupos[clave].append((datetime.combine(li.fecha, _time.min, tzinfo=_tz.utc),
+                              float(li.horas_termo), 0.0))
     remolques, camiones = [], []
     for (tipo, aid), lecturas in grupos.items():
         lecturas.sort()

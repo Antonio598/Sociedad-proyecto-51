@@ -2143,3 +2143,39 @@ class CargaExterna(Base):
 
     unidad: Mapped["Unidad | None"] = relationship()
     remolque: Mapped["Remolque | None"] = relationship()
+
+
+class LecturaInicial(Base):
+    """El PUNTO DE PARTIDA de un equipo: odómetro u horas de termo, y litros en su tanque.
+
+    Hasta que existió esto, la app sólo aprendía el odómetro y las horas cuando un operador
+    pedía una carga con fotos: el primer viaje no tenía contra qué compararse y nadie sabía
+    cuánto diésel traía el tanque al empezar. Lo captura el administrador al dar de alta un
+    equipo o al arrancar una prueba.
+
+    Sirve de lectura anterior para: avisar si una foto trae un odómetro menor, el consumo del
+    termo en L/h y lo que trae el tanque. Nada se borra: una lectura equivocada se ANULA con
+    motivo y se captura otra; la vigente es la última no anulada.
+    """
+
+    __tablename__ = "lecturas_iniciales"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    unidad_id: Mapped[int | None] = mapped_column(ForeignKey("unidades.id"), nullable=True, index=True)
+    remolque_id: Mapped[int | None] = mapped_column(ForeignKey("remolques.id"), nullable=True, index=True)
+    fecha: Mapped[date] = mapped_column(Date)
+    odometro: Mapped[float | None] = mapped_column(Float, nullable=True)       # km (tracto / camión)
+    horas_termo: Mapped[float | None] = mapped_column(Float, nullable=True)    # horómetro del termo
+    # Litros en el tanque al momento de la lectura: del MOTOR en una unidad, del TERMO en un
+    # remolque. Para un camión, el de su termo va aparte.
+    litros_tanque: Mapped[float | None] = mapped_column(Float, nullable=True)
+    litros_tanque_termo: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nota: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    capturada_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    creada_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    anulada_en: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    anulada_por_id: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True)
+    motivo_anulacion: Mapped[str | None] = mapped_column(String(400), nullable=True)
+
+    unidad: Mapped["Unidad | None"] = relationship()
+    remolque: Mapped["Remolque | None"] = relationship()

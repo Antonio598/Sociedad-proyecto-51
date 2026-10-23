@@ -481,6 +481,19 @@ td.mono{font:500 12px 'IBM Plex Mono'}
         <div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table><thead><tr><th>Fecha y hora</th><th>Unidad</th><th>Operador</th><th>Km tablero</th><th>Nivel tanque</th><th>Km viaje</th><th>Lts real</th><th>RTO real</th><th>%</th><th></th></tr></thead><tbody id="viajes-body"></tbody></table></div></div>
       </section>
 
+      <!-- LECTURAS INICIALES -->
+      <section class="section" id="s-lecturas">
+        <div class="card" style="margin-bottom:16px">
+          <div class="chart-h">Lecturas iniciales</div>
+          <div class="sub" style="margin-top:4px;line-height:1.5">El punto de partida de cada equipo: odómetro del tracto o camión, horas del termo y litros en sus tanques. La primera foto del operador se compara contra esta lectura, y el consumo del termo (L/h) se mide desde aquí. Nada se borra: una lectura equivocada se anula y se captura otra.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+            <button class="btn primary" onclick="nuevaLectura('unidad')">+ Lectura de tracto o camión</button>
+            <button class="btn" onclick="nuevaLectura('remolque')">+ Lectura de termo (remolque)</button>
+          </div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Equipo</th><th>Tipo</th><th>Odómetro</th><th>Horas termo</th><th>Litros tanque</th><th>Litros termo</th><th>Nota</th><th></th></tr></thead><tbody id="lecturas-body"></tbody></table></div></div>
+      </section>
+
       <!-- HORAS DE TERMO -->
       <section class="section" id="s-termo">
         <div class="card" style="padding:0;overflow:hidden"><div style="padding:16px 20px 6px"><div class="chart-h">Horas de termo</div><div class="sub" style="margin-top:3px">Horómetro y consumo del equipo de refrigeración</div></div><div class="tablewrap"><table><thead><tr><th>Unidad</th><th>Operador</th><th>Remolque</th><th>Mes</th><th>Hrs inic.</th><th>Hrs fin.</th><th>Horas trab.</th><th>Litros</th><th>RTO termo</th></tr></thead><tbody id="thermo-body"></tbody></table></div></div>
@@ -761,15 +774,15 @@ const NAV=[
   {top:true,items:[['resumen','Resumen','M4 13h6v8H4zM14 3h6v18h-6zM4 3h6v6H4z']]},
   {grp:'Análisis',items:[['reportes','Reportes por periodo','M4 20V4M4 20h16M7 16v-5M11 16V8M15 16v-3M19 16V6'],['graficos','Gráficos','M4 20V4M4 20h16M8 16l3-4 3 2 4-6'],['conciliacion','Motor vs comprobante','M4 8h11l-2.5-2.5M20 16H9l2.5 2.5'],['reporte','Reporte ejecutivo','M6 3h9l4 4v14H6zM15 3v4h4M9.5 13h6M9.5 16.5h6'],['costos','Rendimiento de costos','M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'],['exportar','Exportar reportes','M12 3v11M8 10l4 4 4-4M5 21h14'],['analisis','Análisis IA','M12 3.5l1.9 5 5 1.9-5 1.9-1.9 5-1.9-5-5-1.9 5-1.9zM18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z'],['anomalias','Anomalías','M12 3.6 2.2 20.4h19.6zM12 10v4.4M12 17.6v.4'],['proveedor','Cargas del proveedor','M3 17V7h11v10zM14 10h3.5l2.5 3v4h-6M2 17h1M13 17h2 M4.2 17.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0 M15.2 17.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0']]},
   {grp:'Operación',items:[['solicitudes','Solicitudes de recarga','M5 3h14v18l-7-3-7 3zM9 8h6M9 12h6'],['asignaciones','Asignar viajes','M4 19c4 0 3-6 7-6s3-6 7-6 M2.4 19a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0 M16.4 7a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0-3.2 0'],['historial','Historial','M4 6h16M4 12h16M4 18h10'],['termo','Horas de termo','M12 3.5a9 9 0 1 0 0 17 9 9 0 0 0 0-17M12 7.5V12l3 1.8']]},
-  {grp:'Flota',items:[['unidades','Unidades','M3 13h11l2-4h4l1 4v4h-2M3 13V6h11v7M3 17h1M9 17h4 M5.2 17.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0 M15.2 17.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0'],['remolques','Remolques','M2 6h15v10H2zM17 13h4M2 16h2M9 16h3 M4.2 17a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0 M9.2 17a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0'],['operadores','Operadores','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M4.5 20a7.5 7.5 0 0 1 15 0'],['catalogo','Diferencias de catálogo','M9 4h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M9 4v16M13 9.5h4M13 13.5h4']]},
+  {grp:'Flota',items:[['lecturas','Lecturas iniciales','M12 3v4M5.6 5.6l2.8 2.8M3 12h4M12 21a9 9 0 1 1 9-9M12 12l4-3'],['unidades','Unidades','M3 13h11l2-4h4l1 4v4h-2M3 13V6h11v7M3 17h1M9 17h4 M5.2 17.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0 M15.2 17.5a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0'],['remolques','Remolques','M2 6h15v10H2zM17 13h4M2 16h2M9 16h3 M4.2 17a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0 M9.2 17a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0-3.6 0'],['operadores','Operadores','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M4.5 20a7.5 7.5 0 0 1 15 0'],['catalogo','Diferencias de catálogo','M9 4h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M9 4v16M13 9.5h4M13 13.5h4']]},
   {grp:'Cuentas',items:[['usuarios','Usuarios y accesos','M8.5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6M2.5 19a6 6 0 0 1 12 0M17 10.5a2.8 2.8 0 1 0-1.5-5.2M21.5 18a5.5 5.5 0 0 0-4-4.7'],['accesos','Accesos de la flota','M14 6a4 4 0 1 0-4 4l-5 5v3h3l1-1v-2h2v-2h1.5A4 4 0 0 0 14 6z'],['desempeno','Desempeño','M4 20V10M4 20h16M9 20V6M14 20v-8M19 20V4']]},
   {grp:'Sistema',items:[['uso','Consumo de IA','M12 3.5l1.9 5 5 1.9-5 1.9-1.9 5-1.9-5-5-1.9 5-1.9zM18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z'],['desarrollos','Desarrollos','M14 7l6 5-6 5M10 7l-6 5 6 5'],['config','Perfil y configuración','M10.3 4.3a1.9 1.9 0 0 1 3.4 0l.25.7a1.9 1.9 0 0 0 2.5 1.05l.7-.28a1.9 1.9 0 0 1 2.38 2.38l-.28.7a1.9 1.9 0 0 0 1.05 2.5l.7.25a1.9 1.9 0 0 1 0 3.4l-.7.25a1.9 1.9 0 0 0-1.05 2.5l.28.7a1.9 1.9 0 0 1-2.38 2.38l-.7-.28a1.9 1.9 0 0 0-2.5 1.05l-.25.7a1.9 1.9 0 0 1-3.4 0l-.25-.7a1.9 1.9 0 0 0-2.5-1.05l-.7.28a1.9 1.9 0 0 1-2.38-2.38l.28-.7a1.9 1.9 0 0 0-1.05-2.5l-.7-.25a1.9 1.9 0 0 1 0-3.4l.7-.25a1.9 1.9 0 0 0 1.05-2.5l-.28-.7a1.9 1.9 0 0 1 2.38-2.38l.7.28a1.9 1.9 0 0 0 2.5-1.05zM12 14.6a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2z']]},
 ];
-const TIT={resumen:['Resumen','RESUMEN'],reportes:['Reportes por periodo','REPORTES'],graficos:['Gráficos','GRÁFICOS'],conciliacion:['Motor vs comprobante','CONCILIACIÓN'],reporte:['Reporte ejecutivo','REPORTE'],costos:['Rendimiento de costos','COSTOS'],exportar:['Exportar reportes','EXPORTAR'],analisis:['Análisis de Claude','ANÁLISIS'],anomalias:['Anomalías','ANOMALÍAS'],proveedor:['Cargas del proveedor y libro mayor','PROVEEDOR'],solicitudes:['Solicitudes de recarga','SOLICITUDES'],asignaciones:['Asignación de viajes','ASIGNACIONES'],historial:['Historial de viajes','HISTORIAL'],termo:['Horas de termo','TERMO'],unidades:['Unidades motrices','UNIDADES'],remolques:['Remolques','REMOLQUES'],operadores:['Operadores','OPERADORES'],catalogo:['Diferencias contra el maestro de placas','CATÁLOGO'],uso:['Consumo de IA','CONSUMO'],desarrollos:['Desarrollos','DESARROLLOS'],usuarios:['Usuarios y accesos','USUARIOS'],accesos:['Accesos de la flota','ACCESOS'],desempeno:['Desempeño del equipo','DESEMPEÑO'],config:['Perfil y configuración','PERFIL · CONFIG'],perfil:['Perfil y configuración','PERFIL · CONFIG']};
+const TIT={resumen:['Resumen','RESUMEN'],lecturas:['Lecturas iniciales','FLOTA'],reportes:['Reportes por periodo','REPORTES'],graficos:['Gráficos','GRÁFICOS'],conciliacion:['Motor vs comprobante','CONCILIACIÓN'],reporte:['Reporte ejecutivo','REPORTE'],costos:['Rendimiento de costos','COSTOS'],exportar:['Exportar reportes','EXPORTAR'],analisis:['Análisis de Claude','ANÁLISIS'],anomalias:['Anomalías','ANOMALÍAS'],proveedor:['Cargas del proveedor y libro mayor','PROVEEDOR'],solicitudes:['Solicitudes de recarga','SOLICITUDES'],asignaciones:['Asignación de viajes','ASIGNACIONES'],historial:['Historial de viajes','HISTORIAL'],termo:['Horas de termo','TERMO'],unidades:['Unidades motrices','UNIDADES'],remolques:['Remolques','REMOLQUES'],operadores:['Operadores','OPERADORES'],catalogo:['Diferencias contra el maestro de placas','CATÁLOGO'],uso:['Consumo de IA','CONSUMO'],desarrollos:['Desarrollos','DESARROLLOS'],usuarios:['Usuarios y accesos','USUARIOS'],accesos:['Accesos de la flota','ACCESOS'],desempeno:['Desempeño del equipo','DESEMPEÑO'],config:['Perfil y configuración','PERFIL · CONFIG'],perfil:['Perfil y configuración','PERFIL · CONFIG']};
 // Las entradas con varios cargadores DEVUELVEN `Promise.all`. Si no, la flecha devuelve
 // `undefined`, `correrLoader` la da por resuelta al instante y su `.then` retira el aviso
 // de fallo mientras las peticiones siguen en vuelo: la sección se quedaba muda otra vez.
-const LOADERS={resumen:loadResumen,graficos:loadGraficos,conciliacion:loadConciliacion,reporte:loadReporte,costos:loadCostos,exportar:loadExportar,analisis:loadAnalisis,anomalias:()=>Promise.all([loadAnomalias(),loadPrecision()]),proveedor:()=>Promise.all([loadProveedor(),cargarEmpleadosProveedor()]),solicitudes:loadSolicitudes,asignaciones:loadAsignaciones,historial:loadViajes,termo:loadThermo,unidades:loadUnidades,remolques:loadRemolques,operadores:loadOperadores,catalogo:loadCatalogo,uso:loadUso,desarrollos:loadDesarrollos,usuarios:loadUsuarios,accesos:loadAccesos,desempeno:loadDesempeno,config:loadConfig,perfil:loadPerfil};
+const LOADERS={lecturas:loadLecturas,resumen:loadResumen,graficos:loadGraficos,conciliacion:loadConciliacion,reporte:loadReporte,costos:loadCostos,exportar:loadExportar,analisis:loadAnalisis,anomalias:()=>Promise.all([loadAnomalias(),loadPrecision()]),proveedor:()=>Promise.all([loadProveedor(),cargarEmpleadosProveedor()]),solicitudes:loadSolicitudes,asignaciones:loadAsignaciones,historial:loadViajes,termo:loadThermo,unidades:loadUnidades,remolques:loadRemolques,operadores:loadOperadores,catalogo:loadCatalogo,uso:loadUso,desarrollos:loadDesarrollos,usuarios:loadUsuarios,accesos:loadAccesos,desempeno:loadDesempeno,config:loadConfig,perfil:loadPerfil};
 let SEC_ACTIVA=null;
 // Los loaders son async: hay que atrapar el rechazo de la promesa, no solo el throw
 // síncrono. Antes un fallo salía como unhandled rejection y la sección se quedaba muda.
@@ -2035,13 +2048,72 @@ async function verViaje(id){
 
 // ── Termo / Unidades / Remolques ─────────────────────────────────────────────
 let THERMO_ROWS=[];
+// ── Lecturas iniciales ───────────────────────────────────────────────────────
+let LECT_UNIS=[], LECT_REMS=[];
+async function loadLecturas(){
+  let rows=[];
+  try{ rows=await api('/api/lecturas-iniciales'); }catch(e){ $('#lecturas-body').innerHTML='<tr><td colspan="9" class="empty">'+esc(e.message||'No se pudo cargar')+'</td></tr>'; return; }
+  const n=v=>v==null?'—':fmt(v,0);
+  $('#lecturas-body').innerHTML=rows.length?rows.map(r=>`<tr style="${r.anulada?'opacity:.5':''}">
+    <td class="mono">${esc(r.fecha)}</td><td class="mono"><b>${esc(r.eco||'—')}</b></td>
+    <td>${r.tipo==='unidad'?'Unidad':'Remolque'}</td><td class="mono">${n(r.odometro)}</td>
+    <td class="mono">${n(r.horas_termo)}</td><td class="mono">${n(r.litros_tanque)}</td>
+    <td class="mono">${n(r.litros_tanque_termo)}</td><td style="color:var(--muted);max-width:220px;white-space:normal">${esc(r.nota||'')}</td>
+    <td style="text-align:right">${r.anulada?`<span class="sub" title="${esc(r.motivo_anulacion||'')}">anulada</span>`:`<button class="mini r" onclick="anularLectura(${r.id})">Anular</button>`}</td></tr>`).join('')
+    :'<tr><td colspan="9" class="empty">Todavía no hay lecturas iniciales.</td></tr>';
+}
+async function nuevaLectura(tipo){
+  try{ if(tipo==='unidad'){ if(!LECT_UNIS.length) LECT_UNIS=await api('/api/unidades'); }
+       else { if(!LECT_REMS.length) LECT_REMS=await api('/api/remolques'); } }
+  catch(e){ toast('No se pudo cargar el catálogo: '+(e.message||'')); return; }
+  const hoy=new Date().toISOString().slice(0,10);
+  const lista=tipo==='unidad'
+    ? LECT_UNIS.filter(u=>u.activo!==false).map(u=>`<option value="${u.id}" data-tipo="${esc(u.tipo||'')}">${esc(u.clave)} · ${esc(u.tipo||'')}</option>`).join('')
+    : LECT_REMS.filter(r=>r.activo!==false).map(r=>`<option value="${r.id}">${esc(r.eco)}${r.eco_nuevo?' ('+esc(r.eco_nuevo)+')':''}</option>`).join('');
+  const campo=(id,lbl,extra)=>`<label style="display:block;margin-top:10px;font-size:12px;color:var(--muted)" for="${id}">${lbl}</label><input id="${id}" type="number" inputmode="decimal" min="0" step="0.1" ${extra||''} style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit">`;
+  const cuerpo=tipo==='unidad'
+    ? campo('li-odo','Odómetro (km)','placeholder="1225800"')+campo('li-lts','Litros en el tanque del motor','placeholder="900"')
+      +'<div id="li-camion" style="display:none">'+campo('li-hrs','Horas del termo (sólo camión)','')+campo('li-ltst','Litros en el tanque del termo (sólo camión)','')+'</div>'
+    : campo('li-hrs','Horas del termo','placeholder="25647"')+campo('li-lts','Litros en el tanque del termo','placeholder="200"');
+  const dlg=Dlg.open({size:'sm',title:tipo==='unidad'?'Lectura inicial de tracto o camión':'Lectura inicial de termo',
+    body:`<label style="display:block;font-size:12px;color:var(--muted)" for="li-activo">${tipo==='unidad'?'Unidad':'Remolque'}</label>
+      <select id="li-activo" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit">${lista}</select>
+      <label style="display:block;margin-top:10px;font-size:12px;color:var(--muted)" for="li-fecha">Fecha de la lectura</label>
+      <input id="li-fecha" type="date" value="${hoy}" max="${hoy}" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit">
+      ${cuerpo}
+      <label style="display:block;margin-top:10px;font-size:12px;color:var(--muted)" for="li-nota">Nota (opcional)</label>
+      <input id="li-nota" type="text" placeholder="Inicio de la prueba" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit">`,
+    actions:[{label:'Cancelar',onClick:()=>Dlg.close(dlg)},{label:'Guardar lectura',variant:'primary',onClick:async()=>{
+      const v=id=>{const e=document.getElementById(id);return e?e.value:'';};
+      const fd=new FormData();
+      fd.append('tipo',tipo); fd.append('activo_id',v('li-activo')); fd.append('fecha',v('li-fecha'));
+      if(tipo==='unidad'){ fd.append('odometro',v('li-odo')); fd.append('litros_tanque',v('li-lts'));
+        fd.append('horas_termo',v('li-hrs')); fd.append('litros_tanque_termo',v('li-ltst')); }
+      else { fd.append('horas_termo',v('li-hrs')); fd.append('litros_tanque',v('li-lts')); }
+      fd.append('nota',v('li-nota'));
+      try{ await apiPost('/api/lecturas-iniciales',fd); toast('Lectura inicial guardada'); Dlg.close(dlg); loadLecturas(); }
+      catch(e){ toast(e.message||'No se pudo guardar'); }
+    }}]});
+  // Las horas del termo sólo aplican a un camión (su termo va pegado a la unidad).
+  const sel=document.getElementById('li-activo'), cam=document.getElementById('li-camion');
+  const ver=()=>{ if(cam&&sel){ const o=sel.selectedOptions[0]; cam.style.display=(o&&o.dataset.tipo==='CAMION')?'block':'none'; } };
+  if(sel){ sel.addEventListener('change',ver); ver(); }
+}
+async function anularLectura(id){
+  const m=await Dlg.prompt({title:'Anular lectura inicial',text:'La lectura queda a la vista como anulada y deja de usarse como punto de partida. Después captura la correcta.',label:'Motivo',okLabel:'Anular'});
+  if(m==null)return;
+  const fd=new FormData(); fd.append('motivo',m);
+  try{ await apiPost('/api/lecturas-iniciales/'+id+'/anular',fd); toast('Lectura anulada'); loadLecturas(); }
+  catch(e){ toast(e.message||'No se pudo anular'); }
+}
 async function loadThermo(){
   THERMO_ROWS=await api('/api/thermo');
   $('#thermo-body').innerHTML=THERMO_ROWS.length?THERMO_ROWS.map((t,i)=>`<tr style="cursor:pointer" onclick="verTermo(${i})"><td class="mono"><b>${esc(t.unidad)||'—'}</b></td><td>${esc(t.operador)||'—'}</td><td class="mono">${esc(t.remolque)||'—'}</td><td>${esc(t.mes)||'—'}</td><td class="mono">${fmt(t.hrs_inic,0)}</td><td class="mono">${fmt(t.hrs_fin,0)}</td><td class="mono"><b>${fmt(t.horas_trab,0)}</b></td><td class="mono">${fmt(t.litros_thermo,1)}</td><td class="mono">${fmt(t.rto_thermo,2)}</td></tr>`).join(''):`<tr><td colspan="9" class="empty">Sin registros</td></tr>`;
 }
 function verTermo(i){
   const t=THERMO_ROWS[i]; if(!t)return;
-  const hist=THERMO_ROWS.filter(x=>x.unidad===t.unidad);   // todos los registros de esa unidad
+  // El historial es el de ESE termo: el del remolque si lo hay (un tracto engancha varios), si no el del camión.
+  const hist=THERMO_ROWS.filter(x=>t.remolque?x.remolque===t.remolque:(x.unidad===t.unidad&&!x.remolque));
   const st=(l,disp)=>`<div class="stat"><div class="l">${l}</div><div class="v">${disp}</div></div>`;
   // horas trabajadas: usa el valor guardado; si falta, lo deriva de hrs fin − inicio.
   const ht=x=>x.horas_trab!=null?x.horas_trab:(x.hrs_fin!=null&&x.hrs_inic!=null&&x.hrs_fin>=x.hrs_inic?x.hrs_fin-x.hrs_inic:null);

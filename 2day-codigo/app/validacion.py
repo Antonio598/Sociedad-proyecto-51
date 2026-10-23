@@ -100,7 +100,14 @@ def _ultimo_odometro_con_fecha(session: Session, unidad_id: int, hasta_fecha,
     )
     if excluir_viaje_id is not None:
         q = q.where(Viaje.id != excluir_viaje_id)
-    return session.execute(q.limit(1)).first()
+    fila = session.execute(q.limit(1)).first()
+    # La LECTURA INICIAL del equipo (lecturas.py) también es una lectura anterior: sin ella el
+    # primer odómetro no tenía contra qué compararse. Gana la más reciente de las dos.
+    from .lecturas import odometro_inicial
+    base = odometro_inicial(session, unidad_id, hasta_fecha)
+    if base is not None and (fila is None or base[1] > fila[1]):
+        return base
+    return fila
 
 
 # Días máximos entre dos lecturas de odómetro para poder comparar km contra su avance.
