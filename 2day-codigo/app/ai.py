@@ -43,6 +43,62 @@ def _get_client() -> anthropic.Anthropic:
     return _client
 
 
+class IANoConfigurada(RuntimeError):
+    """Falta ANTHROPIC_API_KEY: ninguna lectura automática puede funcionar."""
+
+
+def explicar_error(exc: BaseException) -> str:
+    """Una frase que dice POR QUÉ falló la IA, para quien opera y para el log.
+
+    Antes todo fallo se presentaba igual («No se pudo leer la foto»), así que una llave mal
+    puesta, el crédito agotado o un modelo inexistente parecían fotos borrosas y el operador
+    repetía la foto sin fin. Cadena de lo más específico a lo más general (el SDK tiene una
+    clase por código HTTP justo para distinguirlos).
+    """
+    if isinstance(exc, IANoConfigurada):
+        return ("La lectura automática no está configurada en el servidor (falta "
+                "ANTHROPIC_API_KEY). Avisa al administrador.")
+    if isinstance(exc, anthropic.AuthenticationError):
+        return "La llave de la IA (ANTHROPIC_API_KEY) es inválida o fue revocada. Avisa al administrador."
+    if isinstance(exc, anthropic.PermissionDeniedError):
+        return "La llave de la IA no tiene permiso para este modelo. Avisa al administrador."
+    if isinstance(exc, anthropic.NotFoundError):
+        return (f"El modelo de IA configurado ({settings.anthropic_model}) no existe o no está "
+                "disponible para esta cuenta. Avisa al administrador.")
+    if isinstance(exc, anthropic.RateLimitError):
+        return "La IA recibió demasiadas lecturas a la vez. Espera un minuto y repite la foto."
+    if isinstance(exc, anthropic.APIStatusError):
+        msg = str(getattr(exc, "message", "") or exc).lower()
+        if exc.status_code == 402 or "credit" in msg or "billing" in msg or "balance" in msg:
+            return "Se acabó el crédito de la IA. Avisa al administrador para recargarlo."
+        if exc.status_code in (529,) or "overloaded" in msg:
+            return "La IA está saturada en este momento. Repite la foto en unos minutos."
+        if exc.status_code >= 500:
+            return "La IA tuvo una falla temporal. Repite la foto en unos minutos."
+        return f"La IA rechazó la foto ({exc.status_code}). Repítela; si sigue, avisa al administrador."
+    if isinstance(exc, anthropic.APIConnectionError):   # incluye APITimeoutError
+        return "El servidor no pudo comunicarse con la IA (sin respuesta). Repite la foto."
+    return "No se pudo leer la foto automáticamente. Repítela enfocando el número."
+
+
+def diagnostico() -> dict:
+    """Prueba la conexión con la IA con una llamada mínima. Para el panel del administrador."""
+    if not settings.anthropic_api_key:
+        return {"ok": False, "modelo": settings.anthropic_model,
+                "detalle": explicar_error(IANoConfigurada())}
+    try:
+        resp = _get_client().messages.create(
+            model=settings.anthropic_model, max_tokens=16,
+            messages=[{"role": "user", "content": "Responde solo: ok"}])
+        registrar_uso("diagnostico", resp)
+        return {"ok": True, "modelo": settings.anthropic_model,
+                "detalle": "La IA responde: las fotos se pueden leer."}
+    except Exception as e:   # se informa, no se oculta
+        log.exception("Diagnóstico de IA fallido")
+        return {"ok": False, "modelo": settings.anthropic_model, "detalle": explicar_error(e),
+                "error": f"{type(e).__name__}: {str(e)[:300]}"}
+
+
 # ── Medición del consumo ─────────────────────────────────────────────────────
 # Precio oficial por millón de tokens (entrada, salida). La lectura de caché cuesta
 # ~0.1x la entrada y la escritura ~1.25x; se cobran aparte para que el total cuadre
@@ -756,6 +812,8 @@ def leer_imagen(path: str, pista: str | None = None, objetivo: str | None = None
 
     `objetivo` enfoca la lectura ('eco', 'kilometraje', 'odometro') sin dejar de llenar el
     resto de campos que se distingan."""
+    if not settings.anthropic_api_key:
+        raise IANoConfigurada()
     instruccion = ("Lee esta foto: el odómetro y el cuentakilómetros de VIAJE del tablero, el "
                    "número económico ROTULADO en la carrocería (si lo hay), el nivel de la aguja "
                    "y/o las horas del termo. ¿Qué muestra?")

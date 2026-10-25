@@ -979,11 +979,32 @@ function evGaleria(s){
       </div>
       <figcaption>
         <span class="evcap-t">${esc(e.etiqueta||e.tipo)}<span class="evcap-o"> · ${esc(evOrigen(e))}</span></span>
-        <span class="evcap-v" style="color:${bad?'var(--danger)':'var(--ink)'}">${esc(String(val||'—'))}</span>
+        <span class="evcap-v" style="color:${bad?'var(--danger)':'var(--ink)'}" id="evval-${e.id}">${esc(String(val||'—'))}</span>
+        ${(EV_CORR_TIPOS[e.tipo] && ODO_EDITABLE.includes(s.estado))
+          ? `<button class="btn ghost sm" style="margin-top:4px" data-ev-corr="${e.id}" data-ev-sol="${s.id}"
+               data-ev-tit="${esc(EV_CORR_TIPOS[e.tipo])}" data-ev-val="${esc(val===''?'':String(val))}">Corregir</button>` : ''}
       </figcaption>
     </figure>`;
   }).join('')+'</div>';
 }
+// Lecturas que el coordinador corrige desde la foto, además del odómetro (que tiene su propio
+// lápiz arriba). El documento del dueño: el coordinador puede corregir kilómetros Y HORAS.
+const EV_CORR_TIPOS={termo:'Horas del termo',kilometraje:'Kilometraje del viaje',horas_motor:'Horas de motor'};
+document.addEventListener('click',async ev=>{
+  const b=ev.target.closest&&ev.target.closest('[data-ev-corr]'); if(!b)return;
+  ev.stopPropagation();
+  const v=await Dlg.prompt({title:'Corregir '+b.dataset.evTit,
+    text:'Escribe el valor que se ve en la foto. La corrección queda registrada con tu nombre.',
+    label:b.dataset.evTit,type:'number',value:b.dataset.evVal,okLabel:'Guardar corrección'});
+  if(v==null||String(v).trim()==='')return;
+  const fd=new FormData(); fd.append('valor',String(v).trim());
+  try{
+    const r=await api('/api/solicitudes/'+b.dataset.evSol+'/evidencia/'+b.dataset.evCorr,{method:'POST',body:fd});
+    const out=document.getElementById('evval-'+b.dataset.evCorr); if(out)out.textContent=String(r.valor_final);
+    b.dataset.evVal=String(r.valor_final);
+    toast('Corrección guardada');
+  }catch(e){ toast(e.message||'No se pudo corregir'); }
+});
 // El origen del zoom sigue al cursor: es lo que hace que se sienta una lupa y no un salto.
 function evLupa(ev,box){
   const r=box.getBoundingClientRect();

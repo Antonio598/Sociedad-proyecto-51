@@ -378,6 +378,11 @@ td.mono{font:500 12px 'IBM Plex Mono'}
               <option value="90">Últimos 90 días</option>
             </select>
           </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--line-2)">
+            <button class="btn" onclick="probarIA(this)">Probar conexión con la IA</button>
+            <span class="sub">Si las fotos no se leen, esto dice por qué: llave, crédito o modelo.</span>
+          </div>
+          <div id="ia-diag" style="margin-top:10px"></div>
         </div>
         <div id="uso-body"></div>
       </section>
@@ -2105,6 +2110,18 @@ async function anularLectura(id){
   const fd=new FormData(); fd.append('motivo',m);
   try{ await apiPost('/api/lecturas-iniciales/'+id+'/anular',fd); toast('Lectura anulada'); loadLecturas(); }
   catch(e){ toast(e.message||'No se pudo anular'); }
+}
+// Prueba de la IA: una llamada mínima que dice si las fotos se pueden leer y, si no, por qué.
+async function probarIA(btn){
+  const out=$('#ia-diag'); if(btn)btn.disabled=true;
+  out.innerHTML='<span class="sub">Probando…</span>';
+  try{
+    const d=await api('/api/ia/diagnostico');
+    out.innerHTML=`<div style="padding:10px 12px;border-radius:8px;border:1px solid ${d.ok?'var(--ok)':'var(--danger)'};background:color-mix(in oklab,${d.ok?'var(--ok)':'var(--danger)'} 8%,transparent)">
+      <b>${d.ok?'Funciona':'No funciona'}</b> · modelo <span class="mono">${esc(d.modelo||'')}</span><br>${esc(d.detalle||'')}
+      ${d.error?`<div class="sub mono" style="margin-top:6px">${esc(d.error)}</div>`:''}</div>`;
+  }catch(e){ out.innerHTML='<span class="sub">No se pudo hacer la prueba: '+esc(e.message||'')+'</span>'; }
+  finally{ if(btn)btn.disabled=false; }
 }
 async function loadThermo(){
   THERMO_ROWS=await api('/api/thermo');

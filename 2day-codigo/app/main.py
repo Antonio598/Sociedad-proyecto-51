@@ -173,6 +173,9 @@ async def lifespan(app: FastAPI):
     _ajustes_de_esquema()
     crear_admin_si_falta()
     restablecer_admin_si_se_pide()
+    if not settings.anthropic_api_key:
+        log.error("IA: falta ANTHROPIC_API_KEY. Ninguna foto se podrá leer (odómetro, horas, "
+                  "económico) hasta que se configure en las variables del servidor.")
     if geo.clave_compartida():
         # No es un aviso de estilo: la clave del servidor no lleva restricción por dominio,
         # así que expuesta en el HTML cualquiera puede gastar con la tarjeta de la flota.
@@ -5618,10 +5621,12 @@ _FOTO_EXT = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
 
 async def _leer_foto(file: UploadFile) -> tuple[str, str]:
     """Lee la imagen subida (chunks, tope 12MB, valida firma) y la devuelve como
-    (base64, mime) para GUARDARLA codificada en la BD. Lanza 400 si algo falla."""
-    ext = _FOTO_EXT.get(file.content_type or "")
-    if not ext:
-        raise HTTPException(400, "Formato no soportado (usa JPG, PNG o WebP)")
+    (base64, mime) para GUARDARLA codificada en la BD. Lanza 400 si algo falla.
+
+    El formato se decide por el CONTENIDO del archivo (su firma), no por el content-type que
+    declara el navegador: hay teléfonos que mandan la foto de la cámara sin tipo o como
+    `application/octet-stream`, y se rechazaba una foto perfectamente buena con «Formato no
+    soportado»."""
     # El cliente ya comprime la foto (lado máx 1600px) antes de subir, así que en la práctica
     # llegan <1 MB. El tope alto es solo una red de seguridad si la compresión no corrió.
     limite = 12 * 1024 * 1024
@@ -5634,9 +5639,21 @@ async def _leer_foto(file: UploadFile) -> tuple[str, str]:
         if len(buf) > limite:
             raise HTTPException(400, "La imagen supera el límite de 12 MB")
     data = bytes(buf)
-    if not _es_imagen(data, ext):
-        raise HTTPException(400, "El archivo no parece una imagen válida")
-    return base64.b64encode(data).decode("ascii"), (file.content_type or "image/jpeg")
+    mime = _tipo_por_firma(data)
+    if mime is None:
+        if data[4:12] in (b"ftypheic", b"ftypheix", b"ftypmif1", b"ftyphevc"):
+            raise HTTPException(400, "La foto viene en formato HEIC (iPhone) y no se puede leer. "
+                                     "Vuelve a tomarla con la cámara de la app.")
+        raise HTTPException(400, "El archivo no es una foto válida (usa JPG, PNG o WebP)")
+    return base64.b64encode(data).decode("ascii"), mime
+
+
+def _tipo_por_firma(data: bytes) -> str | None:
+    """El tipo real de la imagen según sus primeros bytes: JPEG, PNG o WebP."""
+    for mime, ext in _FOTO_EXT.items():
+        if _es_imagen(data, ext):
+            return mime
+    return None
 
 
 def _espejar_foto(db: Session, *, desde_usuario: "Usuario | None" = None,
@@ -6458,6 +6475,7 @@ async def solicitud_evidencia(
     confianza = None
     aviso = None
     sospechosa, sospecha_motivo = False, None
+    ia_fallo = False   # la IA no respondió (no es que la foto esté mal)
     esp = (esperado or "").strip().upper() or None
     objetivo = {"eco": "eco", "kilometraje": "kilometraje", "odometro": "odometro"}.get(tipo)
     try:
@@ -6509,12 +6527,15 @@ async def solicitud_evidencia(
         # coordinador le llega igual en la evidencia, aunque el operador la ignore.
         if sospecha_motivo and not aviso:
             aviso = sospecha_motivo
-    except Exception:
-        log.exception("Fallo leyendo la evidencia de la solicitud %s", sol_id)
+    except Exception as e:
+        log.exception("Fallo leyendo la evidencia de la solicitud %s (%s)", sol_id, type(e).__name__)
         # El operador NO teclea el odómetro: sale siempre de la cámara (regla del
         # dueño, 20-sep-2026). Si la foto no se deja leer, se repite; y si aun así no
         # sale, el número lo pone el coordinador desde la misma foto.
-        aviso = "No se pudo leer la foto automáticamente. Repítela enfocando el número."
+        # El aviso dice el MOTIVO real: una llave mal puesta o el crédito agotado no se
+        # arreglan repitiendo la foto, y antes todo parecía una foto borrosa.
+        aviso = ai.explicar_error(e)
+        ia_fallo = True
 
     # La lectura ACERTADA también cuenta: hasta hoy sólo la CORRECCIÓN copiaba el valor a la
     # solicitud, así que el odómetro de la cabecera se llenaba únicamente cuando alguien
@@ -6542,7 +6563,7 @@ async def solicitud_evidencia(
     db.commit()
     return {"ok": True, "evidencia_id": ev.id, "tipo": tipo, "etiqueta": ev.etiqueta,
             "valor_ia": valor_ia, "texto_ia": texto_ia, "coincide": coincide,
-            "confianza": confianza, "aviso": aviso}
+            "confianza": confianza, "aviso": aviso, "ia_fallo": ia_fallo}
 
 
 # Hasta cuándo se puede corregir una lectura. Quien revisa (coordinador, gerencia) llega
@@ -6679,10 +6700,17 @@ def _evidencia_faltante(s: SolicitudRecarga, db: Session) -> list[str]:
     # coordinador con el odómetro en nulo — y él autorizaba litros sin saber los kilómetros.
     # El valor puede venir de la IA o de una corrección posterior: `valor_final` arranca
     # igual que `valor_ia` y es lo que queda tras corregir.
-    if not any(e.tipo == "odometro" and (e.valor_final if e.valor_final is not None
-                                         else e.valor_ia) is not None
-               for e in s.evidencias):
-        faltan.append("odómetro legible" if "odometro" in tipos else "odómetro")
+    # Odómetro: con su número leído, o —si la IA no lo pudo leer en DOS fotos— con esas fotos,
+    # para que el coordinador capture el número desde ellas antes de autorizar. Antes se
+    # exigía el número sí o sí y el operador no puede teclearlo: con la IA caída (llave,
+    # crédito, red) o un tablero difícil, NINGUNA solicitud se podía enviar.
+    leido = any(e.tipo == "odometro" and (e.valor_final if e.valor_final is not None
+                                          else e.valor_ia) is not None
+                for e in s.evidencias)
+    fotos_odo = sum(1 for e in s.evidencias if e.tipo == "odometro" and e.foto_path)
+    if not leido and fotos_odo < 2:
+        faltan.append("odómetro legible (si no se lee, toma la foto una vez más)"
+                      if "odometro" in tipos else "odómetro")
     # El kilometraje YA NO se pide aparte: el dueño declaró que el odómetro acumulado del
     # tablero es el mismo dato, en tracto y en camión. Eran dos fotos del mismo instrumento.
     # Se sigue ACEPTANDO la evidencia de tipo 'kilometraje' para no invalidar lo ya capturado.
@@ -6978,6 +7006,18 @@ async def solicitud_autorizar(sol_id: int, request: Request,
     f = await request.form()
     # El coordinador FIJA los litros al autorizar (el operador ya no los aporta): obligatorio.
     litros = _pf_litros(f.get("litros"), "los litros a autorizar")
+    # Una carga de MOTOR no se autoriza sin odómetro: los km del viaje, el tope y el
+    # rendimiento salen de él. Si la IA no lo leyó, el coordinador lo captura desde la foto.
+    if (getattr(s, "tipo_recarga", "motor") or "motor") == "motor":
+        odo = s.odometro
+        if odo is None:
+            odo = next((e.valor_final if e.valor_final is not None else e.valor_ia
+                        for e in reversed(s.evidencias or [])
+                        if e.tipo == "odometro"
+                        and (e.valor_final is not None or e.valor_ia is not None)), None)
+        if odo is None:
+            raise HTTPException(409, "Falta el odómetro: la IA no pudo leerlo. Captúralo desde "
+                                     "la foto (lápiz junto al odómetro) y después autoriza.")
     # Freno a la SEGUNDA autorización del día para la misma unidad. No es un muro: el 46% de
     # los días una unidad carga más de una vez y eso es operación normal —153 de 472 cargas
     # reales son de menos de 100 L—. Lo que faltaba era que alguien lo mirara: hasta hoy no
@@ -7583,6 +7623,12 @@ async def motor_escaneos_cargar(files: list[UploadFile] = File(...),
     return {"ok": True, "cuenta": cuenta, "inferidos": inferidos,
             "total": db.scalar(select(func.count(EscaneoMotor.id))) or 0,
             "archivos": reporte}
+
+
+@app.get("/api/ia/diagnostico")
+def ia_diagnostico(user: dict = Depends(require_admin)) -> dict:
+    """Prueba si la IA responde (llave, crédito, modelo). Gasta una llamada mínima."""
+    return ai.diagnostico()
 
 
 @app.get("/api/uso-ia")

@@ -560,7 +560,7 @@ function remolquesTermo(){ return (VIAJE&&VIAJE.unidad_tipo==='TRACTO'&&Array.is
 function termoRemolque(){ const rt=remolquesTermo(); if(!rt.length)return null; return rt.find(r=>r.id===REMOLQUE_SEL)||rt[0]; }
 async function setTipoRecarga(t){
   if(t===RECARGA_TIPO)return;
-  RECARGA_TIPO=t; SOL_ID=null; SOL_ID_TERMO=null; P_SOL=null; CLIENT_UUID=null; DRAFT={fotos:{}}; CAPTURADAS.clear(); RETOMADO={};
+  RECARGA_TIPO=t; SOL_ID=null; SOL_ID_TERMO=null; P_SOL=null; CLIENT_UUID=null; DRAFT={fotos:{}}; CAPTURADAS.clear(); for(const _k in FALLOS_FOTO)delete FALLOS_FOTO[_k]; RETOMADO={};
   construirFotos(); pintarFotos();   // la pantalla cambia ya, sin esperar al servidor
   // Y ENSEGUIDA SE RECUPERA LO QUE YA ESTABA SUBIDO. Sin esto, asomarse a la otra pestaña
   // borraba de la pantalla fotos que seguían existiendo en la base, y la siguiente foto
@@ -568,7 +568,7 @@ async function setTipoRecarga(t){
   await adoptarBorrador();
   pintarFotos();
 }
-async function setRemolqueTermo(id){ REMOLQUE_SEL=id; SOL_ID=null; SOL_ID_TERMO=null; P_SOL=null; CLIENT_UUID=null; DRAFT={fotos:{}}; CAPTURADAS.clear(); construirFotos(); pintarFotos(); await adoptarBorrador(); pintarFotos(); }
+async function setRemolqueTermo(id){ REMOLQUE_SEL=id; SOL_ID=null; SOL_ID_TERMO=null; P_SOL=null; CLIENT_UUID=null; DRAFT={fotos:{}}; CAPTURADAS.clear(); for(const _k in FALLOS_FOTO)delete FALLOS_FOTO[_k]; construirFotos(); pintarFotos(); await adoptarBorrador(); pintarFotos(); }
 function pintarTipoRecarga(){
   const box=$('#tipo-recarga'), hint=$('#tipo-hint'), rbox=$('#termo-rem'); if(!box)return;
   const esCamion=!!(VIAJE&&VIAJE.unidad_tipo==='CAMION');
@@ -1209,7 +1209,7 @@ async function corregirDevuelta(id){
   // lista: en un tracto con dos refrigerados se le pedía el económico del que no era, y la
   // corrección volvía devuelta por segunda vez con el mismo aspecto de culpa suya.
   if(s.remolque_id) REMOLQUE_SEL=s.remolque_id;
-  CAPTURADAS.clear(); RETOMADO={};
+  CAPTURADAS.clear(); for(const _k in FALLOS_FOTO)delete FALLOS_FOTO[_k]; RETOMADO={};
   construirFotos();
   await sembrarEvidencias([SOL_ID, SOL_ID_TERMO].filter(Boolean));
   pintarFotos();
@@ -1286,7 +1286,10 @@ async function sidDe(f){
 async function comprimirImagen(file, maxLado, calidad){
   maxLado=maxLado||1600; calidad=calidad||0.82;
   try{
-    if(!file || !/^image\//.test(file.type||'')) return file;
+    // Sin tipo declarado también se intenta: hay teléfonos que entregan la foto de la cámara
+    // sin `type`, y antes se subía sin convertir. Si no es una imagen, la decodificación de
+    // abajo falla y se devuelve tal cual.
+    if(!file || (file.type && !/^image\//.test(file.type))) return file;
     let w=0,h=0,src=null,bmp=null;
     try{ bmp=await createImageBitmap(file); w=bmp.width; h=bmp.height; src=bmp; }catch(_){ bmp=null; }
     if(!src){
@@ -1304,7 +1307,11 @@ async function comprimirImagen(file, maxLado, calidad){
     if(bmp&&bmp.close)bmp.close();
     const blob=await new Promise(res=>cv.toBlob(res,'image/jpeg',calidad));
     if(!blob) return file;
-    if(blob.size>=file.size && file.size<5*1024*1024) return file;   // ya era chica: no la agrandes
+    // La original sólo se conserva si YA es un formato que el servidor acepta. Un iPhone
+    // puede entregar HEIC, que suele pesar MENOS que el JPG convertido: antes se subía tal
+    // cual y el servidor lo rechazaba («formato no soportado»).
+    const aceptada=/^image\/(jpeg|png|webp)$/.test(file.type||'');
+    if(aceptada && blob.size>=file.size && file.size<5*1024*1024) return file;   // ya era chica: no la agrandes
     return new File([blob],(file.name||'foto').replace(/\.[^.]+$/,'')+'.jpg',{type:'image/jpeg'});
   }catch(e){ return file; }
 }
@@ -1314,6 +1321,7 @@ async function comprimirImagen(file, maxLado, calidad){
 // (POST /api/solicitudes/{id}/evidencia/{ev_id}), así que queda registrado como corrección
 // a mano y no se confunde con una lectura automática. La foto sigue ahí como prueba: esto
 // no la sustituye, la completa.
+var FALLOS_FOTO={};   // fotos sin lectura por casilla (ver subirFoto)
 async function subirFoto(key,file){
   const f=FOTOS.find(x=>x.key===key)||{key,tipo:key};
   let box=$('#foto-'+key), st=$('#st-'+key), val=$('#val-'+key);
@@ -1351,11 +1359,20 @@ async function subirFoto(key,file){
     }else{
       if(val)val.textContent=d.valor_ia!=null?d.valor_ia:'—';
       if(d.valor_ia==null){
-        // Sin número NO hay slot cubierto: el dueño lo decidió así (20-sep-2026). La foto
-        // se repite hasta que salga. El servidor lo exige igual, así que saltarse esto por
-        // el teléfono no serviría de nada; aquí sólo se le dice al chofer cuanto antes.
-        CAPTURADAS.delete(key);
-        if(st)st.innerHTML=ic('alert')+' No se leyó el número · repite la foto';
+        // Sin número la foto se repite (regla del dueño, 20-sep-2026). Pero el chofer no
+        // teclea nada: si DOS fotos seguidas no se leen —tablero difícil, o la IA caída—, la
+        // solicitud se puede enviar con esas fotos y el coordinador captura el número desde
+        // ellas antes de autorizar (el servidor aplica la misma regla). Antes el chofer
+        // quedaba atrapado repitiendo la foto sin poder pedir combustible.
+        FALLOS_FOTO[key]=(FALLOS_FOTO[key]||0)+1;
+        const motivo=d.aviso?esc(d.aviso):'No se leyó el número';
+        if(f.tipo==='odometro' && FALLOS_FOTO[key]>=2){
+          CAPTURADAS.add(key);
+          if(st)st.innerHTML=ic('alert')+' '+motivo+' · Tu coordinador capturará el número desde la foto';
+        }else{
+          CAPTURADAS.delete(key);
+          if(st)st.innerHTML=ic('alert')+' '+motivo+(d.ia_fallo?'':' · repite la foto');
+        }
         if(box)box.className='foto warn';
       }
       else if(d.aviso){ if(st)st.innerHTML=ic('alert')+' '+esc(d.aviso); if(box)box.className='foto warn'; }
@@ -1400,7 +1417,7 @@ async function enviar(){
     toast(media ? 'Se envió la del motor. La del termo quedó a medias: vuelve a «Nueva recarga» para terminarla.'
         : (SOL_ID_TERMO ? 'Enviadas las 2 solicitudes al coordinador'
                         : 'Solicitud enviada al coordinador'));
-    SOL_ID=null; SOL_ID_TERMO=null; P_SOL=null; CLIENT_UUID=null; DRAFT={fotos:{}}; CAPTURADAS.clear(); pintarFotos();
+    SOL_ID=null; SOL_ID_TERMO=null; P_SOL=null; CLIENT_UUID=null; DRAFT={fotos:{}}; CAPTURADAS.clear(); for(const _k in FALLOS_FOTO)delete FALLOS_FOTO[_k]; pintarFotos();
     cargarMisSolicitudes(); show('solicitudes');
   }catch(e){
     // Sin cola detrás, un fallo de red se dice tal cual y la captura se queda en pantalla
@@ -1558,7 +1575,7 @@ async function loadMiViaje(){
   // vieja (evidencia de la unidad equivocada). Solo resetea cuando de verdad cambia el viaje.
   const vidActual = VIAJE ? (VIAJE.id || ('u'+VIAJE.unidad_id)) : null;
   if(vidActual !== DRAFT_VIAJE){
-    CAPTURADAS.clear(); RETOMADO={}; SOL_ID=null; SOL_ID_TERMO=null; P_SOL=null; CLIENT_UUID=null; DRAFT={fotos:{}}; DRAFT_VIAJE=vidActual;
+    CAPTURADAS.clear(); for(const _k in FALLOS_FOTO)delete FALLOS_FOTO[_k]; RETOMADO={}; SOL_ID=null; SOL_ID_TERMO=null; P_SOL=null; CLIENT_UUID=null; DRAFT={fotos:{}}; DRAFT_VIAJE=vidActual;
   }
   UNIDAD_ID = VIAJE ? VIAJE.unidad_id : null;   // la unidad SIEMPRE sale del viaje activo
   pintarViajeActivo();
