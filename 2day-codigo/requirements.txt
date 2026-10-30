@@ -15,3 +15,6 @@ python-multipart>=0.0.9
 pillow>=10.0
 # pypdf lo usa escaneo.py para leer los PDF del motor Cummins: misma historia.
 pypdf>=4.0
+# Lee el código QR desde la FOTO del económico cuando el escáner en vivo no pudo (hologramas
+# brillantes, iPhone). Trae ruedas precompiladas: no necesita librerías del sistema.
+zxing-cpp>=2.2,<4

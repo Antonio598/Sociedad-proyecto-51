@@ -670,14 +670,14 @@
 
   // Medida en pies del remolque. Se lee de la DESCRIPCIÓN y nunca del número económico: la
   // renumeración de la flota desmintió esa correlación (está documentado en models.py).
+  // La medida sale del NÚMERO económico (regla del dueño, 30-oct-2026): 40… = 40 pies,
+  // 53… = 53 pies. El servidor manda `medida_pies` con la misma regla; esto es el respaldo.
   function _asgPies(r) {
     if (r.medida_pies != null) return r.medida_pies;
-    var d = r.descripcion || '';
-    var m = /\b(\d{2})\s*['"’”]/.exec(d);
-    if (m) return Number(m[1]);
-    m = /\b(40|45|48|53)\b/.exec(d);
-    return m ? Number(m[1]) : null;
+    var eco = String(r.eco_nuevo || r.eco || '').toUpperCase();
+    return eco.indexOf('40') === 0 ? 40 : eco.indexOf('53') === 0 ? 53 : null;
   }
+
 
   function _asgMarcados() {
     return Array.prototype.map.call(
@@ -704,14 +704,12 @@
     if (!box) return;
     var marcados = _asgMarcados();
     box.innerHTML = _asgCfg.remolques.map(function (r) {
-      var pies = _asgPies(r);
       var on = marcados.indexOf(r.id) >= 0;
       var no = !on && _asgNoCabe(r, marcados);
       return '<span class="remchip' + (on ? ' on' : '') + '"' +
-        (no ? ' aria-disabled="true" title="No encaja con lo ya marcado: dos remolques sólo si ambos son de 40 pies"' : '') +
+        (no ? ' aria-disabled="true" title="No encaja: dos remolques sólo si ambos son de 40 (empiezan por 40); los de 53 van solos"' : '') +
         ' data-rem="' + r.id + '" role="checkbox" aria-checked="' + on + '" tabindex="0">' +
-        _asgEsc(r.eco_nuevo || r.eco) +
-        '<span class="m">' + (pies ? pies + "'" : 'sin medida') + '</span></span>';
+        _asgEsc(r.eco_nuevo || r.eco) + '</span>';   // sin la medida: el número ya la dice
     }).join('');
   }
 

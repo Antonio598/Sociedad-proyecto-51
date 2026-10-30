@@ -134,6 +134,43 @@ def contenido_qr(texto) -> str:
     return t.strip()
 
 
+def candidatos_qr(texto) -> list[str]:
+    """Todas las lecturas posibles de lo que trae un QR, de la más probable a la menos.
+
+    No se sabe con certeza qué imprime cada sticker: el identificador del holograma solo
+    (`04BF0FE2A91E94`, el UID de 7 bytes de su chip), una dirección web con el código en la
+    ruta o en un parámetro (`…/verificar?id=04BF…`), o el económico. `contenido_qr` sólo
+    miraba el último tramo de la RUTA y tiraba lo que va después del `?`: si el código venía
+    en un parámetro, se perdía y la unidad «no tenía» QR. Aquí se prueban todas.
+    """
+    from urllib.parse import parse_qsl, urlsplit
+    t = str(texto if texto is not None else "").strip()
+    out: list[str] = []
+
+    def add(v):
+        v = str(v or "").strip()
+        if v and v not in out:
+            out.append(v)
+
+    add(contenido_qr(t))
+    add(t)
+    # UID de holograma (7 bytes en hex, empiezan por 04) en cualquier parte del texto
+    for m in re.findall(r"04[0-9A-Fa-f]{12}", t):
+        add(m.upper())
+    if "://" in t:
+        u = urlsplit(t)
+        for _k, v in parse_qsl(u.query, keep_blank_values=False):
+            add(v)
+        for seg in reversed([s for s in u.path.split("/") if s]):
+            add(seg)
+        add(u.fragment)
+    for parte in re.split(r"[\s;,&|]+", t):
+        if "=" in parte or ":" in parte:
+            add(re.split(r"[=:]", parte, maxsplit=1)[-1])
+        add(parte)
+    return out
+
+
 def resolver_qr(db: Session, texto) -> Resuelto:
     """Resuelve el activo desde el contenido de un QR.
 
@@ -143,14 +180,24 @@ def resolver_qr(db: Session, texto) -> Resuelto:
     por casualidad se pareciera a un económico resolvería al activo equivocado.
     """
     t = contenido_qr(texto)
-    if not t:
+    cands = candidatos_qr(texto)
+    if not t and not cands:
         return Resuelto(discrepancias=["el código QR vino vacío"])
+    t = t or cands[0]
+    # Primero TODAS las lecturas como etiqueta registrada; sólo después como económico.
     r = resolver_activo(db, etiqueta=t)
     if r.ok:
         return r
-    r2 = resolver_activo(db, eco=t)
-    if r2.ok:
-        return r2
+    for c in cands:
+        if len(norm_etiqueta(c)) >= 8:
+            rc = resolver_activo(db, etiqueta=c)
+            if rc.ok:
+                return rc
+    for c in [t] + cands:
+        if len(c) >= 3:
+            r2 = resolver_activo(db, eco=c)
+            if r2.ok:
+                return r2
     # Ninguna de las dos resolvió. Si el código SÍ está registrado como etiqueta pero no
     # resuelve (en conflicto, duplicada, retirada), ese motivo es la información útil y se
     # conserva. Si ni siquiera existe, se habla del texto QUE SE ESCANEÓ: la discrepancia

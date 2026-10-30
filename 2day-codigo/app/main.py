@@ -666,7 +666,9 @@ def _asignacion_dict(a: AsignacionViaje, db: Session) -> dict:
     remolques = []
     if a.remolque_ids:
         rows = db.execute(
-            select(Remolque.id, Remolque.eco, Remolque.usa_combustible, Remolque.operador_asignado_id)
+            # El número VIGENTE (el nuevo si se renumeró): es el que trae pintado y en su QR.
+            select(Remolque.id, func.coalesce(Remolque.eco_nuevo, Remolque.eco),
+                   Remolque.usa_combustible, Remolque.operador_asignado_id)
             .where(Remolque.id.in_(a.remolque_ids))).all()
         info = {rid: (e, uc, tit) for rid, e, uc, tit in rows}
         ovr = a.remolque_operadores or {}
@@ -6342,6 +6344,79 @@ def evidencia_foto(ev_id: int, user: dict = Depends(require_user),
                         headers={"Cache-Control": "private, max-age=3600"})
 
 
+def _qr_de_foto(ruta) -> str | None:
+    """El texto del primer código QR que aparezca en la foto, o None.
+
+    Con zxing-cpp, que también lee el QR con los colores invertidos (pasa con los hologramas
+    brillantes). Se prueba la foto entera y una versión reducida: un QR enorme o muy pequeño
+    en el encuadre a veces sólo sale en una de las dos.
+    """
+    try:
+        import zxingcpp
+        from PIL import Image, ImageOps
+        with Image.open(ruta) as im:
+            im = ImageOps.exif_transpose(im).convert("RGB")
+            for intento in (im, ImageOps.grayscale(im), im.reduce(2) if max(im.size) > 1600 else None):
+                if intento is None:
+                    continue
+                for b in zxingcpp.read_barcodes(intento):
+                    if b.text:
+                        return b.text.strip()
+    except Exception:
+        log.exception("No se pudo buscar el QR en la foto %s", ruta)
+    return None
+
+
+def _verificar_codigo(db: Session, texto: str, esperado: str | None) -> dict:
+    """Resuelve un código QR al número económico de su activo y lo compara con el esperado.
+
+    Lo usan el escáner en vivo (`/qr`) y la FOTO del QR (`/evidencia` con tipo «eco»), para
+    que las dos vías digan lo mismo. Devuelve nombre, leído, coincide, aviso y el Resuelto.
+
+    Si el activo esperado NO TIENE NINGÚN QR registrado, se dice así —«falta su número
+    económico (QR)»— en vez de «no coincide»: ningún escaneo podría coincidir, y el
+    problema no es del chofer sino del catálogo.
+    """
+    r = catalogo.resolver_qr(db, texto)
+    leido = catalogo.contenido_qr(texto).upper() or None
+    nombre, alias = None, set()
+    if r.unidad_id:
+        u = db.get(Unidad, r.unidad_id)
+        nombre = u.clave if u else None
+        alias = {catalogo.norm_eco(nombre)} if nombre else set()
+    elif r.remolque_id:
+        rem = db.get(Remolque, r.remolque_id)
+        nombre = rem.eco if rem else None
+        alias = {catalogo.norm_eco(x) for x in ((rem.eco, rem.eco_nuevo) if rem else ()) if x}
+    coincide, aviso = None, None
+    if esperado is not None:
+        coincide = bool(nombre and catalogo.norm_eco(esperado) in alias)
+        if not coincide:
+            if not _tiene_qr_registrado(db, esperado):
+                aviso = (f"Falta el número económico (QR) de {esperado}: no tiene ningún código "
+                         f"registrado en el sistema. Avisa al administrador para registrarlo.")
+            else:
+                aviso = (f"El QR corresponde a {nombre or 'un activo desconocido'} y el viaje "
+                         f"tiene asignado {esperado}. Se marca para revisión del coordinador.")
+    if not r.ok and not aviso:
+        aviso = "; ".join(r.discrepancias or ["el código no corresponde a ningún activo"])
+    return {"nombre": nombre, "leido": leido, "coincide": coincide, "aviso": aviso, "r": r}
+
+
+def _tiene_qr_registrado(db: Session, eco: str) -> bool:
+    """¿El activo con ese económico (unidad o remolque) tiene al menos un QR vinculado?"""
+    e = catalogo.norm_eco(eco)
+    u = next((x for x in db.execute(select(Unidad)).scalars()
+              if catalogo.norm_eco(x.clave) == e), None)
+    rem = None if u else next((x for x in db.execute(select(Remolque)).scalars()
+                               if e in {catalogo.norm_eco(x.eco), catalogo.norm_eco(x.eco_nuevo)}), None)
+    if u is None and rem is None:
+        return True   # activo desconocido: que hable la discrepancia del código, no esto
+    q = select(EtiquetaActivo.id).where(EtiquetaActivo.estado == "vinculada")
+    q = q.where(EtiquetaActivo.unidad_id == u.id) if u else q.where(EtiquetaActivo.remolque_id == rem.id)
+    return db.execute(q.limit(1)).first() is not None
+
+
 @app.post("/api/solicitudes/{sol_id}/qr")
 async def solicitud_qr(sol_id: int, request: Request,
                        user: dict = Depends(require_operador),
@@ -6375,28 +6450,8 @@ async def solicitud_qr(sol_id: int, request: Request,
     if s.estado not in (EstadoSolicitud.BORRADOR, EstadoSolicitud.DEVUELTA):
         raise HTTPException(409, "La solicitud ya no admite cambios de evidencia")
 
-    r = catalogo.resolver_qr(db, texto)
-    leido = catalogo.contenido_qr(texto).upper() or None
-
-    # El nombre del activo al que resolvió: es lo que se compara y lo que se le enseña a la
-    # persona. Si el código no resuelve, se conserva el texto crudo para poder investigarlo.
-    nombre = None
-    if r.unidad_id:
-        u = db.get(Unidad, r.unidad_id)
-        nombre = u.clave if u else None
-    elif r.remolque_id:
-        rem = db.get(Remolque, r.remolque_id)
-        nombre = rem.eco if rem else None
-
-    coincide = None
-    aviso = None
-    if esperado is not None:
-        coincide = bool(nombre and catalogo.norm_eco(nombre) == catalogo.norm_eco(esperado))
-        if not coincide:
-            aviso = (f"El QR corresponde a {nombre or 'un activo desconocido'} y el viaje "
-                     f"tiene asignado {esperado}. Se marca para revisión del coordinador.")
-    if not r.ok:
-        aviso = "; ".join(r.discrepancias or ["el código no corresponde a ningún activo"])
+    v = _verificar_codigo(db, texto, esperado)
+    r, leido, nombre, coincide, aviso = v["r"], v["leido"], v["nombre"], v["coincide"], v["aviso"]
 
     ev = EvidenciaRecarga(
         solicitud_id=sol_id, tipo="eco", foto_path=None,
@@ -6478,64 +6533,81 @@ async def solicitud_evidencia(
     ia_fallo = False   # la IA no respondió (no es que la foto esté mal)
     esp = (esperado or "").strip().upper() or None
     objetivo = {"eco": "eco", "kilometraje": "kilometraje", "odometro": "odometro"}.get(tipo)
-    try:
-        # A UN HILO. Esta función es `async`, así que corre SOBRE el bucle de eventos, y
-        # uvicorn arranca sin `--workers`: un solo proceso, un solo bucle. Leer la foto aquí
-        # dentro congelaba la aplicación entera —los cinco paneles, todos los usuarios— los
-        # 5-10 s que tarda la llamada (ver el mismo arreglo en `licencia_leer`). Y éste es el
-        # camino más transitado que hay: cada foto de cada chofer al cerrar el turno.
-        lectura = await run_in_threadpool(ai.leer_imagen, str(ruta),
-                                          pista=pista, objetivo=objetivo)
-        confianza = lectura.confianza
-        # Autenticidad, que es otra pregunta distinta de la legibilidad: una foto de la
-        # pantalla de otro teléfono se lee perfecta y el dato es de otro día.
-        sospechosa = bool(getattr(lectura, "es_recaptura", False))
-        sospecha_motivo = (getattr(lectura, "motivo_sospecha", None) or "").strip() or None
-        if sospecha_motivo:
-            sospechosa = True
-        elif sospechosa:
-            sospecha_motivo = "La imagen parece la foto de una pantalla, no del instrumento."
-        if not getattr(lectura, "es_instrumento", True):
-            sospechosa = True
-            sospecha_motivo = sospecha_motivo or "La foto no parece un instrumento del camión."
-
-        if tipo == "eco":
-            # Lectura de TEXTO: el número económico rotulado, y su verificación.
-            texto_ia = (lectura.eco_rotulado or "").strip().upper() or None
-            if esp is not None:
-                # `None` es "no se pudo leer" y `False` es "es otro activo": son preguntas
-                # distintas y antes se contestaban con el mismo False. Una foto ilegible
-                # acusaba de económico equivocado a una unidad correcta, y encendía la
-                # alerta del coordinador (`eco_alerta` mira `coincide is False`).
-                coincide = (texto_ia == esp) if texto_ia else None
-                if coincide is False:
-                    aviso = (f"El económico leído ({texto_ia}) NO coincide con el "
-                             f"asignado ({esp}). Se marca para revisión del coordinador.")
-                elif coincide is None:
-                    aviso = (f"No se pudo leer el económico en la foto. Escanea la etiqueta "
-                             f"del activo o captura {esp} a mano.")
+    procedencia_eco = None
+    if tipo == "eco":
+        # El ECONÓMICO sale del QR, no del número pintado. Antes, cuando el escáner en vivo no
+        # leía el código (un holograma brillante, un iPhone), la app pasaba a «toma la foto» y
+        # la IA leía el número ROTULADO en la carrocería —el del tracto—: justo lo que no se
+        # quiere. Ahora se decodifica el QR de la propia foto y se resuelve en el catálogo
+        # igual que con el escáner; sin QR en la foto, se pide repetirla de cerca.
+        qr_txt = await run_in_threadpool(_qr_de_foto, ruta)
+        if qr_txt:
+            v = _verificar_codigo(db, qr_txt, esp)
+            texto_ia = v["nombre"] or v["leido"]
+            coincide, aviso = v["coincide"], v["aviso"]
+            procedencia_eco = Procedencia.ESCANEADA
         else:
-            campo = {"odometro": "odometro", "kilometraje": "kilometraje_viaje",
-                     "nivel": "nivel_tanque", "termo": "horas_termo", "comprobante": "lts_real",
-                     "horas_motor": "horas_motor"}[tipo]
-            valor_ia = getattr(lectura, campo, None)
-            # Validación de rango EN EL MOMENTO: un odómetro que retrocede se avisa aquí.
-            if tipo == "odometro" and valor_ia is not None and ultimo_odo and valor_ia < ultimo_odo:
-                aviso = (f"El odómetro leído ({valor_ia:.0f}) es MENOR al anterior "
-                         f"({ultimo_odo:.0f}). Revisa la foto o el valor.")
-        # Se le dice al operador en el momento, que es cuando puede repetir la foto. Al
-        # coordinador le llega igual en la evidencia, aunque el operador la ignore.
-        if sospecha_motivo and not aviso:
-            aviso = sospecha_motivo
-    except Exception as e:
-        log.exception("Fallo leyendo la evidencia de la solicitud %s (%s)", sol_id, type(e).__name__)
-        # El operador NO teclea el odómetro: sale siempre de la cámara (regla del
-        # dueño, 20-sep-2026). Si la foto no se deja leer, se repite; y si aun así no
-        # sale, el número lo pone el coordinador desde la misma foto.
-        # El aviso dice el MOTIVO real: una llave mal puesta o el crédito agotado no se
-        # arreglan repitiendo la foto, y antes todo parecía una foto borrosa.
-        aviso = ai.explicar_error(e)
-        ia_fallo = True
+            aviso = ("No se encontró el código QR en la foto. Tómala de cerca, con el QR "
+                     "completo dentro de la foto y sin reflejo.")
+    else:
+        try:
+            # A UN HILO. Esta función es `async`, así que corre SOBRE el bucle de eventos, y
+            # uvicorn arranca sin `--workers`: un solo proceso, un solo bucle. Leer la foto aquí
+            # dentro congelaba la aplicación entera —los cinco paneles, todos los usuarios— los
+            # 5-10 s que tarda la llamada (ver el mismo arreglo en `licencia_leer`). Y éste es el
+            # camino más transitado que hay: cada foto de cada chofer al cerrar el turno.
+            lectura = await run_in_threadpool(ai.leer_imagen, str(ruta),
+                                              pista=pista, objetivo=objetivo)
+            confianza = lectura.confianza
+            # Autenticidad, que es otra pregunta distinta de la legibilidad: una foto de la
+            # pantalla de otro teléfono se lee perfecta y el dato es de otro día.
+            sospechosa = bool(getattr(lectura, "es_recaptura", False))
+            sospecha_motivo = (getattr(lectura, "motivo_sospecha", None) or "").strip() or None
+            if sospecha_motivo:
+                sospechosa = True
+            elif sospechosa:
+                sospecha_motivo = "La imagen parece la foto de una pantalla, no del instrumento."
+            if not getattr(lectura, "es_instrumento", True):
+                sospechosa = True
+                sospecha_motivo = sospecha_motivo or "La foto no parece un instrumento del camión."
+
+            if tipo == "eco":
+                # Lectura de TEXTO: el número económico rotulado, y su verificación.
+                texto_ia = (lectura.eco_rotulado or "").strip().upper() or None
+                if esp is not None:
+                    # `None` es "no se pudo leer" y `False` es "es otro activo": son preguntas
+                    # distintas y antes se contestaban con el mismo False. Una foto ilegible
+                    # acusaba de económico equivocado a una unidad correcta, y encendía la
+                    # alerta del coordinador (`eco_alerta` mira `coincide is False`).
+                    coincide = (texto_ia == esp) if texto_ia else None
+                    if coincide is False:
+                        aviso = (f"El económico leído ({texto_ia}) NO coincide con el "
+                                 f"asignado ({esp}). Se marca para revisión del coordinador.")
+                    elif coincide is None:
+                        aviso = (f"No se pudo leer el económico en la foto. Escanea la etiqueta "
+                                 f"del activo o captura {esp} a mano.")
+            else:
+                campo = {"odometro": "odometro", "kilometraje": "kilometraje_viaje",
+                         "nivel": "nivel_tanque", "termo": "horas_termo", "comprobante": "lts_real",
+                         "horas_motor": "horas_motor"}[tipo]
+                valor_ia = getattr(lectura, campo, None)
+                # Validación de rango EN EL MOMENTO: un odómetro que retrocede se avisa aquí.
+                if tipo == "odometro" and valor_ia is not None and ultimo_odo and valor_ia < ultimo_odo:
+                    aviso = (f"El odómetro leído ({valor_ia:.0f}) es MENOR al anterior "
+                             f"({ultimo_odo:.0f}). Revisa la foto o el valor.")
+            # Se le dice al operador en el momento, que es cuando puede repetir la foto. Al
+            # coordinador le llega igual en la evidencia, aunque el operador la ignore.
+            if sospecha_motivo and not aviso:
+                aviso = sospecha_motivo
+        except Exception as e:
+            log.exception("Fallo leyendo la evidencia de la solicitud %s (%s)", sol_id, type(e).__name__)
+            # El operador NO teclea el odómetro: sale siempre de la cámara (regla del
+            # dueño, 20-sep-2026). Si la foto no se deja leer, se repite; y si aun así no
+            # sale, el número lo pone el coordinador desde la misma foto.
+            # El aviso dice el MOTIVO real: una llave mal puesta o el crédito agotado no se
+            # arreglan repitiendo la foto, y antes todo parecía una foto borrosa.
+            aviso = ai.explicar_error(e)
+            ia_fallo = True
 
     # La lectura ACERTADA también cuenta: hasta hoy sólo la CORRECCIÓN copiaba el valor a la
     # solicitud, así que el odómetro de la cabecera se llenaba únicamente cuando alguien
@@ -6554,8 +6626,9 @@ async def solicitud_evidencia(
         valor_ia=valor_ia, valor_final=valor_ia,   # arranca igual; se ajusta si corrigen
         texto_ia=texto_ia, esperado=esp if tipo == "eco" else None, coincide=coincide,
         etiqueta=((etiqueta or "").strip()[:60] or None),
-        procedencia=(Procedencia.IA_ACEPTADA if (valor_ia is not None or texto_ia is not None)
-                     else Procedencia.MANUAL),
+        procedencia=(procedencia_eco or
+                     (Procedencia.IA_ACEPTADA if (valor_ia is not None or texto_ia is not None)
+                      else Procedencia.MANUAL)),
         confianza=confianza,
         sospechosa=sospechosa, sospecha_motivo=sospecha_motivo,
     )

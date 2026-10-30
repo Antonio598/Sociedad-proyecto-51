@@ -905,7 +905,7 @@ async function qrLeerFotograma(v){
   }
   if(typeof window.jsQR!=='function')return null;
   try{
-    const rr = window.jsQR(cx.getImageData(0,0,w,h).data, w, h, {inversionAttempts:'dontInvert'});
+    const rr = window.jsQR(cx.getImageData(0,0,w,h).data, w, h, {inversionAttempts:'attemptBoth'});
     return (rr&&rr.data)||null;
   }catch(_){ return null; }
 }
@@ -945,7 +945,7 @@ async function iniciarLecturaQR(){
     if(qrVisto){ qrPlazo=setTimeout(rendirse, 12000); return; }
     c.classList.remove('qr');          // devuelve el obturador a la pantalla
     const m=$('#qr-msg');
-    if(m)m.textContent='¿No lee el código? Toma la foto del número económico.';
+    if(m)m.textContent='¿No lee el código? Toma una foto de cerca al código QR (sin reflejo).';
     const f=FOTOS.find(x=>x.key===camTipo); if(f)f.sinQR=true;
     clearInterval(qrTimer); qrTimer=null;
     pintarFotos();   // el botón deja de prometer un escáner que ya no va a abrirse
@@ -1031,7 +1031,7 @@ async function enviarQR(tipo, texto){
     if(st)st.textContent='Sin leer';
     if(errDeRed(e)){
       const f2=await confirmar('No hay conexión para verificar el código. Inténtalo otra vez '
-        +'cuando tengas señal, o toma la foto del número.', 'Tomar foto', 'Cancelar');
+        +'cuando tengas señal, o toma una foto de cerca al código QR.', 'Tomar foto', 'Cancelar');
       if(f2)forzarFoto(tipo);
     } else {
       toast('No se pudo registrar el código: '+(e.message||''));

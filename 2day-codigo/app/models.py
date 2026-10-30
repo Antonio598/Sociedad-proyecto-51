@@ -182,37 +182,25 @@ class Remolque(Base):
         ForeignKey("operadores.id"), nullable=True)
     @property
     def medida_pies(self) -> int | None:
-        """Largo de la caja en pies, deducido de la descripción. None si no se sabe.
+        """Largo de la caja en pies, según su NÚMERO ECONÓMICO vigente (el que se muestra).
 
-        Se DEDUCE en vez de guardarse porque el dato ya está escrito y duplicarlo abriría
-        la puerta a que las dos copias discrepen. Tolera que alguien haya tecleado la
-        comilla doble en lugar del pie: en el catálogo hay un 53" que así se lee bien.
+        REGLA DEL DUEÑO (30-oct-2026): los que empiezan por 40 son de 40 pies —se pueden
+        enganchar DOS—, y los que empiezan por 53 son de 53 —sólo UNO—. Con esos números ya
+        se sabe la medida, así que el selector ni la muestra.
 
-        Vale None en los 4 remolques sin descripción, y eso NO es un hueco que tapar: sin
-        medida no se puede afirmar que sean de 40, así que la regla de enganche los deja
-        fuera de las parejas por sí sola.
+        Antes se deducía de la descripción. Con la regla del dueño, tres cajas quedan con
+        número de 40 y descripción de 53 (401215 «LEGALIZADO 53"», 400916 «53' C/EQREF
+        ALTA», 400211 «53' C/EQ REF»): manda el número; si alguna es en realidad de 53, se
+        corrige su número económico o su descripción en el catálogo.
 
-        NO DEDUZCAS LA MEDIDA DEL NÚMERO ECONÓMICO (comprobado el 3-sep-2026). Es tentador:
-        casi todas las cajas de 53 pies empiezan por 53 y casi todas las de 40 por 40, y
-        contra el económico VIEJO la regla acierta 43 de 44 veces. Pero la renumeración la
-        rompió: cinco cajas pasaron de 53… a 40… sin cambiar de tamaño, y dos de ellas lo
-        dicen por escrito en su propia descripción —530901→400916 ("53' C/EQREF ALTA") y
-        531215→401215 ("LEGALIZADO 53\"")—. Contra el económico VIGENTE la regla falla 3 de
-        44. Se comprueba con:
-            SELECT left(eco,2), left(eco_nuevo,2), descripcion FROM remolques
-            WHERE eco_nuevo IS NOT NULL AND left(eco,2) <> left(eco_nuevo,2);
-        El prefijo es una serie administrativa, no una medida. Y aquí no se está eligiendo
-        un dato de catálogo cualquiera: de esto depende si dos cajas pueden engancharse,
-        así que adivinar mal engancha o desengancha equipo físico. Los cuatro sin
-        descripción (400913, 5300121, 53113, 53114) los tiene que medir una persona.
+        Otro prefijo (los dollies D-0X) → None: no se miden y no entran en parejas.
         """
-        import re as _re
-        d = self.descripcion or ""
-        m = _re.search(r"\b(\d{2})\s*['\"\u2019\u201d]", d)
-        if m:
-            return int(m.group(1))
-        m = _re.search(r"\b(40|45|48|53)\b", d)
-        return int(m.group(1)) if m else None
+        eco = (self.eco_nuevo or self.eco or "").strip().upper()
+        if eco.startswith("40"):
+            return 40
+        if eco.startswith("53"):
+            return 53
+        return None
 
     # Procedencia del renglón: responde "¿esta fila la respalda el maestro oficial y
     # cuándo se verificó?" frente a "la inventó una importación vieja". No cambia

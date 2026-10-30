@@ -11,7 +11,7 @@
 <!-- dialog.js se carga SIN defer: el codigo de la pagina es inline y debe encontrar Dlg ya definido -->
 <script src="/static/reportes.js?v=20261014"></script>
 <script src="/static/dialog.js?v=20261005a"></script>
-<script src="/static/maps.js?v=20261014"></script>
+<script src="/static/maps.js?v=20261030"></script>
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
@@ -511,7 +511,7 @@ async function opRenderAsignar(){
           <div class="t">Quién va</div>
           <label class="f">Operador</label><select id="as-oper">${oOpts}</select>
           <label class="f">Unidad</label><select id="as-unidad" onchange="asRemToggle()">${uOpts}</select>
-          <div id="as-remwrap" style="display:none"><label class="f">Remolques a enganchar <span style="color:var(--muted);font-weight:400">(2 sólo si ambos son de 40 pies)</span> <span id="as-remn" style="color:var(--accent);font-weight:700"></span></label><div class="remgrid" id="as-remgrid"></div></div>
+          <div id="as-remwrap" style="display:none"><label class="f">Remolques a enganchar <span style="color:var(--muted);font-weight:400">(2 sólo si ambos empiezan por 40; los de 53 van solos)</span> <span id="as-remn" style="color:var(--accent);font-weight:700"></span></label><div class="remgrid" id="as-remgrid"></div></div>
         </div>
         <div class="as-blq">
           <div class="t">A dónde</div>
@@ -552,7 +552,7 @@ function asRemToggle(){
   if(tipo==='TRACTO'){
     const oOpts='<option value="">— Titular del remolque —</option>'+G_OPS.slice().sort(opSort).map(o=>`<option value="${o.id}">${esc(o.nombre)}${o.numero?' (#'+o.numero+')':''}</option>`).join('');
     wrap.style.display='';
-    $('#as-remgrid').innerHTML=G_REM.length?G_REM.map(r=>`<div class="remopt2" style="display:flex;flex-direction:column;gap:4px"><label class="remopt"><input type="checkbox" value="${r.id}" onchange="asRemPick(this)"> ${esc(r.eco)}${r.operador_titular?' · '+esc(r.operador_titular):''}</label><select class="as-remop" data-rem="${r.id}" style="display:none" onclick="event.stopPropagation()">${oOpts}</select></div>`).join(''):'<div class="empty" style="padding:8px">Sin remolques en catálogo.</div>';
+    $('#as-remgrid').innerHTML=G_REM.length?G_REM.map(r=>`<div class="remopt2" style="display:flex;flex-direction:column;gap:4px"><label class="remopt"><input type="checkbox" value="${r.id}" onchange="asRemPick(this)"> ${esc(r.eco_nuevo||r.eco)}${r.operador_titular?' · '+esc(r.operador_titular):''}</label><select class="as-remop" data-rem="${r.id}" style="display:none" onclick="event.stopPropagation()">${oOpts}</select></div>`).join(''):'<div class="empty" style="padding:8px">Sin remolques en catálogo.</div>';
     asRemN();
   }
   else{wrap.style.display='none';}
