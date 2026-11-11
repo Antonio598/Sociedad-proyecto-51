@@ -6359,9 +6359,20 @@ def _qr_de_foto(ruta) -> str | None:
         from PIL import Image, ImageOps
         with Image.open(ruta) as im:
             im = ImageOps.exif_transpose(im).convert("RGB")
-            for intento in (im, ImageOps.grayscale(im), im.reduce(2) if max(im.size) > 1600 else None):
-                if intento is None:
-                    continue
+            gris = ImageOps.grayscale(im)
+
+            def intentos():
+                yield im
+                yield gris
+                # Holograma con reflejo: subir el contraste, o igualarlo, saca el código del
+                # brillo. Y un QR enorme en una foto de 12 MP a veces sólo sale reducido.
+                yield ImageOps.autocontrast(gris, cutoff=2)
+                yield ImageOps.equalize(gris)
+                if max(im.size) > 1600:
+                    yield gris.reduce(2)
+                if max(im.size) > 3000:
+                    yield gris.reduce(4)
+            for intento in intentos():
                 for b in zxingcpp.read_barcodes(intento):
                     if b.text:
                         return b.text.strip()

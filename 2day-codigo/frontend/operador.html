@@ -838,7 +838,7 @@ function pintarFotos(){
 // despegó o el teléfono no sabe leer códigos, el operador no se queda tirado.
 let qrDetector=null, qrTimer=null, qrVisto=null, qrDesde=0, qrLienzo=null, qrOcupado=false;
 let qrPlazo=null;           // el plazo tras el cual se ofrece la foto como salida
-let qrUltimo=0, qrVuelta=0; // cuándo se leyó por última vez · alterna marco / pantalla entera
+let qrUltimo=0, qrVuelta=0, qrChico=null; // cuándo se leyó por última vez · alterna marco / pantalla entera
 // LECTURA CASI INSTANTÁNEA (10-nov-2026). Antes había que sostener el código 3 s y bastaba
 // UN fotograma sin leer —un reflejo del holograma, la mano que tiembla— para que la cuenta
 // volviera a empezar: en la práctica casi nunca terminaba. Ahora basta con medio segundo y
@@ -858,14 +858,15 @@ const QR_ANCHO=720;             // a cuánto se reduce el fotograma para jsQR (e
 // para que dos aperturas seguidas no pidan el archivo dos veces.
 let _jsqrProm=null, _jsqrRoto=false;
 function cargarJsQR(){
-  if(typeof window.BarcodeDetector!=='undefined') return Promise.resolve(true);  // no hace falta
+  // Se carga SIEMPRE, también donde hay lector nativo: el nativo no lee el QR invertido de
+  // los hologramas y jsQR sí. Si la descarga falla, el nativo sigue solo.
   if(typeof window.jsQR==='function') return Promise.resolve(true);
   if(_jsqrProm) return _jsqrProm;
   _jsqrProm = new Promise(res=>{
     const s=document.createElement('script');
     s.src='/static/jsqr.js?v=1.4.0';
     s.onload =()=>res(typeof window.jsQR==='function');
-    s.onerror=()=>{ _jsqrProm=null; _jsqrRoto=true; res(false); };
+    s.onerror=()=>{ _jsqrProm=null; _jsqrRoto=true; res(typeof window.BarcodeDetector!=='undefined'); };
     document.head.appendChild(s);
   });
   return _jsqrProm;
@@ -906,28 +907,61 @@ function qrVisible(v){
   const sw=Math.min(vw, Math.round(cw/factor)), sh=Math.min(vh, Math.round(ch/factor));
   return { sx:Math.round((vw-sw)/2), sy:Math.round((vh-sh)/2), sw:sw, sh:sh };
 }
+// ESTIRAR EL CONTRASTE a gris: el oscuro del 2 % pasa a negro y el claro del 98 % a blanco.
+// El holograma no es negro sobre blanco sino gris sobre gris, con brillo encima; así jsQR no
+// lo ve, y estirado sí (comprobado con un QR invertido al 45 % de contraste y con reflejo).
+function qrEstirar(d){
+  const n=d.length>>2, L=new Uint8Array(n), hist=new Uint32Array(256);
+  for(let i=0,j=0;j<n;i+=4,j++){ const y=(77*d[i]+150*d[i+1]+29*d[i+2])>>8; L[j]=y; hist[y]++; }
+  let lo=0, hi=255, acc=0;
+  for(let k=0;k<256;k++){ acc+=hist[k]; if(acc>=n*0.02){ lo=k; break; } }
+  acc=0; for(let k=255;k>=0;k--){ acc+=hist[k]; if(acc>=n*0.02){ hi=k; break; } }
+  const esc=255/Math.max(1,hi-lo);
+  for(let i=0,j=0;j<n;i+=4,j++){ const y=Math.max(0,Math.min(255,(L[j]-lo)*esc)); d[i]=d[i+1]=d[i+2]=y; }
+}
 async function qrLeerFotograma(v){
   // Un fotograma sí y otro no se busca en el MARCO; los demás en toda la pantalla, para que
-  // un código que quedó fuera del cuadro también se lea. Se reduce para jsQR, que recorre
-  // todos los píxeles; el lector nativo es rápido y recibe el recorte a resolución completa.
+  // un código que quedó fuera del cuadro también se lea.
+  //
+  // TRES INTENTOS POR FOTOGRAMA, porque el holograma es lo difícil: refleja, y muchas veces
+  // el código sale CLARO SOBRE OSCURO (invertido). El lector nativo de Android no lee
+  // invertidos, y antes, si el teléfono tenía lector nativo, jsQR ni se cargaba: el escáner
+  // se quedaba mirando el código para siempre. Ahora:
+  //   1. nativo sobre el recorte a buena resolución;
+  //   2. nativo sobre el recorte INVERTIDO;
+  //   3. jsQR con `attemptBoth` (normal e invertido) sobre una versión reducida y con el
+  //      contraste estirado (qrEstirar).
   const r = (qrVuelta++ % 2) ? qrVisible(v) : qrRegion(v);
-  qrLienzo = qrLienzo || document.createElement('canvas');
-  const f = qrDetector ? Math.min(1, 1600/Math.max(r.sw,r.sh)) : Math.min(1, QR_ANCHO/Math.max(r.sw,r.sh));
-  const w = Math.max(1, Math.round(r.sw*f)), h = Math.max(1, Math.round(r.sh*f));
-  if(qrLienzo.width!==w || qrLienzo.height!==h){ qrLienzo.width=w; qrLienzo.height=h; }
-  const cx = qrLienzo.getContext('2d',{willReadFrequently:true});
-  cx.drawImage(v, r.sx,r.sy,r.sw,r.sh, 0,0,w,h);
   if(qrDetector){
-    // Al nativo se le entrega el MISMO recorte, no el elemento de vídeo: si no, seguiría
-    // viendo la franja que la pantalla oculta.
-    try{ const c=await qrDetector.detect(qrLienzo); return (c&&c.length&&c[0].rawValue)||null; }
-    catch(_){ return null; }      // un fotograma ilegible no es un error
+    qrLienzo = qrLienzo || document.createElement('canvas');
+    const f = Math.min(1, 1600/Math.max(r.sw,r.sh));
+    const w = Math.max(1, Math.round(r.sw*f)), h = Math.max(1, Math.round(r.sh*f));
+    if(qrLienzo.width!==w || qrLienzo.height!==h){ qrLienzo.width=w; qrLienzo.height=h; }
+    qrLienzo.getContext('2d').drawImage(v, r.sx,r.sy,r.sw,r.sh, 0,0,w,h);
+    try{ const c=await qrDetector.detect(qrLienzo); if(c&&c.length&&c[0].rawValue)return c[0].rawValue; }
+    catch(_){ }      // un fotograma ilegible no es un error
   }
-  if(typeof window.jsQR!=='function')return null;
-  try{
-    const rr = window.jsQR(cx.getImageData(0,0,w,h).data, w, h, {inversionAttempts:'attemptBoth'});
-    return (rr&&rr.data)||null;
-  }catch(_){ return null; }
+  // Versión reducida: la usan el nativo invertido y jsQR (que recorre todos los píxeles).
+  qrChico = qrChico || document.createElement('canvas');
+  const f2 = Math.min(1, QR_ANCHO/Math.max(r.sw,r.sh));
+  const w2 = Math.max(1, Math.round(r.sw*f2)), h2 = Math.max(1, Math.round(r.sh*f2));
+  if(qrChico.width!==w2 || qrChico.height!==h2){ qrChico.width=w2; qrChico.height=h2; }
+  const cx = qrChico.getContext('2d',{willReadFrequently:true});
+  cx.drawImage(v, r.sx,r.sy,r.sw,r.sh, 0,0,w2,h2);
+  let img;
+  try{ img = cx.getImageData(0,0,w2,h2); }catch(_){ return null; }
+  qrEstirar(img.data);
+  if(typeof window.jsQR==='function'){
+    try{ const rr = window.jsQR(img.data, w2, h2, {inversionAttempts:'attemptBoth'}); if(rr&&rr.data)return rr.data; }
+    catch(_){ }
+  }
+  if(qrDetector){
+    const d=img.data; for(let k=0;k<d.length;k+=4){ d[k]=255-d[k]; d[k+1]=255-d[k+1]; d[k+2]=255-d[k+2]; }
+    cx.putImageData(img,0,0);
+    try{ const c=await qrDetector.detect(qrChico); if(c&&c.length&&c[0].rawValue)return c[0].rawValue; }
+    catch(_){ }
+  }
+  return null;
 }
 function qrPintarCuenta(restan){
   const c=$('#qr-cuenta'), m=$('#qr-marcha');
