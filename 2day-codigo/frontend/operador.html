@@ -202,7 +202,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent)}
 /* Escaneo de QR: es OTRA cosa que tomar una foto, y se nota. No hay botón de disparo —
    la captura la decide el lector— así que la pantalla sólo tiene que decir dónde apuntar
    y cuánto falta. El marco es la mira; el aro es el tiempo. */
-.cam.qr .shutter{display:none}
+.cam.qr .shutter{opacity:.8}       /* a la vista: si el escáner no lee, la FOTO del QR la lee el servidor */
 .cam .mira{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none}
 .cam.qr .mira{display:flex}
 .cam .marco{width:min(68vw,290px);aspect-ratio:1;border-radius:22px;position:relative;
@@ -482,7 +482,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent)}
       <div class="aro">
         <svg viewBox="0 0 54 54"><circle class="pista" cx="27" cy="27" r="24"></circle>
         <circle class="marcha" id="qr-marcha" cx="27" cy="27" r="24"></circle></svg>
-        <b id="qr-cuenta">3</b>
+        <b id="qr-cuenta"></b>
       </div>
     </div>
   </div>
@@ -652,6 +652,10 @@ const NAV=[['inicio','Inicio','M4 11.5 12 4l8 7.5M6 10v9h12v-9'],
   ['rendimiento','Rendimiento','M4 20V4M4 20h16M8 16l3-4 3 2 4-6'],
   ['ayuda','Recomendaciones','M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M9.7 9.5a2.4 2.4 0 0 1 4.5 1.2c0 1.6-2.2 2-2.2 3.3M12 17h.01'],
   ['perfil','Perfil','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M4.5 20a7.5 7.5 0 0 1 15 0']];
+// MENÚ SIMPLE (pedido del dueño, 10-nov-2026): sólo lo que se usa a diario. Las secciones que
+// salen siguen en el código; para regresar una al menú basta con quitarla de esta lista.
+const NAV_OCULTAS=new Set(['viajes','rendimiento','ayuda']);
+NAV.splice(0,NAV.length,...NAV.filter(it=>!NAV_OCULTAS.has(it[0])));
 const TIT={inicio:['Inicio','INICIO'],recarga:['Nueva recarga','RECARGA'],solicitudes:['Mis solicitudes','SOLICITUDES'],viajes:['Mis viajes','VIAJES'],rendimiento:['Mi\nRendimiento','RENDIMIENTO'],ayuda:['Ayuda','AYUDA'],perfil:['Perfil','PERFIL']};
 
 // ── Lo que se guarda en el teléfono es de UNA persona ──────────────────────────────
@@ -834,8 +838,15 @@ function pintarFotos(){
 // despegó o el teléfono no sabe leer códigos, el operador no se queda tirado.
 let qrDetector=null, qrTimer=null, qrVisto=null, qrDesde=0, qrLienzo=null, qrOcupado=false;
 let qrPlazo=null;           // el plazo tras el cual se ofrece la foto como salida
-const QR_SEGUNDOS=3;            // hay que sostener el código enfocado este tiempo
-const QR_ANCHO=480;             // a cuánto se reduce el fotograma antes de decodificar
+let qrUltimo=0, qrVuelta=0; // cuándo se leyó por última vez · alterna marco / pantalla entera
+// LECTURA CASI INSTANTÁNEA (10-nov-2026). Antes había que sostener el código 3 s y bastaba
+// UN fotograma sin leer —un reflejo del holograma, la mano que tiembla— para que la cuenta
+// volviera a empezar: en la práctica casi nunca terminaba. Ahora basta con medio segundo y
+// se tolera perderlo de vista hasta QR_TOLERANCIA. El código del vecino no se cuela porque
+// el servidor compara contra la unidad asignada y avisa si no coincide.
+const QR_SEGUNDOS=0.5;
+const QR_TOLERANCIA=900;        // ms sin leerlo antes de reiniciar la cuenta
+const QR_ANCHO=720;             // a cuánto se reduce el fotograma para jsQR (el nativo va sin reducir)
 
 // DOS LECTORES, y el orden importa. `BarcodeDetector` es nativo y lo resuelve el sistema:
 // es más rápido y no gasta batería, pero sólo existe en Chromium de Android. En iOS no
@@ -887,12 +898,21 @@ function qrRegion(v){
            sw:Math.round(lado), sh:Math.round(lado) };
 }
 
+// Lo que se ve en pantalla (el mismo recorte que hace `object-fit:cover`).
+function qrVisible(v){
+  const vw=v.videoWidth, vh=v.videoHeight;
+  const cw=v.clientWidth||vw, ch=v.clientHeight||vh;
+  const factor=Math.max(cw/vw, ch/vh);
+  const sw=Math.min(vw, Math.round(cw/factor)), sh=Math.min(vh, Math.round(ch/factor));
+  return { sx:Math.round((vw-sw)/2), sy:Math.round((vh-sh)/2), sw:sw, sh:sh };
+}
 async function qrLeerFotograma(v){
-  // Se recorta SIEMPRE al marco, y se reduce: jsQR recorre todos los píxeles y a resolución
-  // de cámara no termina entre un tick y el siguiente, con lo que la interfaz se traba.
-  const r = qrRegion(v);
+  // Un fotograma sí y otro no se busca en el MARCO; los demás en toda la pantalla, para que
+  // un código que quedó fuera del cuadro también se lea. Se reduce para jsQR, que recorre
+  // todos los píxeles; el lector nativo es rápido y recibe el recorte a resolución completa.
+  const r = (qrVuelta++ % 2) ? qrVisible(v) : qrRegion(v);
   qrLienzo = qrLienzo || document.createElement('canvas');
-  const f = Math.min(1, QR_ANCHO/r.sw);
+  const f = qrDetector ? Math.min(1, 1600/Math.max(r.sw,r.sh)) : Math.min(1, QR_ANCHO/Math.max(r.sw,r.sh));
   const w = Math.max(1, Math.round(r.sw*f)), h = Math.max(1, Math.round(r.sh*f));
   if(qrLienzo.width!==w || qrLienzo.height!==h){ qrLienzo.width=w; qrLienzo.height=h; }
   const cx = qrLienzo.getContext('2d',{willReadFrequently:true});
@@ -911,7 +931,6 @@ async function qrLeerFotograma(v){
 }
 function qrPintarCuenta(restan){
   const c=$('#qr-cuenta'), m=$('#qr-marcha');
-  if(c)c.textContent=Math.max(0,Math.ceil(restan/1000));
   // 151 es la longitud del círculo (2·π·24): el trazo se va cerrando conforme avanza.
   if(m)m.style.strokeDashoffset=String(151*(restan/(QR_SEGUNDOS*1000)));
 }
@@ -936,6 +955,7 @@ async function iniciarLecturaQR(){
   // .shutter{display:none}), el diálogo de "no coincide" sólo aparece si el código SÍ se
   // leyó, y el económico es obligatorio para enviar. Con un sticker roto —o en los 16
   // activos que no tienen etiqueta— esa recarga no se podía terminar de ninguna forma.
+  qrUltimo=0; qrVuelta=0;
   qrPlazo = setTimeout(function rendirse(){
     const c=$('#cam'); if(!c||!c.classList.contains('show'))return;
     // NO SE RINDE MIENTRAS ESTÁ LEYENDO. El plazo sólo miraba si la cámara seguía abierta.
@@ -945,13 +965,13 @@ async function iniciarLecturaQR(){
     if(qrVisto){ qrPlazo=setTimeout(rendirse, 12000); return; }
     c.classList.remove('qr');          // devuelve el obturador a la pantalla
     const m=$('#qr-msg');
-    if(m)m.textContent='¿No lee el código? Toma una foto de cerca al código QR (sin reflejo).';
+    if(m)m.textContent='¿No lee el código? Toca el botón blanco para tomarle foto de cerca al QR (sin reflejo).';
     const f=FOTOS.find(x=>x.key===camTipo); if(f)f.sinQR=true;
     clearInterval(qrTimer); qrTimer=null;
     pintarFotos();   // el botón deja de prometer un escáner que ya no va a abrirse
-  }, 12000);
+  }, 8000);
   qrOcupado=false;
-  qrReiniciar('Acerca el código al marco');
+  qrReiniciar('Apunta al código QR · o toca el botón blanco para tomarle foto');
   qrTimer=setInterval(async()=>{
     if(!camStream||!v.videoWidth)return;
     // jsQR tarda más que el intervalo en teléfonos modestos. Sin este cerrojo se apilarían
@@ -963,11 +983,11 @@ async function iniciarLecturaQR(){
     finally{ qrOcupado=false; }
 
     if(!txt){
-      // Se perdió de vista: se reinicia la cuenta. Sostenerlo 3 s es lo que evita que un
-      // código que pasa de refilón por el encuadre —el de la unidad de al lado— se capture.
-      if(qrVisto)qrReiniciar('Acerca el código al marco');
+      // Un fotograma sin leer no reinicia nada: sólo si lleva QR_TOLERANCIA sin verse.
+      if(qrVisto && Date.now()-qrUltimo>QR_TOLERANCIA)qrReiniciar('Apunta al código QR · o toca el botón blanco para tomarle foto');
       return;
     }
+    qrUltimo=Date.now();
     if(txt!==qrVisto){ qrVisto=txt; qrDesde=Date.now(); $('#cam').classList.add('leyendo');
       const m=$('#qr-msg'); if(m)m.textContent='Sostén el código quieto'; }
     const pasado=Date.now()-qrDesde, restan=QR_SEGUNDOS*1000-pasado;
@@ -1078,7 +1098,18 @@ async function abrirCamara(tipo){
   // stream tarda bastante más que traer un archivo del propio servidor.
   const pLector = quiereQR ? cargarJsQR() : Promise.resolve(false);
   try{
-    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    // ALTA RESOLUCIÓN. Sin pedirla, muchos teléfonos abren la cámara a 640×480 y el QR del
+    // holograma queda en unos cuantos píxeles: ilegible aunque se vea bien en pantalla.
+    try{
+      camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},
+        width:{ideal:1920}, height:{ideal:1080}},audio:false});
+    }catch(e1){
+      camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+    }
+    // Enfoque continuo donde el teléfono lo permite (Android); si no, se ignora.
+    try{ const tr=camStream.getVideoTracks()[0]; const cap=tr.getCapabilities?tr.getCapabilities():{};
+      if(cap.focusMode&&cap.focusMode.indexOf('continuous')>=0)await tr.applyConstraints({advanced:[{focusMode:'continuous'}]});
+    }catch(_){ }
     const qr = quiereQR && await pLector;
     $('#cam-hint').textContent = qr?('Apunta al QR de '+(f.esperado||'la unidad'))
       : f.eco?('Encuadra el ECONÓMICO '+(f.esperado||'')):('Encuadra: '+(f.lbl||'la lectura'));

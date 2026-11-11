@@ -668,9 +668,9 @@ def _asignacion_dict(a: AsignacionViaje, db: Session) -> dict:
         rows = db.execute(
             # El número VIGENTE (el nuevo si se renumeró): es el que trae pintado y en su QR.
             select(Remolque.id, func.coalesce(Remolque.eco_nuevo, Remolque.eco),
-                   Remolque.usa_combustible, Remolque.operador_asignado_id)
+                   Remolque.es_dolly, Remolque.operador_asignado_id)
             .where(Remolque.id.in_(a.remolque_ids))).all()
-        info = {rid: (e, uc, tit) for rid, e, uc, tit in rows}
+        info = {rid: (e, dolly, tit) for rid, e, dolly, tit in rows}
         ovr = a.remolque_operadores or {}
         op_ids = {(ovr.get(str(rid)) or info[rid][2]) for rid in a.remolque_ids
                   if rid in info and (ovr.get(str(rid)) or info[rid][2])}
@@ -679,9 +679,12 @@ def _asignacion_dict(a: AsignacionViaje, db: Session) -> dict:
         remolques = []
         for rid in a.remolque_ids:
             if rid in info:
-                e, uc, tit = info[rid]
+                e, dolly, tit = info[rid]
                 oid = ovr.get(str(rid)) or tit
-                remolques.append({"id": rid, "eco": e, "termo": bool(uc),
+                # Todo remolque que no sea dolly puede pedir recarga de termo. Antes dependía
+                # de la casilla «usa combustible» del catálogo, que en muchos refrigerados
+                # quedó en No, y al operador no le salía el botón para la foto de las horas.
+                remolques.append({"id": rid, "eco": e, "termo": not dolly,
                                   "operador_id": oid, "operador": nombres.get(oid)})
     # Quién lo asignó: `creada_por_id` estaba en la tabla y no salía nunca. Es de las
     # primeras cosas que se preguntan al abrir el detalle de un viaje.

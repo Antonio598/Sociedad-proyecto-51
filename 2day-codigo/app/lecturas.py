@@ -113,7 +113,7 @@ def lectura_dict(li: LecturaInicial) -> dict:
         "id": li.id, "fecha": li.fecha.isoformat(),
         "tipo": "unidad" if li.unidad_id else "remolque",
         "activo_id": li.unidad_id or li.remolque_id,
-        "eco": li.unidad.clave if li.unidad else (li.remolque.eco if li.remolque else None),
+        "eco": li.unidad.clave if li.unidad else ((li.remolque.eco_nuevo or li.remolque.eco) if li.remolque else None),
         "odometro": li.odometro, "horas_termo": li.horas_termo,
         "litros_tanque": li.litros_tanque, "litros_tanque_termo": li.litros_tanque_termo,
         "nota": li.nota, "creada_en": li.creada_en.isoformat() if li.creada_en else None,

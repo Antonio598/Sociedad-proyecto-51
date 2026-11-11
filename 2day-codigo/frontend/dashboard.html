@@ -507,14 +507,14 @@ td.mono{font:500 12px 'IBM Plex Mono'}
 
       <!-- UNIDADES -->
       <section class="section" id="s-unidades">
-        <div class="toolbar"><button class="btn primary" onclick="nuevaUnidad()">+ Nueva unidad</button><span class="sub" id="uni-count"></span></div>
-        <div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table><thead><tr><th>Clave</th><th>Tipo</th><th>Marca</th><th>Año</th><th>Placa</th><th>Operador asignado</th><th>Viajes</th><th>RTO real</th><th></th></tr></thead><tbody id="unidades-body"></tbody></table></div></div>
+        <div class="toolbar"><button class="btn primary" onclick="nuevaUnidad()">+ Nueva unidad</button><button class="btn" onclick="show('lecturas')">Historial de lecturas iniciales</button><span class="sub" id="uni-count"></span></div>
+        <div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table><thead><tr><th>Clave</th><th>Tipo</th><th>Marca</th><th>Año</th><th>Placa</th><th>Operador asignado</th><th>Lectura inicial</th><th>Viajes</th><th>RTO real</th><th></th></tr></thead><tbody id="unidades-body"></tbody></table></div></div>
       </section>
 
       <!-- REMOLQUES -->
       <section class="section" id="s-remolques">
         <div class="toolbar"><button class="btn primary" onclick="nuevoRemolque()">+ Nuevo remolque</button><span class="sub" id="rem-count"></span></div>
-        <div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table><thead><tr><th>ECO</th><th>ECO nuevo</th><th>Marca</th><th>Año</th><th>Placa</th><th>Serie termo</th><th>Combustible</th><th></th></tr></thead><tbody id="remolques-body"></tbody></table></div></div>
+        <div class="card" style="padding:0;overflow:hidden"><div class="tablewrap"><table><thead><tr><th>ECO</th><th>ECO nuevo</th><th>Marca</th><th>Año</th><th>Placa</th><th>Serie termo</th><th>Combustible</th><th>Lectura inicial</th><th></th></tr></thead><tbody id="remolques-body"></tbody></table></div></div>
       </section>
 
       <!-- CARGAS DEL PROVEEDOR (E2) Y LIBRO MAYOR (E3) -->
@@ -783,6 +783,16 @@ const NAV=[
   {grp:'Cuentas',items:[['usuarios','Usuarios y accesos','M8.5 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6M2.5 19a6 6 0 0 1 12 0M17 10.5a2.8 2.8 0 1 0-1.5-5.2M21.5 18a5.5 5.5 0 0 0-4-4.7'],['accesos','Accesos de la flota','M14 6a4 4 0 1 0-4 4l-5 5v3h3l1-1v-2h2v-2h1.5A4 4 0 0 0 14 6z'],['desempeno','Desempeño','M4 20V10M4 20h16M9 20V6M14 20v-8M19 20V4']]},
   {grp:'Sistema',items:[['uso','Consumo de IA','M12 3.5l1.9 5 5 1.9-5 1.9-1.9 5-1.9-5-5-1.9 5-1.9zM18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z'],['desarrollos','Desarrollos','M14 7l6 5-6 5M10 7l-6 5 6 5'],['config','Perfil y configuración','M10.3 4.3a1.9 1.9 0 0 1 3.4 0l.25.7a1.9 1.9 0 0 0 2.5 1.05l.7-.28a1.9 1.9 0 0 1 2.38 2.38l-.28.7a1.9 1.9 0 0 0 1.05 2.5l.7.25a1.9 1.9 0 0 1 0 3.4l-.7.25a1.9 1.9 0 0 0-1.05 2.5l.28.7a1.9 1.9 0 0 1-2.38 2.38l-.7-.28a1.9 1.9 0 0 0-2.5 1.05l-.25.7a1.9 1.9 0 0 1-3.4 0l-.25-.7a1.9 1.9 0 0 0-2.5-1.05l-.7.28a1.9 1.9 0 0 1-2.38-2.38l.28-.7a1.9 1.9 0 0 0-1.05-2.5l-.7-.25a1.9 1.9 0 0 1 0-3.4l.7-.25a1.9 1.9 0 0 0 1.05-2.5l-.28-.7a1.9 1.9 0 0 1 2.38-2.38l.7.28a1.9 1.9 0 0 0 2.5-1.05zM12 14.6a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2z']]},
 ];
+// MENÚ SIMPLE (pedido del dueño, 10-nov-2026): sólo lo que se usa a diario. Las secciones
+// que salen siguen en el código y se llega a algunas desde un botón (p. ej. «Accesos de la
+// flota» desde Operadores, «Lecturas iniciales» desde Unidades); para regresar una al menú
+// basta con quitarla de esta lista.
+const NAV_OCULTAS=new Set(['graficos','conciliacion','reporte','costos','exportar','analisis','termo',
+  'lecturas','catalogo','accesos','desempeno','uso','desarrollos']);
+for(let i=NAV.length-1;i>=0;i--){
+  NAV[i].items=NAV[i].items.filter(it=>!NAV_OCULTAS.has(it[0]));
+  if(!NAV[i].items.length)NAV.splice(i,1);
+}
 const TIT={resumen:['Resumen','RESUMEN'],lecturas:['Lecturas iniciales','FLOTA'],reportes:['Reportes por periodo','REPORTES'],graficos:['Gráficos','GRÁFICOS'],conciliacion:['Motor vs comprobante','CONCILIACIÓN'],reporte:['Reporte ejecutivo','REPORTE'],costos:['Rendimiento de costos','COSTOS'],exportar:['Exportar reportes','EXPORTAR'],analisis:['Análisis de Claude','ANÁLISIS'],anomalias:['Anomalías','ANOMALÍAS'],proveedor:['Cargas del proveedor y libro mayor','PROVEEDOR'],solicitudes:['Solicitudes de recarga','SOLICITUDES'],asignaciones:['Asignación de viajes','ASIGNACIONES'],historial:['Historial de viajes','HISTORIAL'],termo:['Horas de termo','TERMO'],unidades:['Unidades motrices','UNIDADES'],remolques:['Remolques','REMOLQUES'],operadores:['Operadores','OPERADORES'],catalogo:['Diferencias contra el maestro de placas','CATÁLOGO'],uso:['Consumo de IA','CONSUMO'],desarrollos:['Desarrollos','DESARROLLOS'],usuarios:['Usuarios y accesos','USUARIOS'],accesos:['Accesos de la flota','ACCESOS'],desempeno:['Desempeño del equipo','DESEMPEÑO'],config:['Perfil y configuración','PERFIL · CONFIG'],perfil:['Perfil y configuración','PERFIL · CONFIG']};
 // Las entradas con varios cargadores DEVUELVEN `Promise.all`. Si no, la flecha devuelve
 // `undefined`, `correrLoader` la da por resuelta al instante y su `.then` retira el aviso
@@ -1130,7 +1140,7 @@ function resumenDominios(R){
     row('Tractos · Camiones',fmt(pt.TRACTO||0,0)+' · '+fmt(pt.CAMION||0,0),{first:1})+row('Remolques',fmt(rm.total,0))+row('· Refrig. · Secos · Dollys',fmt(rm.refrigerados,0)+' · '+fmt(rm.secos,0)+' · '+fmt(rm.dollys,0),{color:'var(--muted)'})+row('Operadores',fmt(fl.operadores_total,0))+row('Sin acceso',fmt(fl.operadores_sin_acceso,0),{color:fl.operadores_sin_acceso?'var(--warn)':'var(--ink)',onclick:"show('accesos')"}));
   const iaCard=card('IA &amp; sistema · '+ps,
     row('Llamadas a IA',fmt(ia.llamadas,0),{first:1})+row('Costo IA','$'+fmt(ia.costo_usd,2)+' USD')+row('Tokens (in/out)',fmt(ia.tokens_entrada,0)+' / '+fmt(ia.tokens_salida,0),{color:'var(--muted)'})+row('Llamadas fallidas',fmt(ia.fallidas,0),{color:ia.fallidas?'var(--danger)':'var(--ink)'}));
-  return cCard+fCard+cuCard+flCard+iaCard;
+  return cCard+fCard+cuCard+flCard;   // «IA y sistema» salió con «Consumo de IA»
 }
 async function loadResumen(){
   // Admin ve el cockpit completo (/api/resumen-admin, admin-only por el dinero). Gerente/otros
@@ -2067,14 +2077,14 @@ async function loadLecturas(){
     <td style="text-align:right">${r.anulada?`<span class="sub" title="${esc(r.motivo_anulacion||'')}">anulada</span>`:`<button class="mini r" onclick="anularLectura(${r.id})">Anular</button>`}</td></tr>`).join('')
     :'<tr><td colspan="9" class="empty">Todavía no hay lecturas iniciales.</td></tr>';
 }
-async function nuevaLectura(tipo){
+async function nuevaLectura(tipo,pre){
   try{ if(tipo==='unidad'){ if(!LECT_UNIS.length) LECT_UNIS=await api('/api/unidades'); }
        else { if(!LECT_REMS.length) LECT_REMS=await api('/api/remolques'); } }
   catch(e){ toast('No se pudo cargar el catálogo: '+(e.message||'')); return; }
   const hoy=new Date().toISOString().slice(0,10);
   const lista=tipo==='unidad'
-    ? LECT_UNIS.filter(u=>u.activo!==false).map(u=>`<option value="${u.id}" data-tipo="${esc(u.tipo||'')}">${esc(u.clave)} · ${esc(u.tipo||'')}</option>`).join('')
-    : LECT_REMS.filter(r=>r.activo!==false).map(r=>`<option value="${r.id}">${esc(r.eco)}${r.eco_nuevo?' ('+esc(r.eco_nuevo)+')':''}</option>`).join('');
+    ? LECT_UNIS.filter(u=>u.activo!==false).map(u=>`<option value="${u.id}" data-tipo="${esc(u.tipo||'')}"${u.id===pre?' selected':''}>${esc(u.clave)} · ${esc(u.tipo||'')}</option>`).join('')
+    : LECT_REMS.filter(r=>r.activo!==false).map(r=>`<option value="${r.id}"${r.id===pre?' selected':''}>${esc(r.eco_nuevo||r.eco)}</option>`).join('');
   const campo=(id,lbl,extra)=>`<label style="display:block;margin-top:10px;font-size:12px;color:var(--muted)" for="${id}">${lbl}</label><input id="${id}" type="number" inputmode="decimal" min="0" step="0.1" ${extra||''} style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit">`;
   const cuerpo=tipo==='unidad'
     ? campo('li-odo','Odómetro (km)','placeholder="1225800"')+campo('li-lts','Litros en el tanque del motor','placeholder="900"')
@@ -2096,7 +2106,8 @@ async function nuevaLectura(tipo){
         fd.append('horas_termo',v('li-hrs')); fd.append('litros_tanque_termo',v('li-ltst')); }
       else { fd.append('horas_termo',v('li-hrs')); fd.append('litros_tanque',v('li-lts')); }
       fd.append('nota',v('li-nota'));
-      try{ await apiPost('/api/lecturas-iniciales',fd); toast('Lectura inicial guardada'); Dlg.close(dlg); loadLecturas(); }
+      try{ await apiPost('/api/lecturas-iniciales',fd); toast('Lectura inicial guardada'); Dlg.close(dlg);
+             (SEC_ACTIVA==='unidades'?loadUnidades:SEC_ACTIVA==='remolques'?loadRemolques:loadLecturas)(); }
       catch(e){ toast(e.message||'No se pudo guardar'); }
     }}]});
   // Las horas del termo sólo aplican a un camión (su termo va pegado a la unidad).
@@ -2150,15 +2161,28 @@ function verTermo(i){
     ${bars||'<div class="sub">Sin más registros de esta unidad.</div>'}
     <div class="tablewrap" style="margin-top:14px"><table><thead><tr><th>Mes</th><th>Hrs trab.</th><th>Litros</th><th>L/h</th></tr></thead><tbody>${hist.map(x=>`<tr${x.mes===t.mes?' style="background:color-mix(in oklab,var(--accent) 7%,transparent)"':''}><td>${esc(x.mes||'—')}</td><td class="mono">${fmt(ht(x),0)}</td><td class="mono">${fmt(x.litros_thermo,1)}</td><td class="mono">${fmt(x.rto_thermo,2)}</td></tr>`).join('')}</tbody></table></div>`);
 }
-async function loadUnidades(){UNIS=await api('/api/unidades');$('#uni-count').textContent=`${UNIS.length} unidades`;
-  $('#unidades-body').innerHTML=UNIS.map(u=>`<tr${u.activo?'':' style="opacity:.5"'}><td class="mono"><b>${esc(u.clave)}</b>${u.activo?'':' <span class="pill rech">baja</span>'}</td><td>${tipoPill(u.tipo)}</td><td>${esc(u.marca)||'—'}</td><td class="mono">${u.anio||'—'}</td><td class="mono">${esc(u.placa)||'—'}</td><td>${esc(u.operador_titular||u.operador_asignado)||'<span class="sub">sin titular</span>'} <span class="link" style="font-size:11px" data-titular="${u.id}">cambiar</span></td><td class="mono">${fmt(u.viajes,0)}</td><td class="mono"><b>${fmt(u.rto_real_prom,3)}</b></td><td style="text-align:right;white-space:nowrap"><span class="link" data-unidad="${esc(u.clave)}">ver</span>${ROL==='admin'?` · <span class="link" onclick="editarUnidad(${u.id})">editar</span> · <span class="link" style="color:var(--danger)" onclick="eliminarUnidad(${u.id})">dar de baja</span>`:''}</td></tr>`).join('');}
+// La última lectura inicial VIGENTE de cada equipo, para enseñarla en su renglón con el botón
+// para capturarla. Si la consulta falla la tabla sale igual, sin esa columna llena.
+async function lecturasVigentes(tipo){
+  try{ const rows=await api('/api/lecturas-iniciales'); const m={};
+    rows.filter(r=>r.tipo===tipo&&!r.anulada).forEach(r=>{ if(!(r.activo_id in m))m[r.activo_id]=r; });
+    return m; }catch(e){ return {}; }
+}
+function celdaLectura(tipo,id,l){
+  const n=v=>v==null?'':fmt(v,0);
+  const txt=!l?'':(tipo==='unidad'?(l.odometro!=null?n(l.odometro)+' km':'')+(l.horas_termo!=null?' · '+n(l.horas_termo)+' h':'')
+                                   :(l.horas_termo!=null?n(l.horas_termo)+' h':''));
+  return `<td class="mono" style="white-space:nowrap">${txt?`<span title="${esc(l.fecha)}">${txt}</span> · `:''}<span class="link" onclick="nuevaLectura('${tipo}',${id})">${txt?'cambiar':'+ cargar'}</span></td>`;
+}
+async function loadUnidades(){const LI=await lecturasVigentes('unidad');UNIS=await api('/api/unidades');$('#uni-count').textContent=`${UNIS.length} unidades`;
+  $('#unidades-body').innerHTML=UNIS.map(u=>`<tr${u.activo?'':' style="opacity:.5"'}><td class="mono"><b>${esc(u.clave)}</b>${u.activo?'':' <span class="pill rech">baja</span>'}</td><td>${tipoPill(u.tipo)}</td><td>${esc(u.marca)||'—'}</td><td class="mono">${u.anio||'—'}</td><td class="mono">${esc(u.placa)||'—'}</td><td>${esc(u.operador_titular||u.operador_asignado)||'<span class="sub">sin titular</span>'} <span class="link" style="font-size:11px" data-titular="${u.id}">cambiar</span></td>${celdaLectura('unidad',u.id,LI[u.id])}<td class="mono">${fmt(u.viajes,0)}</td><td class="mono"><b>${fmt(u.rto_real_prom,3)}</b></td><td style="text-align:right;white-space:nowrap"><span class="link" data-unidad="${esc(u.clave)}">ver</span>${ROL==='admin'?` · <span class="link" onclick="editarUnidad(${u.id})">editar</span> · <span class="link" style="color:var(--danger)" onclick="eliminarUnidad(${u.id})">dar de baja</span>`:''}</td></tr>`).join('');}
 async function verUnidad(clave){const[uni,vs]=await Promise.all([api('/api/unidades'),api('/api/viajes?unidad='+encodeURIComponent(clave)+'&limit=12')]);const u=uni.find(x=>x.clave===clave)||{};
   openModal(`<h3>Unidad ${esc(clave)} ${tipoPill(u.tipo)}</h3><div class="sub" style="margin-top:2px">${esc(u.marca)||'—'} · ${u.anio||'—'} · placa ${esc(u.placa)||'—'}</div>
   <div class="grid2"><span class="k">Serie (VIN)</span><span class="v">${esc(u.serie)||'—'}</span><span class="k">Motor</span><span class="v">${esc(u.motor)||'—'}</span><span class="k">Operador asignado</span><span class="v">${esc(u.operador_asignado)||'—'}</span><span class="k">Viajes</span><span class="v">${fmt(u.viajes,0)}</span><span class="k">RTO real prom.</span><span class="v">${fmt(u.rto_real_prom,3)} km/l</span><span class="k">Usa remolque</span><span class="v">${u.usa_remolque?'Sí':'No'}</span></div>
   <div class="sech">Últimos viajes</div><div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Operador</th><th>Km</th><th>RTO real</th><th>%</th></tr></thead><tbody>${vs.length?vs.map(v=>`<tr><td class="mono" style="color:var(--muted)">${v.fecha}</td><td>${esc(v.operador)||'—'}</td><td class="mono">${fmt(v.kilometros,1)}</td><td class="mono">${fmt(v.rto_real,3)}</td><td class="mono">${pctFmt(v.pct)}</td></tr>`).join(''):`<tr><td colspan="5" class="empty">Sin viajes</td></tr>`}</tbody></table></div>`);
 }
-async function loadRemolques(){REMS=await api('/api/remolques');$('#rem-count').textContent=`${REMS.length} remolques`;
-  $('#remolques-body').innerHTML=REMS.map(r=>`<tr${r.activo?'':' style="opacity:.5"'}><td class="mono"><b>${esc(r.eco)}</b>${r.activo?'':' <span class="pill rech">baja</span>'}</td><td class="mono">${esc(r.eco_nuevo)||'—'}</td><td>${esc(r.marca)||'—'}</td><td class="mono">${r.anio||'—'}</td><td class="mono">${esc(r.placa)||'—'}</td><td class="mono">${esc(r.serie_thermo)||'—'}</td><td>${r.es_dolly?'<span class="pill rech">Dolly</span>':r.usa_combustible?'<span class="pill conf">Sí</span>':'<span class="pill rech">No</span>'}</td><td style="text-align:right;white-space:nowrap"><span class="link" onclick="editarRemolque(${r.id})">editar</span> · <span class="link" style="color:var(--danger)" onclick="eliminarRemolque(${r.id})">dar de baja</span></td></tr>`).join('');}
+async function loadRemolques(){const LI=await lecturasVigentes('remolque');REMS=await api('/api/remolques');$('#rem-count').textContent=`${REMS.length} remolques`;
+  $('#remolques-body').innerHTML=REMS.map(r=>`<tr${r.activo?'':' style="opacity:.5"'}><td class="mono"><b>${esc(r.eco)}</b>${r.activo?'':' <span class="pill rech">baja</span>'}</td><td class="mono">${esc(r.eco_nuevo)||'—'}</td><td>${esc(r.marca)||'—'}</td><td class="mono">${r.anio||'—'}</td><td class="mono">${esc(r.placa)||'—'}</td><td class="mono">${esc(r.serie_thermo)||'—'}</td><td>${r.es_dolly?'<span class="pill rech">Dolly</span>':r.usa_combustible?'<span class="pill conf">Sí</span>':'<span class="pill rech">No</span>'}</td>${r.es_dolly?'<td></td>':celdaLectura('remolque',r.id,LI[r.id])}<td style="text-align:right;white-space:nowrap"><span class="link" onclick="editarRemolque(${r.id})">editar</span> · <span class="link" style="color:var(--danger)" onclick="eliminarRemolque(${r.id})">dar de baja</span></td></tr>`).join('');}
 
 // ── Operadores (lista + ficha editable) ──────────────────────────────────────
 let OPS=[],UNIS=[],REMS=[];

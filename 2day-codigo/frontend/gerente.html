@@ -451,6 +451,10 @@ const NAV=[
   ['reportes','Reportes','M4 20V4M4 20h16M7 16v-5M11 16V8M15 16v-3M19 16V6'],
   ['perfil','Perfil','M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0 M4.5 20a7.5 7.5 0 0 1 15 0'],
 ];
+// MENÚ SIMPLE (pedido del dueño, 10-nov-2026): sólo lo que se usa a diario. Las secciones que
+// salen siguen en el código; para regresar una al menú basta con quitarla de esta lista.
+const NAV_OCULTAS=new Set(['consulta','rendimiento','combustible','operaciones','exportar','operadores']);
+NAV.splice(0,NAV.length,...NAV.filter(it=>!NAV_OCULTAS.has(it[0])));
 const TIT={reportes:['ANÁLISIS','Reportes'],panorama:['GERENCIA','Panorama'],consulta:['INTELIGENCIA','Consulta IA'],rendimiento:['ANÁLISIS','Rendimiento'],combustible:['COMBUSTIBLE','Combustible'],viajes:['BITÁCORA','Viajes y recargas'],anomalias:['AUDITORÍA','Anomalías'],operaciones:['OPERACIÓN','Operaciones'],exportar:['REPORTES','Exportar reportes'],operadores:['EQUIPO','Operadores'],perfil:['CUENTA','Perfil']};
 function pintarNav(){$('#nav').innerHTML=NAV.map(([id,lbl,d])=>`<button class="navbtn" data-sec="${id}" onclick="show('${id}')"><svg class="ic" viewBox="0 0 24 24"><path d="${d}"/></svg><span style="flex:1">${lbl}</span>${id==='anomalias'?'<span class="bdg" id="nav-an" style="display:none"></span>':''}</button>`).join('');}
 function toggleNav(){$('#app').classList.toggle('navopen');}
