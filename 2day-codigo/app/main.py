@@ -1,5 +1,6 @@
 import base64
 import binascii
+import io
 import logging
 import mimetypes
 import re
@@ -6381,6 +6382,25 @@ def _qr_de_foto(ruta) -> str | None:
     return None
 
 
+@app.post("/api/qr/decodificar")
+async def qr_decodificar(file: UploadFile = File(...),
+                         user: dict = Depends(require_operador)) -> dict:
+    """Decodifica el QR de UN FOTOGRAMA del escáner en vivo. No guarda nada.
+
+    El teléfono sólo lee QR normales. Las calcomanías de algunos remolques traen un MICRO QR
+    (un solo cuadro de esquina; con un número corto como «401002» es lo que sale), y ni el
+    lector nativo ni jsQR lo reconocen: el escáner se quedaba mirándolo. Cuando el teléfono
+    no lee nada en un segundo y medio, manda aquí un fotograma y zxing-cpp —que lee QR,
+    Micro QR, invertidos y con reflejo— lo intenta. El texto vuelve al teléfono y se registra
+    por el camino de siempre (`/api/solicitudes/{id}/qr`).
+    """
+    datos = await file.read(2 * 1024 * 1024 + 1)
+    if len(datos) > 2 * 1024 * 1024:
+        raise HTTPException(413, "Fotograma demasiado grande")
+    texto = await run_in_threadpool(_qr_de_foto, io.BytesIO(datos))
+    return {"texto": texto}
+
+
 def _verificar_codigo(db: Session, texto: str, esperado: str | None) -> dict:
     """Resuelve un código QR al número económico de su activo y lo compara con el esperado.
 
@@ -6400,7 +6420,7 @@ def _verificar_codigo(db: Session, texto: str, esperado: str | None) -> dict:
         alias = {catalogo.norm_eco(nombre)} if nombre else set()
     elif r.remolque_id:
         rem = db.get(Remolque, r.remolque_id)
-        nombre = rem.eco if rem else None
+        nombre = (rem.eco_nuevo or rem.eco) if rem else None   # el número que trae pintado
         alias = {catalogo.norm_eco(x) for x in ((rem.eco, rem.eco_nuevo) if rem else ()) if x}
     coincide, aviso = None, None
     if esperado is not None:
