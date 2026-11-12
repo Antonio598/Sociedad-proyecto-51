@@ -182,6 +182,11 @@ input:focus,select:focus{outline:none;border-color:var(--accent)}
 .scrim{display:none}
 .toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:8px;font-size:13.5px;font-weight:500;opacity:0;transition:.25s;z-index:var(--z-toast, 150);max-width:90vw;text-align:center;box-shadow:var(--sh-2)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* EL AVISO NO ATRAPA TOQUES. Invisible (opacity 0) seguía encima de todo, justo en el centro
+   de abajo: sobre el OBTURADOR de la cámara. Tras «Económico verificado» el texto largo dejaba
+   una caja invisible que tapaba el botón entero y la foto del odómetro no se podía tomar. */
+.toast{pointer-events:none}
+.cam.show ~ .toast{bottom:calc(130px + env(safe-area-inset-bottom))}   /* con la cámara, arriba del obturador */
 /* Cámara en vivo */
 .cam{display:none;position:fixed;inset:0;z-index:90;background:#000;flex-direction:column}
 /* Vista de ruta: el operador sólo mira. No hay nada que tocar en el mapa, así que ocupa
