@@ -200,7 +200,11 @@ input:focus,select:focus{outline:none;border-color:var(--accent)}
 .rutav #rv-map{flex:1;min-height:0}
 .rutav .rpie{padding:12px 16px calc(14px + env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
 .cam.show{display:flex}
-.cam video{flex:1;width:100%;object-fit:cover;background:#000}
+/* `flex:1 1 0` + `min-height:0`: el video ocupa SÓLO lo que sobra. Con `flex:1` a secas crecía
+   a su alto natural —en vertical a alta resolución, 1080×1920— y empujaba la barra del
+   obturador fuera de la pantalla: el botón blanco «no estaba». */
+.cam video{flex:1 1 0;min-height:0;width:100%;object-fit:cover;background:#000}
+.cam .bar{flex:0 0 auto}
 .cam .bar{padding:16px calc(16px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));display:flex;align-items:center;justify-content:space-between;background:#000}
 .cam .cancel{background:none;border:0;color:#fff;font-size:15px;cursor:pointer;min-height:44px;padding:0 14px;margin-left:-14px}   /* medía 18 px con la cámara abierta */
 .cam .shutter{width:68px;height:68px;border-radius:99px;border:4px solid #fff;background:rgba(255,255,255,.25);cursor:pointer}
